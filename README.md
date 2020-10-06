@@ -1,57 +1,32 @@
 # Project Name
 
-(short, 1-3 sentenced, description of the project)
-
-## Features
-
-This project framework provides the following features:
-
-* Feature 1
-* Feature 2
-* ...
+ACS Calling Tutorial
 
 ## Getting Started
 
 ### Prerequisites
 
-(ideally very short, if any)
-
-- OS
-- Library version
-- ...
-
-### Installation
-
-(ideally very short)
-
-- npm install [package name]
-- mvn install
-- ...
+1. [npm](https://www.npmjs.com/get-npm)
+2. [Node.js](https://nodejs.org/en/download/)
 
 ### Quickstart
-(Add steps to get up and running quickly)
 
-1. git clone [repository clone url]
-2. cd [respository name]
-3. ...
+1. git clone https://github.com/Azure-Samples/communication-services-web-calling-tutorial
+2. cd communication-services-web-calling-tutorial/Project
+3. Get a connection string by provisioning an Azure Communication Services resource from the Azure portal. Use the connection string as value for key `connectionString` in config.json file.
+4. npm install
+5. npm run build
+6. npm run start
+7. Open localhost:5000 in a browser. (Supported browsers are Chrome, Edge Chromium, and Safari)
 
 
-## Demo
+## Code structure
 
-A demo app is included to show how to use the project.
-
-To run the demo, follow these steps:
-
-(Add steps to start up the demo)
-
-1.
-2.
-3.
+* ./src: client side source code
+* ./webpack.config.js: Project bundler. Has a simple local server for user token provisioning.
+* ./config.json: configuration file for specifying the connectiong string.
 
 ## Resources
 
-(Any additional resources or related projects)
-
-- Link to supporting information
-- Link to similar sample
-- ...
+1. Documentation on how to use the ACS Calling SDK for Javascript can be found on https://docs.microsoft.com/en-gb/azure/communication-services/quickstarts/voice-video-calling/calling-client-samples?pivots=platform-web
+2. ACS Calling SDK for Javascript API reference documentation can be found on https://docs.microsoft.com/en-us/javascript/api/azure-communication-services/@azure/communication-calling/?view=azure-communication-services-js
