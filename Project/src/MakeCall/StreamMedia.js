@@ -25,7 +25,7 @@ export default class StreamMedia extends React.Component {
             }
             videoContainer = document.getElementById(`${this.id}-${this.stream.type}-${this.stream.id}`);
             videoContainer.hidden = false;
-            videoContainer.appendChild(view.target);
+            if(!videoContainer.hasChildNodes()) { videoContainer.appendChild(view.target); }
         }
 
         this.stream.on('availabilityChanged', async () => {
@@ -34,7 +34,7 @@ export default class StreamMedia extends React.Component {
                 this.setState({ isAvailable: true });
                 await renderStream();
             } else {
-               videoContainer.hidden = true;
+                if(videoContainer) { videoContainer.hidden = true; }
                 this.setState({ isAvailable: false });
             }
         });
