@@ -44,12 +44,6 @@ h1, h2, h3, h4, h5, h6 {
     text-align: right;
 }
 
-@media (max-width: 575.98px) {
-  .sdk-docs-header {
-    text-align: left;
-  }
-}
-
 .sdk-docs-link {
   color: #edebe9;
   text-decoration: underline;
@@ -110,12 +104,6 @@ button:focus {
 
 .card:first-child {
   margin-top: 2em;
-}
-
-@media (max-width: 575.98px) {
-  .card {
-    padding: 1em;
-  }
 }
 
 ul {
@@ -207,6 +195,10 @@ ul {
   outline: none;
 }
 
+.call-input-panel {
+  padding: 0 2em;
+}
+
 .in-call-button {
   padding-bottom: 0.4em;
   padding-right: 0.4em;
@@ -232,12 +224,6 @@ ul {
 
 .in-call-button > i {
   vertical-align: middle;
-}
-
-@media (max-width: 575.98px) {
-  .in-call-button {
-    font-size: x-large;
-  }
 }
 
 .ms-TextField-wrapper > label {
@@ -724,4 +710,25 @@ ul {
 .ml-n5,
 .mx-n5 {
   margin-left: -3rem !important;
+}
+
+/*********************************
+*         Small screen           *
+*********************************/
+@media (max-width: 575.98px) {
+  .sdk-docs-header {
+    text-align: left;
+  }
+
+  .card {
+    padding: 1em;
+  }
+
+  .in-call-button {
+    font-size: x-large;
+  }
+
+  .call-input-panel {
+    padding: 0;
+  }
 }

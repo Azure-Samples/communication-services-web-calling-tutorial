@@ -7,7 +7,6 @@ export default class Login extends React.Component {
     constructor(props) {
         super(props);
         this.userDetailsResponse = undefined;
-        this.userIdentity = undefined;
 
         this.state = {
             showUserProvisioningAndSdkInitializationCode: false,
@@ -20,7 +19,7 @@ export default class Login extends React.Component {
     provisionNewUser = async () => {
         try {
             this.setState({ showSpinner: true});
-            this.userDetailsResponse = await utils.provisionNewUser(this.userIdentity);
+            this.userDetailsResponse = await utils.provisionNewUser();
             this.setState({ id: utils.getIdentifierText(this.userDetailsResponse.user) });
             await this.props.onLoggedIn({ id: this.state.id, token: this.userDetailsResponse.token });
             this.setState({ loggedIn: true });
@@ -82,7 +81,7 @@ export class MyCallingApp {
         // CallClient is the entrypoint for the SDK. Use it to
         // to instantiate a CallClient and to access the DeviceManager
         this.callClient = new CallClient(options);
-        this.callAgent = await this.callClient.createCallAgent(tokenCredential);
+        this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: 'Optional ACS user name'});
         this.deviceManager = await this.callClient.getDeviceManager();
 
         // Handle Calls and RemoteParticipants
@@ -92,8 +91,11 @@ export class MyCallingApp {
                 //Subscribe to call state changed event
                 addedCall.on('callStateChanged', callStateChangedHandler);
 
-                /Subscribe to call id changed event
+                // Subscribe to call id changed event
                 addedCall.on('callIdChanged', callIdChangedHandler);
+
+                // Subscribe to is recording active event
+                addedCall.on('isRecordingActiveChanged', isRecordingActiveHandler);
 
                 // Subscribe to remote participants updated event
                 addedCall.on('remoteParticipantsUpdated', participants => {
@@ -170,12 +172,6 @@ export class MyCallingApp {
                     {
                         !this.state.loggedIn &&
                         <div className="mt-3">
-                            <div className="ms-Grid-row">
-                                <div className="ms-Grid-col ms-lg3">
-                                    <TextField label="User identity to provision a token for. If no user identity specified, then a random user identity will be generated"
-                                                componentRef={(val) => this.userIdentity = val} />
-                                </div>
-                            </div>
                             <PrimaryButton className="primary-button mt-3"
                                 iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
                                 label="Provision an user" 
