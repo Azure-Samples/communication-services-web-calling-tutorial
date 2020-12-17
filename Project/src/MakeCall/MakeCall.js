@@ -227,6 +227,7 @@ this.callAgent.on('callsUpdated', e => {
         if(this.currentCall.isIncoming) {
             // Incoming call was detected
             this.currentCall = addedCall;
+            this.currentCall.accept();
         }
     })
 });
