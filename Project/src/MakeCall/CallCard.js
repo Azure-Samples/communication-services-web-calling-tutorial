@@ -102,7 +102,7 @@ export default class CallCard extends React.Component {
             });
 
             const onCallStateChanged = () => {
-                console.log('callStateChanged', this.state.call.state);
+                console.log('callStateChanged ', this.state.call.state);
                 this.setState({callState: this.state.call.state});
 
                 if (this.state.call.state !== 'None' &&
@@ -120,9 +120,16 @@ export default class CallCard extends React.Component {
             }
             onCallStateChanged();
             this.state.call.on('callStateChanged', onCallStateChanged);
+
             this.state.call.on('callIdChanged', () => {
+                console.log('callIdChanged ', this.state.call.id);
                 this.setState({ callId: this.state.call.id});
             });
+
+            this.state.call.on('isRecordingActiveChanged', () => {
+                console.log('isRecordingActiveChanged ', this.state.call.isRecordingActive);
+            });
+
             this.state.call.remoteParticipants.forEach(rp => this.subscribeToRemoteParticipant(rp));
             this.state.call.on('remoteParticipantsUpdated', e => {
                 console.log(`Call=${this.state.call.callId}, remoteParticipantsUpdated, added=${e.added}, removed=${e.removed}`);
@@ -132,7 +139,7 @@ export default class CallCard extends React.Component {
                     this.setState({remoteParticipants: [...this.state.call.remoteParticipants.values()]});
                 });
                 e.removed.forEach(p => {
-                    console.log('participantRemoved');
+                    console.log('participantRemoved', p);
                     this.setState({remoteParticipants: [...this.state.call.remoteParticipants.values()]});
                 });
             });
@@ -141,6 +148,10 @@ export default class CallCard extends React.Component {
 
     subscribeToRemoteParticipant(participant) {
         let id = utils.getIdentifierText(participant.identifier);
+
+        participant.on('displayNameChanged', () => {
+            console.log('displayNameChanged ', participant.displayName);
+        });
 
         participant.on('participantStateChanged', () => {
             console.log('participantStateChanged', participant.identifier.communicationUserId, participant.state);
