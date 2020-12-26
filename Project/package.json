@@ -4,8 +4,8 @@
   "private": true,
   "dependencies": {
     "@fluentui/react": "^7.137.1",
-    "react": "^16.13.0",
-    "react-dom": "^16.13.0",
+    "react": "^16.14.0",
+    "react-dom": "^16.14.0",
     "@azure/communication-common": "1.0.0-beta.1",
     "@azure/communication-administration": "1.0.0-beta.1",
     "@azure/communication-calling": "1.0.0-beta.1",
