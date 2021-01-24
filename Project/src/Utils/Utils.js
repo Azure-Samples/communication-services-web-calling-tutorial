@@ -4,15 +4,13 @@ export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    provisionNewUser: async (userIdentity) => {
-        console.log('userIdentity: ', userIdentity);
+    provisionNewUser: async () => {
         let response = await fetch('/tokens/provisionUser', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json, text/plain, */*',
                 'Content-Type': 'application/json'
             },
-            body : JSON.stringify({userIdentity: userIdentity.value.trim()})
         });
 
         if (response.ok)
