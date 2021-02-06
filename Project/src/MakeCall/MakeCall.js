@@ -1,6 +1,6 @@
 import React from "react";
 import { CallClient, LocalVideoStream } from '@azure/communication-calling';
-import { AzureCommunicationUserCredential } from '@azure/communication-common';
+import { AzureCommunicationTokenCredential } from '@azure/communication-common';
 import {
     PrimaryButton,
     TextField,
@@ -47,7 +47,7 @@ export default class MakeCall extends React.Component {
     handleLogIn = async (userDetails) => {
         if(userDetails) {
             try {
-                const tokenCredential = new AzureCommunicationUserCredential(userDetails.token);
+                const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 const logger = createClientLogger('ACS');
                 setLogLevel('warning');
                 logger.verbose.log = (...args) => { console.log(...args); };
