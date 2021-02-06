@@ -1,4 +1,5 @@
-import { isCommunicationUser, isPhoneNumber, isCallingApplication } from '@azure/communication-common';
+import { isCommunicationUserIdentifier, isPhoneNumberIdentifier, isCallingApplicationIdentifier } from '@azure/communication-common';
+import commo from '@azure/communication-common'
 
 export const utils = {
     getAppServiceUrl: () => {
@@ -21,11 +22,11 @@ export const utils = {
         throw new Error('Invalid token response');
     },
     getIdentifierText: (identifier) => {
-        if (isCommunicationUser(identifier)) {
+        if (isCommunicationUserIdentifier(identifier)) {
             return identifier.communicationUserId;
-        } else if (isPhoneNumber(identifier)) {
+        } else if (isPhoneNumberIdentifier(identifier)) {
             return identifier.phoneNumber;
-        } else if(isCallingApplication(identifier)) {
+        } else if(isCallingApplicationIdentifier(identifier)) {
             return identifier.callingApplicationId;
         } else {
             return 'Unknwon Identifier';
