@@ -81,6 +81,10 @@ export default class MakeCall extends React.Component {
                         }
                     });
                 });
+                this.callAgent.on('incomingCall', e => {
+                    console.log(`incoming call ${e.incomingCall.state}`)
+                    this.setState({call: e.incomingCall});
+                })
                 this.setState({ loggedIn: true });
             } catch (e) {
                 console.error(e);
@@ -126,6 +130,7 @@ export default class MakeCall extends React.Component {
         }
     };
 
+    
     joinGroup = () => {
         try {
             this.callAgent.join({ groupId: this.destinationGroup.value }, this.getCallOptions());
