@@ -1,5 +1,4 @@
 import { isCommunicationUserIdentifier, isPhoneNumberIdentifier, isCallingApplicationIdentifier } from '@azure/communication-common';
-import commo from '@azure/communication-common'
 
 export const utils = {
     getAppServiceUrl: () => {
