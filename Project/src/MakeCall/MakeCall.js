@@ -129,7 +129,6 @@ export default class MakeCall extends React.Component {
             this.setState({ callError: 'Failed to place a call: ' + e });
         }
     };
-
     
     joinGroup = () => {
         try {
