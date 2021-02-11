@@ -1,6 +1,6 @@
 import React from "react";
 import { CallClient, LocalVideoStream } from '@azure/communication-calling';
-import { AzureCommunicationUserCredential } from '@azure/communication-common';
+import { AzureCommunicationTokenCredential } from '@azure/communication-common';
 import {
     PrimaryButton,
     TextField,
@@ -47,7 +47,7 @@ export default class MakeCall extends React.Component {
     handleLogIn = async (userDetails) => {
         if(userDetails) {
             try {
-                const tokenCredential = new AzureCommunicationUserCredential(userDetails.token);
+                const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 const logger = createClientLogger('ACS');
                 setLogLevel('warning');
                 logger.verbose.log = (...args) => { console.log(...args); };
@@ -81,6 +81,10 @@ export default class MakeCall extends React.Component {
                         }
                     });
                 });
+                this.callAgent.on('incomingCall', e => {
+                    console.log(`incoming call ${e.incomingCall.state}`)
+                    this.setState({call: e.incomingCall});
+                })
                 this.setState({ loggedIn: true });
             } catch (e) {
                 console.error(e);
@@ -125,7 +129,7 @@ export default class MakeCall extends React.Component {
             this.setState({ callError: 'Failed to place a call: ' + e });
         }
     };
-
+    
     joinGroup = () => {
         try {
             this.callAgent.join({ groupId: this.destinationGroup.value }, this.getCallOptions());
