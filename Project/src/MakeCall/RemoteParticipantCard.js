@@ -38,10 +38,11 @@ export default class RemoteParticipantCard extends React.Component {
 
     render() {
         return (
-            <li className={`paticipant-item ${this.state.isSpeaking && !this.remoteParticipant.videoStreams.find(stream => { return stream.isAvailable }) ? `speaking` : `not-speaking`}`} action key={utils.getIdentifierText(this.remoteParticipant.identifier)}>
+            <li className={`participant-item`} action key={utils.getIdentifierText(this.remoteParticipant.identifier)}>
                 <div className="ms-Grid-row">
                     <div className="ms-Grid-col ms-lg11">
-                    <Persona size={PersonaSize.size40}
+                    <Persona className={this.state.isSpeaking ? `speaking-border-for-initials` : ``}
+                            size={PersonaSize.size40}
                             text={ utils.getIdentifierText(this.remoteParticipant.identifier) }
                             secondaryText={this.state.state}
                             styles={{ primaryText: {color: '#edebe9'}, secondaryText: {color: '#edebe9'} }}/>

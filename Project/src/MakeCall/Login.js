@@ -1,7 +1,6 @@
 import React from "react";
 import { PrimaryButton } from 'office-ui-fabric-react'
 import { utils } from "../Utils/Utils";
-import { TextField } from 'office-ui-fabric-react'
 
 export default class Login extends React.Component {
     constructor(props) {
@@ -51,8 +50,8 @@ app.get('/tokens/provisionUser', async (request, response) => {
 /********************************************************************************************************
  *   Client application initializing the ACS Calling Client Web SDK after receiving token from service   *
  *********************************************************************************************************/
-import { CallClient } from '@azure/communication-calling';
-import { AzureCommunicationUserCredentials } from '@azure/communication-common';
+import { CallClient, Features } from '@azure/communication-calling';
+import { AzureCommunicationTokenCredential } from '@azure/communication-common';
 import { createClientLogger, setLogLevel } from '@azure/logger';
 
 export class MyCallingApp {
@@ -66,7 +65,7 @@ export class MyCallingApp {
     public async initCallClient() {
         const response = (await fetch('/tokens/provisionUser')).json();
         const token = response.token;
-        const tokenCredential = new AzureCommunicationUserCredential(token);
+        const tokenCredential = new AzureCommunicationTokenCredential(token);
 
         // Create Azure logger
         const logger = createClientLogger('ACS');
@@ -88,32 +87,33 @@ export class MyCallingApp {
         // Subscribe to 'callsUpdated' event to be when a a call is added or removed
         this.callAgent.on('callsUpdated', calls => {
             calls.added.foreach(addedCall => {
+                // Get the state of the call
+                addedCall.state;
+
                 //Subscribe to call state changed event
                 addedCall.on('callStateChanged', callStateChangedHandler);
+
+                // Get the unique Id for this Call
+                addeeCall.id;
 
                 // Subscribe to call id changed event
                 addedCall.on('callIdChanged', callIdChangedHandler);
 
-                // Subscribe to is recording active event
-                addedCall.on('isRecordingActiveChanged', isRecordingActiveHandler);
+                // Indicates if recording is active in current call
+                addedCall.api(Features.Recording).isRecordingActive;
 
-                // Subscribe to remote participants updated event
+                // Subscribe to is recording active event
+                addedCall.api(Features.Recording).on('isRecordingActiveChanged', isRecordingActiveChangedHandler);
+
+                // Subscribe to current remote participants in the call
+                addedCall.remoteParticipants.forEach(participant => {
+                    subscribeToRemoteParticipant(participant)
+                });
+
+                // Subscribe to new added remote participants in the call
                 addedCall.on('remoteParticipantsUpdated', participants => {
                     participants.added.forEach(addedParticipant => {
-                        // Subscribe to participant state changed event.
-                        addedParticipant.on('participantStateChanged', participantStateChangedHandler);
-
-                        // Subscribe to is muted changed event.
-                        addedParticipant.on('isMutedChanged', isMutedChangedHandler);
-
-                        // Subscribe to display name changed event
-                        addedParticipant.on('displayNameChanged', dispalyNameChangedHandler);
-
-                        // Subscribe to participant is speaking changed event
-                        addedParticipant.on('isSpeakingChanged', isSpeakingChangedHandler);
-
-                        // Subscribe to video streams and screen-sharing streams updated event.
-                        addedParticipant.on('videoStreamsUpdated', handleStreamsUpdated);
+                        subscribeToRemoteParticipant(addedParticipant)
                     });
 
                     participants.removed.forEach(removedParticipant => {
@@ -124,6 +124,45 @@ export class MyCallingApp {
 
             calls.removed.foreach(removedCall => {
                 removedCallHandler(removedCall);
+            });
+        });
+    }
+
+    private subscribeToRemoteParticipant(remoteParticipant) {
+        // Get state of this remote participant
+        remoteParticipant.state;
+
+        // Subscribe to participant state changed event.
+        remoteParticipant.on('stateChanged', participantStateChangedHandler);
+
+        // Whether this remote participant is muted or not
+        remoteParticipant.isMuted;
+
+        // Subscribe to is muted changed event.
+        remoteParticipant.on('isMutedChanged', isMutedChangedHandler);
+
+        // Get participant's display name, if it was set
+        remoteParticipant.displayName;
+
+        // Subscribe to display name changed event
+        remoteParticipant.on('displayNameChanged', dispalyNameChangedHandler);
+
+        // Weather the participant is speaking or not
+        remoteParticipant.isSpeaking;
+
+        // Subscribe to participant is speaking changed event
+        remoteParticipant.on('isSpeakingChanged', isSpeakingChangedHandler);
+
+        // Handle remote participant's current video streams
+        remoteParticipant.videoStreams.forEach(videoStream => { handleRemoteStream(videoStream) });
+
+        // Handle remote participants new added video streams and screen-sharing streams
+        remoteParticipant.on('videoStreamsUpdated', videoStreams => {
+            videoStream.added.forEach(addedStream => {
+                handleRemoteStream(videoStream);
+            });
+            videoStream.removed.forEach(removedStream => {
+                handleRemoveStream(removedStream);
             });
         });
     }
@@ -167,7 +206,6 @@ export class MyCallingApp {
                             <div className="loader"> </div>
                             <div className="ml-2">Fetching token from service and initializing SDK...</div>
                         </div>
-                              
                     }
                     {
                         !this.state.loggedIn &&

@@ -164,27 +164,25 @@ export default class CallCard extends React.Component {
         const addToListOfAllParticipantStreams = (participantStreams) => {
             if(participantStreams) {
                 let participantStreamTuples = participantStreams.map(stream => { return { stream, participant }});
-                const tuplesToAdd = [];
                 participantStreamTuples.forEach(participantStreamTuple => {
                     if (!this.state.streams.find((v) => { return v === participantStreamTuple }) ) {
-                        tuplesToAdd.push(participantStreamTuple);
+                        this.setState( prevState => ({
+                            streams: [...prevState.streams, participantStreamTuple]
+                        }));
                     }
                 })
-                this.setState({ streams: this.state.streams.concat(tuplesToAdd) });
             }
         }
 
         const removeFromListOfAllParticipantStreams = (participantStreams) => {
-            if(participantStreams) {
-                let participantStreamTuples = participantStreams.map(stream => { return { stream, participant }});
-                let arr = this.state.streams;
-                arr.forEach((tuple, i) => {
-                    if (participantStreamTuples.find((v) => { return v === tuple})) {
-                        streams.splice(i);
+                participantStreams.forEach(streamToRemove => {
+                    const tupleToRemove = prevState.streams.find((v) => { return v.stream === streamToRemove})
+                    if(tupleToRemove) {
+                        this.setState( prevState => ({
+                            streams: prevState.streams.splice(prevState.streams.indexOf(tupleToRemove), 1)
+                        }));
                     }
                 });
-                this.setState({ streams: arr });
-            }
         }
 
         const handleVideoStreamsUpdated = (e) => {
@@ -378,8 +376,8 @@ export default class CallCard extends React.Component {
                                     }
                                     <ul className="participants-panel-list">
                                         {
-                                            this.state.remoteParticipants.map(remoteParticipant =>
-                                                <RemoteParticipantCard remoteParticipant={remoteParticipant} call={this.call}/>
+                                            this.call.remoteParticipants.map(remoteParticipant =>
+                                                <RemoteParticipantCard key={`${this.call.id}-${utils.getIdentifierText(remoteParticipant.identifier)}`} remoteParticipant={remoteParticipant} call={this.call}/>
                                             )
                                         }
                                     </ul>
@@ -398,9 +396,8 @@ export default class CallCard extends React.Component {
                         {
                             <div className="video-grid-row">
                                 {
-                                    this.state.callState === 'Connected' &&
-                                    this.state.streams.map((v, index) =>
-                                        <StreamMedia key={index} stream={v.stream} remoteParticipant={v.participant}/>
+                                    this.state.streams.map(v =>
+                                        <StreamMedia key={`${utils.getIdentifierText(v.participant.identifier)}${v.stream.id}`} stream={v.stream} remoteParticipant={v.participant}/>
                                     )
                                 }
                             </div>
@@ -543,7 +540,7 @@ export default class CallCard extends React.Component {
                             </div>
                             <div className="text-center">
                             {
-                                this.state.callState === 'Incoming' ? this.getIncomingActionContent() : undefined
+                                this.call.direction === 'Incoming' && this.call.state === 'Incoming' ? this.getIncomingActionContent() : undefined
                             }
                             </div>
                         </div>
