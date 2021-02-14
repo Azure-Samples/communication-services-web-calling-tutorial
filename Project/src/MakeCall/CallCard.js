@@ -386,7 +386,7 @@ export default class CallCard extends React.Component {
                             </div>
                             <div>
                                 {
-                                    this.callState === 'Connected' && this.state.showLocalVideo &&
+                                    this.state.callState === 'Connected' && this.state.showLocalVideo &&
                                     <div className="mb-3">
                                         <LocalVideoPreviewCard selectedCameraDeviceId={this.state.selectedCameraDeviceId} deviceManager={this.deviceManager}/>
                                     </div>
