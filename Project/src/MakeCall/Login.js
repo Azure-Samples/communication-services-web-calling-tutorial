@@ -117,7 +117,7 @@ export class MyCallingApp {
                     });
 
                     participants.removed.forEach(removedParticipant => {
-                        removedParticipantHandler(removedParticipant);
+                        unsubscribeFromRemoteParticipant(removedParticipant);
                     });
                 });
             });
@@ -154,15 +154,15 @@ export class MyCallingApp {
         remoteParticipant.on('isSpeakingChanged', isSpeakingChangedHandler);
 
         // Handle remote participant's current video streams
-        remoteParticipant.videoStreams.forEach(videoStream => { handleRemoteStream(videoStream) });
+        remoteParticipant.videoStreams.forEach(videoStream => { subscribeToRemoteVideoStream(videoStream) });
 
         // Handle remote participants new added video streams and screen-sharing streams
         remoteParticipant.on('videoStreamsUpdated', videoStreams => {
             videoStream.added.forEach(addedStream => {
-                handleRemoteStream(videoStream);
+                subscribeToRemoteVideoStream(addedStream);
             });
             videoStream.removed.forEach(removedStream => {
-                handleRemoveStream(removedStream);
+                unsubscribeFromRemoteVideoStream(removedStream);
             });
         });
     }
