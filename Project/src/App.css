@@ -124,6 +124,7 @@ ul {
 }
 
 .participant-item {
+  padding: 1em;
   margin-bottom: 1em;
 }
 
@@ -271,8 +272,12 @@ ul {
   padding-bottom: 0.5em;
 }
 
-.speaking {
-  box-shadow: 0px 0px 15px 2px #ca5010;
+.speaking-border-for-initials > .ms-Persona-coin > .ms-Persona-imageArea > .ms-Persona-initials {
+  box-shadow: 0px 0px 0px 3px #ca5010;
+}
+
+.speaking-border-for-video {
+  box-shadow: 0px 0px 0px 3px #ca5010;
 }
 
 .spinner-border {
