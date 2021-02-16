@@ -190,7 +190,7 @@ export default class CallCard extends React.Component {
             removeFromListOfAllRemoteParticipantStreams(e.removed);
         }
 
-        addToListOfAllParticipantStreams(participant.videoStreams);
+        addToListOfAllRemoteParticipantStreams(participant.videoStreams);
         participant.on('videoStreamsUpdated', handleVideoStreamsUpdated);
     }
 
