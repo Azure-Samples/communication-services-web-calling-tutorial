@@ -167,7 +167,7 @@ export default class CallCard extends React.Component {
                 participantStreamTuples.forEach(participantStreamTuple => {
                     if (!this.state.allRemoteParticipantStreams.find((v) => { return v === participantStreamTuple }) ) {
                         this.setState( prevState => ({
-                            streams: [...prevState.streams, participantStreamTuple]
+                            allRemoteParticipantStreams: [...prevState.allRemoteParticipantStreams, participantStreamTuple]
                         }));
                     }
                 })
