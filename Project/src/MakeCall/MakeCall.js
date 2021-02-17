@@ -1,6 +1,6 @@
 import React from "react";
 import { CallClient, LocalVideoStream } from '@azure/communication-calling';
-import { AzureCommunicationUserCredential } from '@azure/communication-common';
+import { AzureCommunicationTokenCredential } from '@azure/communication-common';
 import {
     PrimaryButton,
     TextField,
@@ -47,9 +47,9 @@ export default class MakeCall extends React.Component {
     handleLogIn = async (userDetails) => {
         if(userDetails) {
             try {
-                const tokenCredential = new AzureCommunicationUserCredential(userDetails.token);
+                const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 const logger = createClientLogger('ACS');
-                setLogLevel('warning');
+                setLogLevel('verbose');
                 logger.verbose.log = (...args) => { console.log(...args); };
                 logger.info.log = (...args) => { console.info(...args) ; };
                 logger.warning.log = (...args) => { console.warn(...args); };
@@ -64,22 +64,26 @@ export default class MakeCall extends React.Component {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
 
                     e.added.forEach(call => {
-                        if (this.state.call && call.isIncoming) {
-                            call.reject();
-                            return;
-                        }
                         this.setState({ call: call, callEndReason: undefined })
                     });
 
                     e.removed.forEach(call => {
                         if (this.state.call && this.state.call === call) {
                             if (this.state.call.callEndReason.code !== 0) {
-                                this.setState({ callError: `Call end reason: code: ${this.state.call.callEndReason.code}, subcode: ${this.state.call.callEndReason.subcode}` });
+                                this.setState({ callError: `Call end reason: code: ${this.state.call.callEndReason.code}, subcode: ${this.state.call.callEndReason.subCode}` });
                             }
 
                             this.setState({ call: null, callEndReason: this.state.call.callEndReason });
                         }
                     });
+                });
+                this.callAgent.on('incomingCall', args => {
+                    if (this.state.call) {
+                        args.incomingCall.reject();
+                        return;
+                    }
+
+                    this.setState({call: args.incomingCall});
                 });
                 this.setState({ loggedIn: true });
             } catch (e) {
@@ -125,7 +129,7 @@ export default class MakeCall extends React.Component {
             this.setState({ callError: 'Failed to place a call: ' + e });
         }
     };
-
+    
     joinGroup = () => {
         try {
             this.callAgent.join({ groupId: this.destinationGroup.value }, this.getCallOptions());
@@ -208,28 +212,24 @@ this.callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
 const userId = { communicationUserId: 'ACS_USER_ID');
 this.currentCall = this.callAgent.call([userId], this.callOptions);
 
-// Place a 1:1 call to am ACS phone number. PSTN calling is currently in private preview.
+// Place a 1:1 call to an ACS phone number. PSTN calling is currently in private preview.
 // When making PSTN calls, your Alternate Caller Id must be specified in the call options.
 const phoneNumber = { phoneNumber: <ACS_PHONE_NUMBER>);
 this.callOptions.alternateCallerId = { phoneNumber: <ALTERNATE_CALLER_ID>}
 this.currentCall = this.callAgent.call([phoneNumber], this.callOptions);
 
 // Place a 1:N call. Specify a multiple destinations
-// When making PSTN calls, your Alternate Caller Id must be specified in the call options.
-this.callOptions.alternateCallerId = { phoneNumber: <ALTERNATE_CALLER_ID>}
 this.currentCall = this.callAgent.call([userId1, phoneNumber], this.callOptions);
 
 /******************************/
 /*      Receiving a call      */
 /******************************/
-this.callAgent.on('callsUpdated', e => {
-    e.added.forEach(addedCall => {
-        if(this.currentCall.isIncoming) {
-            // Incoming call was detected
-            this.currentCall = addedCall;
-            this.currentCall.accept();
-        }
-    })
+this.callAgent.on('incomingCall', async (args) => {
+    // accept the incoming call
+    const call = await args.incomingCall.accept();
+
+    // or reject the incoming call
+    args.incomingCall.reject();
 });
 
 /******************************/
@@ -246,15 +246,26 @@ this.currentCall = this.callAgent.join({groupId: <GUID>}, this.callOptions);
 /*******************************/
 /*  Joining a Teams meetings   */
 /*******************************/
-// Join a Teams meeting using a meeting link
+// Join a Teams meeting using a meeting link. To get a Teams meeting link, go to the Teams meeting and
+// open the participants roster, then click on the 'Share Invite' button and then click on 'Copy link meeting' button.
 this.currentCall = this.callAgent.join({meetingLink: <meeting link>}, this.callOptions);
 
-// Join a Teams meeting using meeting coordinates
+// Join a Teams meeting using meeting coordinates. Coordinates can be derived from the meeting link
+// Teams meeting link example
+const meetingLink = 'https://teams.microsoft.com/l/meetup-join/19:meeting_NjNiNzE3YzMtYzcxNi00ZGQ3LTk2YmYtMjNmOTE1MTVhM2Jl@thread.v2/0?context=%7B%22Tid%22:%2272f988bf-86f1-41af-91ab-2d7cd011db47%22,%22Oid%22:%227e353a91-0f71-4724-853b-b30ee4ca6a42%22%7D'
+const url = new URL(meetingLink);
+// Derive the coordinates (threadId, messageId, tenantId, and organizerId)
+const pathNameSplit = url.pathname.split('/');
+const threadId = decodeURIComponent(pathNameSplit[3]);
+const messageId = pathNameSplit[4];
+const meetingContext = JSON.parse(decodeURIComponent(url.search.replace('?context=', '')));
+const organizerId = meetingContext.Oid;
+const tenantId = meetingContext.Tid;
 this.currentCall = this.callAgent.join({
-                                threadId: <thread id>,
-                                messageId: <message id>,
-                                tenantId: <tenant id>,
-                                organizerId: <organizer id>
+                                threadId,
+                                messageId,
+                                tenantId,
+                                organizerId
                             }, this.callOptions);
 
         `;

@@ -1,12 +1,16 @@
 import React, { useEffect, createRef } from "react";
+import { utils } from '../Utils/Utils';
 import { Renderer } from "@azure/communication-calling";
 export default class StreamMedia extends React.Component {
     constructor(props) {
         super(props);
         this.stream = props.stream;
-        this.id = props.id;
+        this.remoteParticipant = props.remoteParticipant;
+        this.id = utils.getIdentifierText(this.remoteParticipant.identifier);
+
         this.state = {
-            isAvailable: props.stream.isAvailable
+            isAvailable: props.stream.isAvailable,
+            isSpeaking: false
         };
     }
 
@@ -14,6 +18,10 @@ export default class StreamMedia extends React.Component {
      * Start stream after DOM has rendered
      */
     async componentDidMount() {
+        this.remoteParticipant.on('isSpeakingChanged', () => {
+            this.setState({ isSpeaking: this.remoteParticipant.isSpeaking });
+        });
+
         console.log('StreamMedia', this.stream, this.id);
         let renderer = new Renderer(this.stream);
         let view;
@@ -50,7 +58,7 @@ export default class StreamMedia extends React.Component {
             return (
                 <div className="py-3 ms-Grid-col ms-lg4 ms-sm-12">
                     <h4 className="video-title">{this.id}</h4>
-                    <div className="w-100" id={`${this.id}-${this.stream.type}-${this.stream.id}`}></div>
+                    <div className={`w-100 ${this.state.isSpeaking ? `speaking-border-for-video` : ``}`} id={`${this.id}-${this.stream.type}-${this.stream.id}`}></div>
                 </div>
             );
         } else {
