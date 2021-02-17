@@ -3,12 +3,15 @@ import { LocalVideoStream, Renderer} from '@azure/communication-calling';
 export default class LocalVideoPreviewCard extends React.Component {
     constructor(props) {
         super(props);
-        this.cameraDeviceInfo = props.deviceManager.getCameraList().find(cameraDevice => {
-            return cameraDevice.id === props.selectedCameraDeviceId;
-        });
+        this.deviceManager = props.deviceManager;
+        this.selectedCameraDeviceId = props.selectedCameraDeviceId;
     }
 
     async componentDidMount() {
+        const cameras = await this.deviceManager.getCameras();
+        this.cameraDeviceInfo = cameras.find(cameraDevice => {
+            return cameraDevice.id === this.selectedCameraDeviceId;
+        });
         const localVideoStream = new LocalVideoStream(this.cameraDeviceInfo);
         const renderer = new Renderer(localVideoStream);
         this.view = await renderer.createView();
