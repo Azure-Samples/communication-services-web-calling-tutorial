@@ -63,7 +63,7 @@ export default class MakeCall extends React.Component {
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.id });
                 window.callAgent = this.callAgent;
                 this.deviceManager = await this.callClient.getDeviceManager();
-                await this.deviceManager.askDevicePermission(true, true);
+                await this.deviceManager.askDevicePermission({ audio: true, video: true });
                 this.callAgent.on('callsUpdated', e => {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
 
