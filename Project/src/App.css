@@ -199,14 +199,18 @@ ul {
   padding: 0 2em;
 }
 
-.in-call-button {
+.in-call-button, .incoming-call-button {
   padding-bottom: 0.4em;
   padding-right: 0.4em;
   padding-left: 0.4em;
   font-size: x-large;
 }
 
-.in-call-button:hover {
+.incoming-call-button, .incoming-call-label {
+  display: inline;
+}
+
+.in-call-button:hover, .incoming-call-button:hover {
   cursor: pointer;
 }
 
@@ -218,11 +222,15 @@ ul {
   border-left: 2px solid #edebe9;
 }
 
-.in-call-button:last-child {
+.incoming-call-button:first-child {
+  background: #3a9414;
+}
+
+.in-call-button:last-child, .incoming-call-button:last-child {
   background-color: #a4262c;
 }
 
-.in-call-button > i {
+.in-call-button > i, .incoming-call-button > i {
   vertical-align: middle;
 }
 

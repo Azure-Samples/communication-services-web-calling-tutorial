@@ -228,18 +228,6 @@ export default class CallCard extends React.Component {
         }).catch((e) => console.error(e));
     }
 
-    getIncomingActionContent() {
-        return (
-            <>
-                <DefaultButton
-                    className="answer-button my-3"
-                    onClick={() => this.handleAcceptCall()}>
-                    <i className="fas fa-phone"></i>Accept
-                </DefaultButton>
-            </>
-        );
-    }
-
     async handleVideoOnOff () {
         try {
             const cameras = await this.deviceManager.getCameras();
@@ -472,7 +460,7 @@ export default class CallCard extends React.Component {
                                         <Icon iconName="Settings"/>
                                     </span>
                                     <span className="in-call-button"
-                                        onClick={() => this.call.hangUp({forEveryone: false}).catch((e) => console.error(e))}>
+                                        onClick={() => this.call.hangUp()}>
                                         <Icon iconName="DeclineCall"/>
                                     </span>
                                 <Panel type={PanelType.medium}
@@ -537,11 +525,6 @@ export default class CallCard extends React.Component {
                                             </div>
                                         </div>
                                 </Panel>
-                            </div>
-                            <div className="text-center">
-                            {
-                                this.call.direction === 'Incoming' && this.call.state === 'Incoming' ? this.getIncomingActionContent() : undefined
-                            }
                             </div>
                         </div>
                     </div>
