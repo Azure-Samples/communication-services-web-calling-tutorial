@@ -22,7 +22,7 @@ export default class RemoteParticipantCard extends React.Component {
             this.setState({ isMuted: this.remoteParticipant.isMuted })
         });
 
-        this.remoteParticipant.on('participantStateChanged', () => {
+        this.remoteParticipant.on('stateChanged', () => {
             this.setState({ state: this.remoteParticipant.state })
         });
 
@@ -38,7 +38,7 @@ export default class RemoteParticipantCard extends React.Component {
 
     render() {
         return (
-            <li className={`participant-item`} action key={utils.getIdentifierText(this.remoteParticipant.identifier)}>
+            <li className={`participant-item`} key={utils.getIdentifierText(this.remoteParticipant.identifier)}>
                 <div className="ms-Grid-row">
                     <div className="ms-Grid-col ms-lg11">
                     <Persona className={this.state.isSpeaking ? `speaking-border-for-initials` : ``}

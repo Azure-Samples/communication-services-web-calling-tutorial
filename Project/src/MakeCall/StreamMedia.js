@@ -6,7 +6,7 @@ export default class StreamMedia extends React.Component {
         super(props);
         this.stream = props.stream;
         this.remoteParticipant = props.remoteParticipant;
-        this.id = utils.getIdentifierText(this.remoteParticipant.identifier);
+        this.componentId = `${utils.getIdentifierText(this.remoteParticipant.identifier)}-${this.stream.mediaStreamType}-${this.stream.id}`;
 
         this.state = {
             isAvailable: props.stream.isAvailable,
@@ -31,13 +31,13 @@ export default class StreamMedia extends React.Component {
             if(!view) {
                 view = await renderer.createView();
             }
-            videoContainer = document.getElementById(`${this.id}-${this.stream.type}-${this.stream.id}`);
+            videoContainer = document.getElementById(this.componentId);
             videoContainer.hidden = false;
             if(!videoContainer.hasChildNodes()) { videoContainer.appendChild(view.target); }
         }
 
-        this.stream.on('availabilityChanged', async () => {
-            console.log(`stream=${this.stream.type}, availabilityChanged=${this.stream.isAvailable}`);
+        this.stream.on('isAvailableChanged', async () => {
+            console.log(`stream=${this.stream.type}, isAvailableChanged=${this.stream.isAvailable}`);
             if (this.stream.isAvailable) {
                 this.setState({ isAvailable: true });
                 await renderStream();
@@ -54,15 +54,15 @@ export default class StreamMedia extends React.Component {
     }
 
     render() {
-        if(this.state.isAvailable) {
+        if(this.stream.isAvailable && this.remoteParticipant.state === 'Connected') {
             return (
                 <div className="py-3 ms-Grid-col ms-lg4 ms-sm-12">
-                    <h4 className="video-title">{this.id}</h4>
-                    <div className={`w-100 ${this.state.isSpeaking ? `speaking-border-for-video` : ``}`} id={`${this.id}-${this.stream.type}-${this.stream.id}`}></div>
+                    <h4 className="video-title">{utils.getIdentifierText(this.remoteParticipant.identifier)}</h4>
+                    <div className={`w-100 ${this.state.isSpeaking ? `speaking-border-for-video` : ``}`} id={this.componentId}></div>
                 </div>
             );
         } else {
-            return null;
+          return null;
         }
     }
 }

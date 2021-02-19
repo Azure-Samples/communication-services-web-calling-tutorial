@@ -91,13 +91,13 @@ export class MyCallingApp {
                 addedCall.state;
 
                 //Subscribe to call state changed event
-                addedCall.on('callStateChanged', callStateChangedHandler);
+                addedCall.on('stateChanged', callStateChangedHandler);
 
                 // Get the unique Id for this Call
                 addeeCall.id;
 
                 // Subscribe to call id changed event
-                addedCall.on('callIdChanged', callIdChangedHandler);
+                addedCall.on('idChanged', callIdChangedHandler);
 
                 // Indicates if recording is active in current call
                 addedCall.api(Features.Recording).isRecordingActive;

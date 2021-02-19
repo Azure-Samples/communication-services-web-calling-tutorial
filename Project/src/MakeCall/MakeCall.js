@@ -8,6 +8,7 @@ import {
     MessageBarType
 } from 'office-ui-fabric-react'
 import { Icon } from '@fluentui/react/lib/Icon';
+import IncomingCallCard from './IncomingCallCard';
 import CallCard from '../MakeCall/CallCard'
 import Login from './Login';
 import { createClientLogger, setLogLevel } from '@azure/logger';
@@ -18,6 +19,7 @@ export default class MakeCall extends React.Component {
         this.callClient = null;
         this.callAgent = null;
         this.deviceManager = null;
+        this.callOptions = null;
         this.destinationUserIds = null;
         this.destinationPhoneIds = null;
         this.destinationGroup = null;
@@ -31,6 +33,8 @@ export default class MakeCall extends React.Component {
         this.state = {
             id: undefined,
             loggedIn: false,
+            call: undefined,
+            incomingCall: undefined,
             showCallSampleCode: false,
             showMuteUnmuteSampleCode: false,
             showHoldUnholdCallSampleCode: false,
@@ -73,7 +77,7 @@ export default class MakeCall extends React.Component {
                                 this.setState({ callError: `Call end reason: code: ${this.state.call.callEndReason.code}, subcode: ${this.state.call.callEndReason.subCode}` });
                             }
 
-                            this.setState({ call: null, callEndReason: this.state.call.callEndReason });
+                            this.setState({ call: null, incomingCall: null, callEndReason: this.state.call.callEndReason });
                         }
                     });
                 });
@@ -83,8 +87,46 @@ export default class MakeCall extends React.Component {
                         return;
                     }
 
-                    this.setState({call: args.incomingCall});
+                    this.setState({incomingCall: args.incomingCall});
                 });
+
+                this.callOptions = {
+                    videoOptions: {
+                        localVideoStreams: undefined
+                    },
+                    audioOptions: {
+                        muted: false
+                    }
+                };
+        
+                const cameras = await this.deviceManager.getCameras();
+                const cameraDevice = cameras[0];
+                if(!cameraDevice || cameraDevice.id === 'camera:') {
+                    this.setState({ showCameraNotFoundWarning: true });
+                } else if (cameraDevice) {
+                    this.setState({ selectedCameraDeviceId: cameraDevice.id });
+                    const localVideoStream = new LocalVideoStream(cameraDevice);
+                    this.callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
+                }
+        
+                const speakers = await this.deviceManager.getSpeakers();
+                const speakerDevice = speakers[0];
+                if(!speakerDevice || speakerDevice.id === 'speaker:') {
+                    this.setState({ showSpeakerNotFoundWarning: true });
+                } else if(speakerDevice) {
+                    this.setState({selectedSpeakerDeviceId: speakerDevice.id});
+                    await this.deviceManager.selectSpeaker(speakerDevice);
+                }
+        
+                const microphones = await this.deviceManager.getMicrophones();
+                const microphoneDevice = microphones[0];
+                if(!microphoneDevice || microphoneDevice.id === 'microphone:') {
+                    this.setState({ showMicrophoneNotFoundWarning: true });
+                } else {
+                    this.setState({selectedMicrophoneDeviceId: microphoneDevice.id});
+                    await this.deviceManager.selectMicrophone(microphoneDevice);
+                }
+
                 this.setState({ loggedIn: true });
             } catch (e) {
                 console.error(e);
@@ -92,7 +134,7 @@ export default class MakeCall extends React.Component {
         }
     }
 
-    placeCall = () => {
+    placeCall = async() => {
         try {
             let identitiesToCall = [];
             const userIdsArray = this.destinationUserIds.value.split(',');
@@ -118,11 +160,10 @@ export default class MakeCall extends React.Component {
                 }
             });
 
-            let callOptions = this.getCallOptions();
             if (this.alternateCallerId.value !== '') {
-                callOptions.alternateCallerId = { phoneNumber: this.alternateCallerId.value.trim() };
+                this.callOptions.alternateCallerId = { phoneNumber: this.alternateCallerId.value.trim() };
             }
-            this.callAgent.call(identitiesToCall, callOptions);
+            this.callAgent.startCall(identitiesToCall, this.callOptions);
 
         } catch (e) {
             console.error('Failed to place a call', e);
@@ -130,19 +171,19 @@ export default class MakeCall extends React.Component {
         }
     };
     
-    joinGroup = () => {
+    joinGroup = async() => {
         try {
-            this.callAgent.join({ groupId: this.destinationGroup.value }, this.getCallOptions());
+            this.callAgent.join({ groupId: this.destinationGroup.value }, this.callOptions);
         } catch (e) {
             console.error('Failed to join a call', e);
             this.setState({ callError: 'Failed to join a call: ' + e });
         }
     };
 
-    joinTeamsMeeting = () => {
+    joinTeamsMeeting = async() => {
         try {
             if(this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
-                this.callAgent.join({ meetingLink: this.meetingLink.value}, this.getCallOptions());
+                this.callAgent.join({ meetingLink: this.meetingLink.value}, callOptions);
 
             } else if(!this.meetingLink.value && this.messageId.value && this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({
@@ -150,7 +191,7 @@ export default class MakeCall extends React.Component {
                                 threadId: this.threadId.value,
                                 tenantId: this.tenantId.value,
                                 organizerId: this.organizerId.value
-                            }, this.getCallOptions());
+                            }, this.callOptions);
             } else {
                 throw new Error('Please enter Teams meeting link or Teams meeting coordinate');
             }
@@ -160,66 +201,28 @@ export default class MakeCall extends React.Component {
         }
     };
 
-    getCallOptions() {
-        let callOptions = {
-            videoOptions: {
-                localVideoStreams: undefined
-            },
-            audioOptions: {
-                muted: false
-            }
-        };
-
-        const cameraDevice = this.deviceManager.getCameraList()[0];
-        if(!cameraDevice || cameraDevice.id === 'camera:') {
-            this.setState({ showCameraNotFoundWarning: true });
-        } else if (cameraDevice) {
-            this.setState({ selectedCameraDeviceId: cameraDevice.id });
-            const localVideoStream = new LocalVideoStream(cameraDevice);
-            callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
-        }
-
-        const speakerDevice = this.deviceManager.getSpeakerList()[0];
-        if(!speakerDevice || speakerDevice.id === 'speaker:') {
-            this.setState({ showSpeakerNotFoundWarning: true });
-        } else if(speakerDevice) {
-            this.setState({selectedSpeakerDeviceId: speakerDevice.id});
-            this.deviceManager.setSpeaker(speakerDevice);
-        }
-
-        const microphoneDevice = this.deviceManager.getMicrophoneList()[0];
-        if(!microphoneDevice || microphoneDevice.id === 'microphone:') {
-            this.setState({ showMicrophoneNotFoundWarning: true });
-        } else {
-            this.setState({selectedMicrophoneDeviceId: microphoneDevice.id});
-            this.deviceManager.setMicrophone(microphoneDevice);
-        }
-
-        return callOptions;
-    }
-
     render() {
         const callSampleCode = `
 /******************************/
 /*       Placing a call       */
 /******************************/
 // Set up CallOptions
-const cameraDevice = this.callClient.getDeviceManager().getCameraList()[0];
+const cameraDevice = this.callClient.getDeviceManager().getCameras()[0];
 const localVideoStream = new LocalVideoStream(cameraDevice);
 this.callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
 
 // To place a 1:1 call to another ACS user
 const userId = { communicationUserId: 'ACS_USER_ID');
-this.currentCall = this.callAgent.call([userId], this.callOptions);
+this.currentCall = this.callAgent.startCall([userId], this.callOptions);
 
 // Place a 1:1 call to an ACS phone number. PSTN calling is currently in private preview.
 // When making PSTN calls, your Alternate Caller Id must be specified in the call options.
 const phoneNumber = { phoneNumber: <ACS_PHONE_NUMBER>);
 this.callOptions.alternateCallerId = { phoneNumber: <ALTERNATE_CALLER_ID>}
-this.currentCall = this.callAgent.call([phoneNumber], this.callOptions);
+this.currentCall = this.callAgent.startCall([phoneNumber], this.callOptions);
 
 // Place a 1:N call. Specify a multiple destinations
-this.currentCall = this.callAgent.call([userId1, phoneNumber], this.callOptions);
+this.currentCall = this.callAgent.startCall([userId1, phoneNumber], this.callOptions);
 
 /******************************/
 /*      Receiving a call      */
@@ -236,7 +239,7 @@ this.callAgent.on('incomingCall', async (args) => {
 /*    Joining a group call    */
 /******************************/
 // Set up CallOptions
-const cameraDevice = this.callClient.deviceManager.getCameraList()[0];
+const cameraDevice = this.callClient.deviceManager.getCameras()[0];
 const localVideoStream = new LocalVideoStream(cameraDevice);
 this.callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
 
@@ -275,11 +278,11 @@ this.currentCall = this.callAgent.join({
 /************************************************/
 /*     Local Video and Local Screen-sharing     */
 /************************************************/
-// To start a video, you have to enumerate cameras using the getCameraList()
+// To start a video, you have to enumerate cameras using the getCameras()
 // method on the deviceManager object. Then create a new instance of
 // LocalVideoStream passing the desired camera into the startVideo() method as
 // an argument
-const cameraDevice = this.callClient.getDeviceManager().getCameraList()[0];
+const cameraDevice = this.callClient.getDeviceManager().getCameras()[0];
 const localVideoStream = new LocalVideoStream(cameraDevice);
 await call.startVideo(localVideoStream);
 
@@ -295,7 +298,7 @@ document.getElementById('someDiv').appendChild(view.target);
 
 // You can switch to a different camera device while video is being sent by invoking
 // switchSource() on a localVideoStream instance
-const cameraDevice1 = this.callClient.getDeviceManager().getCameraList()[1];
+const cameraDevice1 = this.callClient.getDeviceManager().getCameras()[1];
 localVideoStream.switchSource(cameraDeivce1);
 
 // Handle 'localVideoStreamsUpdated' event
@@ -350,7 +353,7 @@ const handleRemoteStream = (stream) => {
         videoContainer.appendChild(view.target);
     }
 
-    this.stream.on('availabilityChanged', async () => {
+    this.stream.on('isAvailableChanged', async () => {
         if (this.stream.isAvailable) {
             this.setState({ isAvailable: true });
             await renderStream();
@@ -390,14 +393,14 @@ addedParticipant.on('isMutedChanged', () => {
 /*      To hold the call      */
 /******************************/
     // Call state changes when holding
-    this.currentCall.on('callStateChanged', () => {
-        // Call state changes to 'Hold'
+    this.currentCall.on('stateChanged', () => {
+        // Call state changes to 'LocalHold' or 'RemoteHold'
         console.log(this.currentCall.state);
     });
 
     // If you hold the Call, remote participant state changes to 'Hold'.
     // Handle remote participant stateChanged event
-    addedParticipant.on('participantStateChanged', () => {
+    addedParticipant.on('stateChanged', () => {
         console.log(addedParticipant.state); // 'Hold'
     });
 
@@ -408,18 +411,18 @@ addedParticipant.on('isMutedChanged', () => {
 /*     To unhold the call     */
 /******************************/
     // The Call state changes when unholding
-    this.currentCall.on('callStateChanged', () => {
+    this.currentCall.on('stateChanged', () => {
         // Call state changes back to 'Connected'
         console.log(this.currentCall.state);
     });
 
     // Remote participant state changes to 'Connected'
-    addedParticipant.on('participantStateChanged', () => {
+    addedParticipant.on('stateChanged', () => {
         console.log(addedParticipant.state); // 'Connected'
     });
 
     // If you want to unhold the call use:
-    await this.currentCall.unhold();
+    await this.currentCall.resume();
         `;
 
         const deviceManagerSampleCode = `
@@ -431,16 +434,20 @@ addedParticipant.on('isMutedChanged', () => {
 this.deviceManager = this.callClient.getDeviceManager();
 
 // Get list of devices
-const cameraDevices = this.deviceManager.getCameraList();
-const speakerDevices = this.deviceManager.getSpeakerList();
-const microphoneDevices = this.deviceManager.getMicrophoneList();
+const cameraDevices = await this.deviceManager.getCameras();
+const speakerDevices = await this.deviceManager.getSpeakers();
+const microphoneDevices = await this.deviceManager.getMicrophones();
 
 // Set microphone device and speaker device to use across the call stack.
-this.deviceManager.setSpeaker(speakerDevices[0]);
-this.deviceManager.setMicrophone(microphoneDevices[0]);
-// NOTE: Setting of video camera device to use is specified on CallAgent.call() and Call.join() APIs
+await this.deviceManager.selectSpeaker(speakerDevices[0]);
+await this.deviceManager.selectMicrophone(microphoneDevices[0]);
+// NOTE: Setting of video camera device to use is specified on CallAgent.startCall() and Call.join() APIs
 // by passing a LocalVideoStream into the options paramter.
 // To switch video camera device to use during call, use the LocalVideoStream.switchSource() method.
+
+// Get selected speaker and microphone
+const selectedSpeaker = this.deviceManager.selectedSpeaker;
+const selectedMicrophone = this.deviceManager.selectedMicrophone;
 
 // Handle videoDevicesUpdated event
 this.callClient.deviceManager.on('videoDevicesUpdated', e => {
@@ -448,12 +455,17 @@ this.callClient.deviceManager.on('videoDevicesUpdated', e => {
     e.removed.forEach(removedCameraDevice => { this.handleRemovedCameraDevice(removeCameraDevice); });
 });
 
-// Handle audioDevicesUpdate
+// Handle audioDevicesUpdate event
 this.callClient.deviceManager.on('audioDevicesUpdated', e => {
     e.added.forEach(audioDevice => { this.handleAddedAudioDevice(audioDevice); });
     e.removed.forEach(removedAudioDevice => { this.handleRemovedAudioDevice(removedAudioDevice); });
 });
 
+// Handle selectedMicrophoneChanged event
+this.deviceManager.on('selectedMicrophoneChanged', () => { console.log(this.deviceManager.selectedMicrophone) });
+
+// Handle selectedSpeakerChanged event
+this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceManager.selectedSpeaker) });
         `;
 
         // TODO: Create section component. Couldnt use the ExampleCard compoenent from uifabric becuase its buggy,
@@ -525,7 +537,7 @@ this.callClient.deviceManager.on('audioDevicesUpdated', e => {
                             </MessageBar>
                         }
                         {
-                            !this.state.call &&
+                            !this.state.incomingCall && !this.state.call &&
                             <div className="ms-Grid-row mt-3">
                                 <div className="call-input-panel mb-5 ms-Grid-col ms-lg4 ms-sm12">
                                     <h3 className="mb-1">Place a call</h3>
@@ -604,14 +616,19 @@ this.callClient.deviceManager.on('audioDevicesUpdated', e => {
                             </div>
                         }
                         {
-                            this.state.call && (<CallCard call={this.state.call}
+                            this.state.call && <CallCard call={this.state.call}
                                                     deviceManager={this.deviceManager}
                                                     selectedCameraDeviceId={this.state.selectedCameraDeviceId}
                                                     selectedSpeakerDeviceId={this.state.selectedSpeakerDeviceId}
                                                     selectedMicrophoneDeviceId={this.state.selectedMicrophoneDeviceId}
                                                     onShowCameraNotFoundWarning={(show) => {this.setState({showCameraNotFoundWarning: show}) }}
                                                     onShowSpeakerNotFoundWarning={(show) => {this.setState({showSpeakerNotFoundWarning: show}) }}
-                                                    onShowMicrophoneNotFoundWarning={(show) => {this.setState({showMicrophoneNotFoundWarning: show}) }}/>)
+                                                    onShowMicrophoneNotFoundWarning={(show) => {this.setState({showMicrophoneNotFoundWarning: show}) }}/>
+                        }
+                        {
+                            this.state.incomingCall && !this.state.call && (<IncomingCallCard
+                                                                                incomingCall={this.state.incomingCall}
+                                                                                acceptCallOptions={{videoOptions: this.callOptions.videoOptions}}/>)
                         }
                     </div>
                 </div>
