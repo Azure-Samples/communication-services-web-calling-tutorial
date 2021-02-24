@@ -53,7 +53,7 @@ module.exports = {
                     const tokenResponse = await communicationIdentityClient.issueToken(communicationUserId, ["voip"]);
                     res.json(tokenResponse);
                 } catch (error) {
-                    console.log(error);
+                    console.error(error);
                 }
             });
         }

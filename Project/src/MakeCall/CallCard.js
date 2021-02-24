@@ -27,9 +27,9 @@ export default class CallCard extends React.Component {
             cameraDeviceOptions:[],
             speakerDeviceOptions:[],
             microphoneDeviceOptions:[],
-            selectedCameraDeviceId: props.selectedCameraDeviceId,
-            selectedSpeakerDeviceId: props.selectedSpeakerDeviceId,
-            selectedMicrophoneDeviceId: props.selectedMicrophoneDeviceId,
+            selectedCameraDeviceId: this.call.localVideoStreams[0]?.source.id,
+            selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id,
+            selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id,
             showSettings: false,
             showLocalVideo: false
         };
@@ -37,65 +37,85 @@ export default class CallCard extends React.Component {
 
     async componentWillMount() {
         if (this.call) {
-            const cameraDevices = await this.deviceManager.getCameras();
-            const speakerDevices = await this.deviceManager.getSpeakers();
-            const microphoneDevices = await this.deviceManager.getMicrophones();
+            this.setState({
+                cameraDeviceOptions: (await this.deviceManager.getCameras()).map(camera => { return { key: camera.id, text: camera.name }}),
+                speakerDeviceOptions: (await this.deviceManager.getSpeakers()).map(speaker => { return { key: speaker.id, text: speaker.name }}),
+                microphoneDeviceOptions: (await this.deviceManager.getMicrophones()).map(microphone => { return { key: microphone.id, text: microphone.name }}),
+            });
 
-            cameraDevices.map(cameraDevice => { this.state.cameraDeviceOptions.push({key: cameraDevice.id, text: cameraDevice.name}) });
-            speakerDevices.map(speakerDevice => { this.state.speakerDeviceOptions.push({key: speakerDevice.id, text: speakerDevice.name}) });
-            microphoneDevices.map(microphoneDevice => { this.state.microphoneDeviceOptions.push({key: microphoneDevice.id, text: microphoneDevice.name}) });
-
-            this.deviceManager.on('videoDevicesUpdated', e => {
-                e.added.forEach(cameraDevice => { this.state.cameraDeviceOptions.push({key: cameraDevice.id, text: cameraDevice.name}); });
+            this.deviceManager.on('videoDevicesUpdated', async e => {
+                let newCameraDeviceToUse = undefined;
+                e.added.forEach(addedCameraDevice => {
+                    newCameraDeviceToUse = addedCameraDevice;
+                    const addedCameraDeviceOption = { key: addedCameraDevice.id, text: addedCameraDevice.name };
+                    this.setState(prevState => ({
+                        cameraDeviceOptions: [...prevState.cameraDeviceOptions, addedCameraDeviceOption]
+                    }));
+                });
+                // When connectnig a new camera, ts device manager automatically switches to use this new camera and
+                // this.call.localVideoStream[0].source is never updated. Hence I have to do the following logic to update
+                // this.call.localVideoStream[0].source to the newly added camera. This is a bug. Under the covers, this.call.localVideoStreams[0].source
+                // should have been updated automatically by the sdk.
+                if(newCameraDeviceToUse) {
+                    try {
+                        await this.call.localVideoStreams[0]?.switchSource(newCameraDeviceToUse);
+                        this.setState({ selectedCameraDeviceId: newCameraDeviceToUse.id});
+                    } catch {
+                        console.error('Failed to switch to newly added video device', error);
+                    }
+                }
 
                 e.removed.forEach(removedCameraDevice => {
-                    this.state.cameraDeviceOptions.forEach(async (value, index) => {
-                        if(value.key === removedCameraDevice.id) {
-                            this.state.cameraDeviceOptions.splice(index, 1);
-                            if(removedCameraDevice.id === this.state.selectedCameraDeviceId) {
-                                const cameraDevice = await this.deviceManager.getCameras()[0];
-                                this.setState({selectedCameraDeviceId: cameraDevice.id});
-                            }
-                        }
-                    });
+                    this.setState( prevState => ({
+                        cameraDeviceOptions: prevState.cameraDeviceOptions.filter(option => { return option.key !== removedCameraDevice.id })
+                    }))
                 });
+
+                // If the current camera being used is removed, pick a new random one
+                if ( !this.state.cameraDeviceOptions.find(option => { return option.key === this.state.selectedCameraDeviceId}) ) {
+                    const newSelectedCameraId = this.state.cameraDeviceOptions[0]?.key;
+                    const cameras = await this.deviceManager.getCameras();
+                    const videoDeviceInfo = cameras.find(c => { return c.id === newSelectedCameraId });
+                    await this.call.localVideoStreams[0]?.switchSource(videoDeviceInfo);
+                    this.setState({ selectedCameraDeviceId: newSelectedCameraId });
+                }
+
+
             });
 
             this.deviceManager.on('audioDevicesUpdated', e => {
-                e.added.forEach(audioDevice => {
-                    if (audioDevice.deviceType === 'Speaker') {
-                        this.state.speakerDeviceOptions.push({key: audioDevice.id, text: audioDevice.name});
-
-                    } else if(audioDevice.deviceType === 'Microphone') {
-                        this.state.microphoneDeviceOptions.push({key: audioDevice.id, text: audioDevice.name});
+                e.added.forEach(addedAudioDevice => {
+                    const addedAudioDeviceOption = { key: addedAudioDevice.id, text: addedAudioDevice.name };
+                    if (addedAudioDevice.deviceType === 'Speaker') {
+                        this.setState(prevState => ({
+                            speakerDeviceOptions: [...prevState.speakerDeviceOptions, addedAudioDeviceOption]
+                        }));
+                    } else if(addedAudioDevice.deviceType === 'Microphone') {
+                        this.setState(prevState => ({
+                            microphoneDeviceOptions: [...prevState.microphoneDeviceOptions, addedAudioDeviceOption]
+                        }));
                     }
                 });
 
                 e.removed.forEach(removedAudioDevice => {
-                    if(removedAudioDevice.deviceType === 'Speaker') {
-                        this.state.speakerDeviceOptions.forEach(async (value, index) => {
-                            if(value.key === removedAudioDevice.id) {
-                                this.state.speakerDeviceOptions.splice(index, 1);
-                                if(removedAudioDevice.id === this.state.selectedSpeakerDeviceId) {
-                                    const speakerDevice = await this.deviceManager.getSpeakers()[0];
-                                    await this.deviceManager.selectSpeaker(speakerDevice);
-                                    this.setState({selectedSpeakerDeviceId: speakerDevice.id});
-                                }
-                            }
-                        });
+                    if (removedAudioDevice.deviceType === 'Speaker') {
+                        this.setState( prevState => ({
+                            speakerDeviceOptions: prevState.speakerDeviceOptions.filter(option => { return option.key !== removedAudioDevice.id })
+                        }))
                     } else if (removedAudioDevice.deviceType === 'Microphone') {
-                        this.state.microphoneDeviceOptions.forEach(async (value, index) => {
-                            if(value.key === removedAudioDevice.id) {
-                                this.state.microphoneDeviceOptions.splice(index, 1);
-                                if(removedAudioDevice.id === this.state.selectedMicrophoneDeviceId) {
-                                    const microphoneDevice = await this.deviceManager.getMicrophones()[0];
-                                    await this.deviceManager.selectMicrophone(microphoneDevice);
-                                    this.setState({selectedMicrophoneDeviceId: microphoneDevice.id});
-                                }
-                            }
-                        });
+                        this.setState( prevState => ({
+                            microphoneDeviceOptions: prevState.microphoneDeviceOptions.filter(option => { return option.key !== removedAudioDevice.id })
+                        }))
                     }
                 });
+            });
+
+            this.deviceManager.on('selectedSpeakerChanged', () => {
+                this.setState({ selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id });
+            });
+
+            this.deviceManager.on('selectedMicrophoneChanged', () => {
+                this.setState({ selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id });
             });
 
             const callStateChanged = () => {
