@@ -19,7 +19,6 @@ export default class MakeCall extends React.Component {
         this.callClient = null;
         this.callAgent = null;
         this.deviceManager = null;
-        this.callOptions = null;
         this.destinationUserIds = null;
         this.destinationPhoneIds = null;
         this.destinationGroup = null;
@@ -90,43 +89,6 @@ export default class MakeCall extends React.Component {
                     this.setState({incomingCall: args.incomingCall});
                 });
 
-                this.callOptions = {
-                    videoOptions: {
-                        localVideoStreams: undefined
-                    },
-                    audioOptions: {
-                        muted: false
-                    }
-                };
-        
-                const cameras = await this.deviceManager.getCameras();
-                const cameraDevice = cameras[0];
-                if(!cameraDevice || cameraDevice.id === 'camera:') {
-                    this.setState({ showCameraNotFoundWarning: true });
-                } else if (cameraDevice) {
-                    this.setState({ selectedCameraDeviceId: cameraDevice.id });
-                    const localVideoStream = new LocalVideoStream(cameraDevice);
-                    this.callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
-                }
-        
-                const speakers = await this.deviceManager.getSpeakers();
-                const speakerDevice = speakers[0];
-                if(!speakerDevice || speakerDevice.id === 'speaker:') {
-                    this.setState({ showSpeakerNotFoundWarning: true });
-                } else if(speakerDevice) {
-                    this.setState({selectedSpeakerDeviceId: speakerDevice.id});
-                    await this.deviceManager.selectSpeaker(speakerDevice);
-                }
-        
-                const microphones = await this.deviceManager.getMicrophones();
-                const microphoneDevice = microphones[0];
-                if(!microphoneDevice || microphoneDevice.id === 'microphone:') {
-                    this.setState({ showMicrophoneNotFoundWarning: true });
-                } else {
-                    this.setState({selectedMicrophoneDeviceId: microphoneDevice.id});
-                    await this.deviceManager.selectMicrophone(microphoneDevice);
-                }
-
                 this.setState({ loggedIn: true });
             } catch (e) {
                 console.error(e);
@@ -163,7 +125,8 @@ export default class MakeCall extends React.Component {
             if (this.alternateCallerId.value !== '') {
                 this.callOptions.alternateCallerId = { phoneNumber: this.alternateCallerId.value.trim() };
             }
-            this.callAgent.startCall(identitiesToCall, this.callOptions);
+            const callOptions = await this.getCallOptions();
+            this.callAgent.startCall(identitiesToCall, callOptions);
 
         } catch (e) {
             console.error('Failed to place a call', e);
@@ -173,7 +136,8 @@ export default class MakeCall extends React.Component {
     
     joinGroup = async() => {
         try {
-            this.callAgent.join({ groupId: this.destinationGroup.value }, this.callOptions);
+            const callOptions = await this.getCallOptions();
+            this.callAgent.join({ groupId: this.destinationGroup.value }, callOptions);
         } catch (e) {
             console.error('Failed to join a call', e);
             this.setState({ callError: 'Failed to join a call: ' + e });
@@ -182,6 +146,7 @@ export default class MakeCall extends React.Component {
 
     joinTeamsMeeting = async() => {
         try {
+            const callOptions = await this.getCallOptions();
             if(this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({ meetingLink: this.meetingLink.value}, callOptions);
 
@@ -191,7 +156,7 @@ export default class MakeCall extends React.Component {
                                 threadId: this.threadId.value,
                                 tenantId: this.tenantId.value,
                                 organizerId: this.organizerId.value
-                            }, this.callOptions);
+                            }, callOptions);
             } else {
                 throw new Error('Please enter Teams meeting link or Teams meeting coordinate');
             }
@@ -201,6 +166,46 @@ export default class MakeCall extends React.Component {
         }
     };
 
+    async getCallOptions() {
+        let callOptions = {
+            videoOptions: {
+                localVideoStreams: undefined
+            },
+            audioOptions: {
+                muted: false
+            }
+        };
+
+        const cameras = await this.deviceManager.getCameras();
+        const cameraDevice = cameras[0];
+        if(!cameraDevice || cameraDevice.id === 'camera:') {
+            this.setState({ showCameraNotFoundWarning: true });
+        } else if (cameraDevice) {
+            this.setState({ selectedCameraDeviceId: cameraDevice.id });
+            const localVideoStream = new LocalVideoStream(cameraDevice);
+            callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
+        }
+
+        const speakers = await this.deviceManager.getSpeakers();
+        const speakerDevice = speakers[0];
+        if(!speakerDevice || speakerDevice.id === 'speaker:') {
+            this.setState({ showSpeakerNotFoundWarning: true });
+        } else if(speakerDevice) {
+            this.setState({selectedSpeakerDeviceId: speakerDevice.id});
+            await this.deviceManager.selectSpeaker(speakerDevice);
+        }
+
+        const microphones = await this.deviceManager.getMicrophones();
+        const microphoneDevice = microphones[0];
+        if(!microphoneDevice || microphoneDevice.id === 'microphone:') {
+            this.setState({ showMicrophoneNotFoundWarning: true });
+        } else {
+            this.setState({selectedMicrophoneDeviceId: microphoneDevice.id});
+            await this.deviceManager.selectMicrophone(microphoneDevice);
+        }
+
+        return callOptions;
+    }
     render() {
         const callSampleCode = `
 /******************************/
@@ -618,9 +623,6 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         {
                             this.state.call && <CallCard call={this.state.call}
                                                     deviceManager={this.deviceManager}
-                                                    selectedCameraDeviceId={this.state.selectedCameraDeviceId}
-                                                    selectedSpeakerDeviceId={this.state.selectedSpeakerDeviceId}
-                                                    selectedMicrophoneDeviceId={this.state.selectedMicrophoneDeviceId}
                                                     onShowCameraNotFoundWarning={(show) => {this.setState({showCameraNotFoundWarning: show}) }}
                                                     onShowSpeakerNotFoundWarning={(show) => {this.setState({showSpeakerNotFoundWarning: show}) }}
                                                     onShowMicrophoneNotFoundWarning={(show) => {this.setState({showMicrophoneNotFoundWarning: show}) }}/>
@@ -628,7 +630,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         {
                             this.state.incomingCall && !this.state.call && (<IncomingCallCard
                                                                                 incomingCall={this.state.incomingCall}
-                                                                                acceptCallOptions={{videoOptions: this.callOptions.videoOptions}}/>)
+                                                                                acceptCallOptions={this.getCallOptions}/>)
                         }
                     </div>
                 </div>
