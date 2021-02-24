@@ -630,7 +630,8 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         {
                             this.state.incomingCall && !this.state.call && (<IncomingCallCard
                                                                                 incomingCall={this.state.incomingCall}
-                                                                                acceptCallOptions={this.getCallOptions}/>)
+                                                                                acceptCallOptions={async () => await this.getCallOptions()}
+                                                                                onReject={() => {this.setState({ incomingCall: undefined })}}/>)
                         }
                     </div>
                 </div>

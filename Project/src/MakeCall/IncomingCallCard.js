@@ -5,12 +5,11 @@ export default class IncomingCallCard extends React.Component {
     constructor(props) {
         super(props);
         this.incomingCall = props.incomingCall;
-        this.getCallOptions = props.getCallOptions;
+        this.acceptCallOptions = props.acceptCallOptions;
     }
 
     async componentWillMount() {
-        const callOptions = await this.getCallOptions();
-        this.acceptCallOptions = { videoOptions: callOptions.videoOptions };
+        this.acceptCallOptions = { videoOptions: (await this.acceptCallOptions()).videoOptions };
     }
 
     render() {
@@ -27,13 +26,16 @@ export default class IncomingCallCard extends React.Component {
                         }
                     </div>
                 </div>
+                <div className="custom-row">
+                    <div className="ringing-loader mb-4"></div>
+                </div>
                 <div className="ms-Grid-row text-center">
                     <span className="incoming-call-button"
                         onClick={() => this.incomingCall.accept(this.acceptCallOptions)}>
                         <Icon iconName="IncomingCall"/>
                     </span>
                     <span className="incoming-call-button"
-                        onClick={() => this.incomingCall.reject()}>
+                        onClick={() => { this.incomingCall.reject(); this.props.onReject(); }}>
                         <Icon iconName="DeclineCall"/>
                     </span>
                 </div>
