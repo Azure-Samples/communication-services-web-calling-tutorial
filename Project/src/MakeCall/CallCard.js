@@ -24,9 +24,9 @@ export default class CallCard extends React.Component {
             micMuted: false,
             onHold: this.call.state === 'LocalHold' || this.call.state === 'RemoteHold',
             screenShareOn: this.call.isScreenShareOn,
-            cameraDeviceOptions:[],
-            speakerDeviceOptions:[],
-            microphoneDeviceOptions:[],
+            cameraDeviceOptions: props.cameraDeviceOptions ? props.cameraDeviceOptions : [],
+            speakerDeviceOptions: props.speakerDeviceOptions ? props.speakerDeviceOptions : [],
+            microphoneDeviceOptions: props.microphoneDeviceOptions ? props.microphoneDeviceOptions : [],
             selectedCameraDeviceId: this.call.localVideoStreams[0]?.source.id,
             selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id,
             selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id,
@@ -37,12 +37,6 @@ export default class CallCard extends React.Component {
 
     async componentWillMount() {
         if (this.call) {
-            this.setState({
-                cameraDeviceOptions: (await this.deviceManager.getCameras()).map(camera => { return { key: camera.id, text: camera.name }}),
-                speakerDeviceOptions: (await this.deviceManager.getSpeakers()).map(speaker => { return { key: speaker.id, text: speaker.name }}),
-                microphoneDeviceOptions: (await this.deviceManager.getMicrophones()).map(microphone => { return { key: microphone.id, text: microphone.name }}),
-            });
-
             this.deviceManager.on('videoDevicesUpdated', async e => {
                 let newCameraDeviceToUse = undefined;
                 e.added.forEach(addedCameraDevice => {
@@ -212,40 +206,6 @@ export default class CallCard extends React.Component {
 
         addToListOfAllRemoteParticipantStreams(participant.videoStreams);
         participant.on('videoStreamsUpdated', handleVideoStreamsUpdated);
-    }
-
-    async handleAcceptCall() {
-        const cameras = await this.deviceManager.getCameras();
-        const cameraDevice = cameras[0];
-        let localVideoStream;
-        if(!cameraDevice || cameraDevice.id === 'camera:') {
-            this.props.onShowCameraNotFoundWarning(true);
-        } else if (cameraDevice) {
-            this.setState({ selectedCameraDeviceId: cameraDevice.id });
-            localVideoStream = new LocalVideoStream(cameraDevice);
-        }
-
-        const speakers = await this.deviceManager.getSpeakers();
-        const speakerDevice = speakers[0];
-        if(!speakerDevice || speakerDevice.id === 'speaker:') {
-            this.props.onShowSpeakerNotFoundWarning(true);
-        } else if(speakerDevice) {
-            this.setState({selectedSpeakerDeviceId: speakerDevice.id});
-            await this.deviceManager.selectSpeaker(speakerDevice);
-        }
-
-        const microphones = await this.deviceManager.getMicrophones();
-        const microphoneDevice = microphones[0];
-        if(!microphoneDevice || microphoneDevice.id === 'microphone:') {
-            this.props.onShowMicrophoneNotFoundWarning(true);
-        } else {
-            this.setState({selectedMicrophoneDeviceId: microphoneDevice.id});
-            await this.deviceManager.selectMicrophone(microphoneDevice);
-        }
-
-        this.call.accept({
-            videoOptions: this.state.videoOn && cameraDevice ? { localVideoStreams: [localVideoStream] } : undefined
-        }).catch((e) => console.error(e));
     }
 
     async handleVideoOnOff () {
