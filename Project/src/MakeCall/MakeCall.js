@@ -40,9 +40,7 @@ export default class MakeCall extends React.Component {
             selectedCameraDeviceId: null,
             selectedSpeakerDeviceId: null,
             selectedMicrophoneDeviceId: null,
-            showCameraNotFoundWarning: false,
-            showSpeakerNotFoundWarning: false,
-            showMicrophoneNotFoundWarning: false,
+            deviceManagerWarning: null,
             callError: null
         };
     }
@@ -176,32 +174,66 @@ export default class MakeCall extends React.Component {
             }
         };
 
-        const cameras = await this.deviceManager.getCameras();
-        const cameraDevice = cameras[0];
-        if(!cameraDevice || cameraDevice.id === 'camera:') {
-            this.setState({ showCameraNotFoundWarning: true });
-        } else if (cameraDevice) {
-            this.setState({ selectedCameraDeviceId: cameraDevice.id });
-            const localVideoStream = new LocalVideoStream(cameraDevice);
-            callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
+        let cameraWarning = undefined;
+        let speakerWarning = undefined;
+        let microphoneWarning = undefined;
+
+        try {
+            const cameras = await this.deviceManager.getCameras();
+            const cameraDevice = cameras[0];
+            if(!cameraDevice || cameraDevice.id === 'camera:') {
+                throw new Error('No camera devices found.');
+            } else if (cameraDevice) {
+                this.setState({
+                    selectedCameraDeviceId: cameraDevice.id,
+                    cameraDeviceOptions: cameras.map(camera => { return { key: camera.id, text: camera.name }})
+                });
+                const localVideoStream = new LocalVideoStream(cameraDevice);
+                callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
+            }
+        } catch(e) {
+            cameraWarning = e.message;
         }
 
-        const speakers = await this.deviceManager.getSpeakers();
-        const speakerDevice = speakers[0];
-        if(!speakerDevice || speakerDevice.id === 'speaker:') {
-            this.setState({ showSpeakerNotFoundWarning: true });
-        } else if(speakerDevice) {
-            this.setState({selectedSpeakerDeviceId: speakerDevice.id});
-            await this.deviceManager.selectSpeaker(speakerDevice);
+        try {
+            const speakers = await this.deviceManager.getSpeakers();
+            const speakerDevice = speakers[0];
+            if(!speakerDevice || speakerDevice.id === 'speaker:') {
+                throw new Error('No speaker devices found.');
+            } else if(speakerDevice) {
+                this.setState({
+                    selectedSpeakerDeviceId: speakerDevice.id,
+                    speakerDeviceOptions: speakers.map(speaker => { return { key: speaker.id, text: speaker.name }})
+                });
+                await this.deviceManager.selectSpeaker(speakerDevice);
+            }
+        } catch (e) {
+            speakerWarning = e.message;
         }
 
-        const microphones = await this.deviceManager.getMicrophones();
-        const microphoneDevice = microphones[0];
-        if(!microphoneDevice || microphoneDevice.id === 'microphone:') {
-            this.setState({ showMicrophoneNotFoundWarning: true });
-        } else {
-            this.setState({selectedMicrophoneDeviceId: microphoneDevice.id});
-            await this.deviceManager.selectMicrophone(microphoneDevice);
+        try {
+            const microphones = await this.deviceManager.getMicrophones();
+            const microphoneDevice = microphones[0];
+            if(!microphoneDevice || microphoneDevice.id === 'microphone:') {
+                throw new Error('No microphone devices found.');
+            } else {
+                this.setState({
+                    selectedMicrophoneDeviceId: microphoneDevice.id,
+                    microphoneDeviceOptions: microphones.map(microphone => { return { key: microphone.id, text: microphone.name }})
+                });
+                await this.deviceManager.selectMicrophone(microphoneDevice);
+            }
+        } catch (e) {
+            microphoneWarning = e.message;
+        }
+
+        if(cameraWarning || speakerWarning || microphoneWarning) {
+            this.setState({
+                deviceManagerWarning:
+                    `${cameraWarning ? cameraWarning + ' ' : ''}
+                    ${speakerWarning ? speakerWarning + ' ' : ''}
+                    ${microphoneWarning ? microphoneWarning + ' ' : ''}`
+            });
         }
 
         return callOptions;
@@ -502,36 +534,6 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </pre>
                         }
                         {
-                            this.state.showCameraNotFoundWarning && 
-                            <MessageBar
-                                messageBarType={MessageBarType.warning}
-                                isMultiline={false}
-                                onDismiss={ () => { this.setState({ showCameraNotFoundWarning: false }) }}
-                                dismissButtonAriaLabel="Close">
-                                <b>No camera device found!</b>
-                            </MessageBar>
-                        }
-                        {
-                            this.state.showSpeakerNotFoundWarning && 
-                            <MessageBar
-                                messageBarType={MessageBarType.warning}
-                                isMultiline={false}
-                                onDismiss={ () => { this.setState({ showSpeakerNotFoundWarning: false}) }}
-                                dismissButtonAriaLabel="Close">
-                                <b>No speaker device found!</b>
-                            </MessageBar>
-                        }
-                        {
-                            this.state.showMicrophoneNotFoundWarning && 
-                            <MessageBar
-                                messageBarType={MessageBarType.warning}
-                                isMultiline={false}
-                                onDismiss={ () => { this.setState({ showMicrophoneNotFoundWarning: false }) }}
-                                dismissButtonAriaLabel="Close">
-                                <b>No microphone device found!</b>
-                            </MessageBar>
-                        }
-                        {
                             this.state.callError && 
                             <MessageBar
                                 messageBarType={MessageBarType.error}
@@ -539,6 +541,16 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                 onDismiss={ () => { this.setState({ callError: undefined }) }}
                                 dismissButtonAriaLabel="Close">
                                 <b>{this.state.callError}</b>
+                            </MessageBar>
+                        }
+                        {
+                            this.state.deviceManagerWarning &&
+                            <MessageBar
+                                messageBarType={MessageBarType.warning}
+                                isMultiline={false}
+                                onDismiss={ () => { this.setState({ deviceManagerWarning: undefined }) }}
+                                dismissButtonAriaLabel="Close">
+                                    <b>{this.state.deviceManagerWarning}</b>
                             </MessageBar>
                         }
                         {
@@ -623,6 +635,9 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         {
                             this.state.call && <CallCard call={this.state.call}
                                                     deviceManager={this.deviceManager}
+                                                    cameraDeviceOptions={this.state.cameraDeviceOptions}
+                                                    speakerDeviceOptions={this.state.speakerDeviceOptions}
+                                                    microphoneDeviceOptions={this.state.microphoneDeviceOptions}
                                                     onShowCameraNotFoundWarning={(show) => {this.setState({showCameraNotFoundWarning: show}) }}
                                                     onShowSpeakerNotFoundWarning={(show) => {this.setState({showSpeakerNotFoundWarning: show}) }}
                                                     onShowMicrophoneNotFoundWarning={(show) => {this.setState({showMicrophoneNotFoundWarning: show}) }}/>
