@@ -159,7 +159,8 @@ export default class CallCard extends React.Component {
                 });
                 e.removed.forEach(p => {
                     console.log('participantRemoved', p);
-                    this.setState({remoteParticipants: this.state.remoteParticipants.filter(remoteParticipant => { return remoteParticipant !== p })});
+                    this.setState({ remoteParticipants: this.state.remoteParticipants.filter(remoteParticipant => { return remoteParticipant !== p }) });
+                    this.setState({ streams: this.state.allRemoteParticipantStreams.filter(s => { return s.participant !== p }) });
                 });
             });
         }
