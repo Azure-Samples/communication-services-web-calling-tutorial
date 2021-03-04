@@ -40,14 +40,14 @@ export default class RemoteParticipantCard extends React.Component {
         return (
             <li className={`participant-item`} key={utils.getIdentifierText(this.remoteParticipant.identifier)}>
                 <div className="ms-Grid-row">
-                    <div className="ms-Grid-col ms-lg11">
+                    <div className="ms-Grid-col ms-lg11 ms-sm10">
                     <Persona className={this.state.isSpeaking ? `speaking-border-for-initials` : ``}
                             size={PersonaSize.size40}
                             text={ utils.getIdentifierText(this.remoteParticipant.identifier) }
                             secondaryText={this.state.state}
                             styles={{ primaryText: {color: '#edebe9'}, secondaryText: {color: '#edebe9'} }}/>
                     </div>
-                    <div className="ms-Grid-col ms-lg1">
+                    <div className="ms-Grid-col ms-lg1 ms-sm2">
                         {
                             this.state.isMuted &&
                             <Icon className="icon-text-large" iconName="MicOff2"/>

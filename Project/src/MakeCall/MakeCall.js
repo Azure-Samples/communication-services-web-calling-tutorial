@@ -564,7 +564,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         {
                             !this.state.incomingCall && !this.state.call &&
                             <div className="ms-Grid-row mt-3">
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-lg4 ms-sm12">
+                                <div className="call-input-panel mb-5 ms-Grid-col ms-lg12 ms-sm12 ms-xl12 ms-xxl4">
                                     <h3 className="mb-1">Place a call</h3>
                                     <div>Enter an Identity to make a call to.</div>
                                     <div>You can specify multiple Identities to call by using "," separated values.</div>
@@ -593,7 +593,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                                     onClick={this.placeCall}>
                                     </PrimaryButton>
                                 </div>
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-lg4 ms-sm12">
+                                <div className="call-input-panel mb-5 ms-Grid-col ms-lg12 ms-sm12 ms-xl12 ms-xxl4">
                                     <h3 className="mb-1">Join a group call</h3>
                                     <div>Group Id must be in GUID format.</div>
                                     <TextField className="mb-3"
@@ -610,7 +610,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                                     onClick={this.joinGroup}>
                                     </PrimaryButton>
                                 </div>
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-lg4 ms-sm12">
+                                <div className="call-input-panel mb-5 ms-Grid-col ms-lg12 ms-sm12 ms-xl12 ms-xxl4">
                                     <h3 className="mb-1">Join a Teams meeting</h3>
                                     <div>Enter meeting link</div>
                                     <TextField className="mb-3"
