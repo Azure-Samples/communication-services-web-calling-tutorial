@@ -120,10 +120,12 @@ export default class MakeCall extends React.Component {
                 }
             });
 
-            if (this.alternateCallerId.value !== '') {
-                this.callOptions.alternateCallerId = { phoneNumber: this.alternateCallerId.value.trim() };
-            }
             const callOptions = await this.getCallOptions();
+
+            if (this.alternateCallerId.value !== '') {
+                callOptions.alternateCallerId = { phoneNumber: this.alternateCallerId.value.trim() };
+            }
+
             this.callAgent.startCall(identitiesToCall, callOptions);
 
         } catch (e) {
@@ -131,7 +133,7 @@ export default class MakeCall extends React.Component {
             this.setState({ callError: 'Failed to place a call: ' + e });
         }
     };
-    
+
     joinGroup = async() => {
         try {
             const callOptions = await this.getCallOptions();
