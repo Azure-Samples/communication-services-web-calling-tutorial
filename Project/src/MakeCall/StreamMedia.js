@@ -56,7 +56,7 @@ export default class StreamMedia extends React.Component {
 
     render() {
         return (
-            <div id={this.componentId} className="py-3 ms-Grid-col ms-lg4 ms-sm-12">
+            <div id={this.componentId} className="py-3 ms-Grid-col ms-sm-12 ms-lg12 ms-xl12 ms-xxl4">
                 <h4 className="video-title">{utils.getIdentifierText(this.remoteParticipant.identifier)}</h4>
                 <div className={`w-100 ${this.state.isSpeaking ? `speaking-border-for-video` : ``}`} id={this.videoContainerId}></div>
             </div>
