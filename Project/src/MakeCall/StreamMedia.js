@@ -7,9 +7,8 @@ export default class StreamMedia extends React.Component {
         this.stream = props.stream;
         this.remoteParticipant = props.remoteParticipant;
         this.componentId = `${utils.getIdentifierText(this.remoteParticipant.identifier)}-${this.stream.mediaStreamType}-${this.stream.id}`;
-
+        this.videoContainerId = this.componentId + '-videoContainer';
         this.state = {
-            isAvailable: props.stream.isAvailable,
             isSpeaking: false
         };
     }
@@ -18,6 +17,9 @@ export default class StreamMedia extends React.Component {
      * Start stream after DOM has rendered
      */
     async componentDidMount() {
+        let componentContainer = document.getElementById(this.componentId);
+        componentContainer.hidden = true;
+
         this.remoteParticipant.on('isSpeakingChanged', () => {
             this.setState({ isSpeaking: this.remoteParticipant.isSpeaking });
         });
@@ -31,39 +33,34 @@ export default class StreamMedia extends React.Component {
             if(!view) {
                 view = await renderer.createView();
             }
-            videoContainer = document.getElementById(this.componentId);
-            videoContainer.hidden = false;
-            if(!videoContainer.hasChildNodes()) { videoContainer.appendChild(view.target); }
+            videoContainer = document.getElementById(this.videoContainerId);
+            if(!videoContainer?.hasChildNodes()) { videoContainer.appendChild(view.target); }
         }
 
         this.stream.on('isAvailableChanged', async () => {
             console.log(`stream=${this.stream.type}, isAvailableChanged=${this.stream.isAvailable}`);
             if (this.stream.isAvailable) {
-                this.setState({ isAvailable: true });
+                componentContainer.hidden = false;
                 await renderStream();
             } else {
-                if(videoContainer) { videoContainer.hidden = true; }
-                this.setState({ isAvailable: false });
+                componentContainer.hidden = true;
+
             }
         });
 
         if (this.stream.isAvailable) {
-            this.setState({ isAvailable: true });
+            componentContainer.hidden = false;
             await renderStream();
         }
     }
 
     render() {
-        if(this.stream.isAvailable && this.remoteParticipant.state === 'Connected') {
-            return (
-                <div className="py-3 ms-Grid-col ms-lg4 ms-sm-12">
-                    <h4 className="video-title">{utils.getIdentifierText(this.remoteParticipant.identifier)}</h4>
-                    <div className={`w-100 ${this.state.isSpeaking ? `speaking-border-for-video` : ``}`} id={this.componentId}></div>
-                </div>
-            );
-        } else {
-          return null;
-        }
+        return (
+            <div id={this.componentId} className="py-3 ms-Grid-col ms-lg4 ms-sm-12">
+                <h4 className="video-title">{utils.getIdentifierText(this.remoteParticipant.identifier)}</h4>
+                <div className={`w-100 ${this.state.isSpeaking ? `speaking-border-for-video` : ``}`} id={this.videoContainerId}></div>
+            </div>
+        );
     }
 }
 

@@ -375,8 +375,11 @@ addedParticipant.on('videoStreamsUpdated', videoStreams => {
 });
 
 // Render remote streams on UI. Do this logic in a UI component.
-// Please refer to /src/MakeCall/StreamMedia.js for an example of how to render streams on the UI.
+// Please refer to /src/MakeCall/StreamMedia.js of this app for an example of how to render streams on the UI:
 const handleRemoteStream = (stream) => {
+    let componentContainer = document.getElementById(this.componentId);
+    componentContainer.hidden = true;
+
     let renderer = new Renderer(this.stream);
     let view;
     let videoContainer;
@@ -385,26 +388,29 @@ const handleRemoteStream = (stream) => {
         if(!view) {
             view = await renderer.createView();
         }
-        videoContainer = document.getElementById('someHtmlElementDiv');
-        videoContainer.hidden = false;
-        videoContainer.appendChild(view.target);
+        videoContainer = document.getElementById(this.videoContainerId);
+        if(!videoContainer?.hasChildNodes()) { videoContainer.appendChild(view.target); }
     }
 
     this.stream.on('isAvailableChanged', async () => {
         if (this.stream.isAvailable) {
-            this.setState({ isAvailable: true });
+            componentContainer.hidden = false;
             await renderStream();
         } else {
-           videoContainer.hidden = true;
-            this.setState({ isAvailable: false });
+            componentContainer.hidden = true;
+
         }
     });
 
     if (this.stream.isAvailable) {
-        this.setState({ isAvailable: true });
+        componentContainer.hidden = false;
         await renderStream();
     }
 }
+
+<div id={this.componentId}>
+    <div id={this.videoContainerId}></div>
+</div>
 
         `;
 
