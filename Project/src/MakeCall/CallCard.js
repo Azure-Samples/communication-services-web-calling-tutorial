@@ -365,6 +365,7 @@ export default class CallCard extends React.Component {
                         {
                             <div className="video-grid-row">
                                 {
+                                    this.state.callState === 'Connected' &&
                                     this.state.allRemoteParticipantStreams.map(v =>
                                         <StreamMedia key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`} stream={v.stream} remoteParticipant={v.participant}/>
                                     )
