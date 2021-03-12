@@ -65,26 +65,28 @@ export default class MakeCall extends React.Component {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
 
                     e.added.forEach(call => {
-                        this.setState({ call: call, callEndReason: undefined })
+                        this.setState({ call: call })
                     });
 
                     e.removed.forEach(call => {
                         if (this.state.call && this.state.call === call) {
-                            if (this.state.call.callEndReason.code !== 0) {
-                                this.setState({ callError: `Call end reason: code: ${this.state.call.callEndReason.code}, subcode: ${this.state.call.callEndReason.subCode}` });
-                            }
-
-                            this.setState({ call: null, incomingCall: null, callEndReason: this.state.call.callEndReason });
+                            this.displayCallEndReason(this.state.call.callEndReason);
                         }
                     });
                 });
                 this.callAgent.on('incomingCall', args => {
+                    const incomingCall = args.incomingCall;
                     if (this.state.call) {
-                        args.incomingCall.reject();
+                        incomingCall.reject();
                         return;
                     }
 
-                    this.setState({incomingCall: args.incomingCall});
+                    this.setState({incomingCall: incomingCall});
+
+                    incomingCall.on('callEnded', args => {
+                        this.displayCallEndReason(args.callEndReason);
+                    });
+
                 });
 
                 this.setState({ loggedIn: true });
@@ -92,6 +94,14 @@ export default class MakeCall extends React.Component {
                 console.error(e);
             }
         }
+    }
+
+    displayCallEndReason = (callEndReason) => {
+        if (callEndReason.code !== 0 || callEndReason.subCode !== 0) {
+            this.setState({ callError: `Call end reason: code: ${callEndReason.code}, subcode: ${callEndReason.subCode}` });
+        }
+
+        this.setState({ call: null, incomingCall: null });
     }
 
     placeCall = async() => {
