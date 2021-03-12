@@ -334,7 +334,7 @@ export default class CallCard extends React.Component {
                 <div className="ms-Grid-row">
                     {
                         this.state.callState === 'Connected' &&
-                        <div className="ms-Grid-col ms-lg3 ms-sm12">
+                        <div className="ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl3">
                             <div className="participants-panel mt-1 mb-3">
                                     <div className="participants-panel-title custom-row text-center">
                                         <AddParticipantPopover call={this.call}/>
@@ -361,7 +361,7 @@ export default class CallCard extends React.Component {
                             </div>
                         </div>
                     }
-                    <div className={ this.state.callState === 'Connected' ? `ms-Grid-col ms-lg9 ms-sm12`: 'ms-Grid-col ms-lg12 ms-sm12'}>
+                    <div className={ this.state.callState === 'Connected' ? `ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl9`: 'ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl12'}>
                         {
                             <div className="video-grid-row">
                                 {
