@@ -20,7 +20,7 @@ export default function AddParticipantPopover(props) {
     function handleAddPhoneNumber() {
         console.log('handleAddPhoneNumber', userId);
         try {
-            props.call.addParticipant({ phoneNumber: userId }, { alternateCallerId: alternateCallerId });
+            props.call.addParticipant({ phoneNumber: userId }, { alternateCallerId: { phoneNumber: alternateCallerId }});
         } catch (e) {
             console.error(e);
         }

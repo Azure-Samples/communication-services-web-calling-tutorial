@@ -48,15 +48,10 @@ module.exports = {
         open: true,
         before: function(app, server, compiler) {
             var bodyParser = require('body-parser');
-            app.use(bodyParser.json());
-            app.post('/tokens/provisionUser', bodyParser.json(), async (req, res) => {
+            app.post('/tokens/provisionUser', async (req, res) => {
                 try {
                     let communicationUserId;
-                    if (!req.body.userIdentity) {
-                        communicationUserId = await communicationIdentityClient.createUser();
-                    } else {
-                        communicationUserId = { communicationUserId: req.body.userIdentity }
-                    }
+                    communicationUserId = await communicationIdentityClient.createUser();
                     const tokenResponse = await communicationIdentityClient.issueToken(communicationUserId, ["voip"]);
                     res.json(tokenResponse);
                 } catch (error) {
