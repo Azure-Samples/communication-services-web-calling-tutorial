@@ -22,84 +22,98 @@ export default class CallCard extends React.Component {
             allRemoteParticipantStreams: [],
             videoOn: true,
             micMuted: false,
-            onHold: this.call.state === 'Hold',
+            onHold: this.call.state === 'LocalHold' || this.call.state === 'RemoteHold',
             screenShareOn: this.call.isScreenShareOn,
-            cameraDeviceOptions:[],
-            speakerDeviceOptions:[],
-            microphoneDeviceOptions:[],
-            selectedCameraDeviceId: props.selectedCameraDeviceId,
-            selectedSpeakerDeviceId: props.selectedSpeakerDeviceId,
-            selectedMicrophoneDeviceId: props.selectedMicrophoneDeviceId,
+            cameraDeviceOptions: props.cameraDeviceOptions ? props.cameraDeviceOptions : [],
+            speakerDeviceOptions: props.speakerDeviceOptions ? props.speakerDeviceOptions : [],
+            microphoneDeviceOptions: props.microphoneDeviceOptions ? props.microphoneDeviceOptions : [],
+            selectedCameraDeviceId: this.call.localVideoStreams[0]?.source.id,
+            selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id,
+            selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id,
             showSettings: false,
             showLocalVideo: false
         };
     }
 
-    componentWillMount() {
+    async componentWillMount() {
         if (this.call) {
-            const cameraDevices = this.deviceManager.getCameraList();
-            const speakerDevices = this.deviceManager.getSpeakerList();
-            const microphoneDevices = this.deviceManager.getMicrophoneList();
-
-            cameraDevices.map(cameraDevice => { this.state.cameraDeviceOptions.push({key: cameraDevice.id, text: cameraDevice.name}) });
-            speakerDevices.map(speakerDevice => { this.state.speakerDeviceOptions.push({key: speakerDevice.id, text: speakerDevice.name}) });
-            microphoneDevices.map(microphoneDevice => { this.state.microphoneDeviceOptions.push({key: microphoneDevice.id, text: microphoneDevice.name}) });
-
-            this.deviceManager.on('videoDevicesUpdated', e => {
-                e.added.forEach(cameraDevice => { this.state.cameraDeviceOptions.push({key: cameraDevice.id, text: cameraDevice.name}); });
+            this.deviceManager.on('videoDevicesUpdated', async e => {
+                let newCameraDeviceToUse = undefined;
+                e.added.forEach(addedCameraDevice => {
+                    newCameraDeviceToUse = addedCameraDevice;
+                    const addedCameraDeviceOption = { key: addedCameraDevice.id, text: addedCameraDevice.name };
+                    this.setState(prevState => ({
+                        cameraDeviceOptions: [...prevState.cameraDeviceOptions, addedCameraDeviceOption]
+                    }));
+                });
+                // When connectnig a new camera, ts device manager automatically switches to use this new camera and
+                // this.call.localVideoStream[0].source is never updated. Hence I have to do the following logic to update
+                // this.call.localVideoStream[0].source to the newly added camera. This is a bug. Under the covers, this.call.localVideoStreams[0].source
+                // should have been updated automatically by the sdk.
+                if(newCameraDeviceToUse) {
+                    try {
+                        await this.call.localVideoStreams[0]?.switchSource(newCameraDeviceToUse);
+                        this.setState({ selectedCameraDeviceId: newCameraDeviceToUse.id});
+                    } catch {
+                        console.error('Failed to switch to newly added video device', error);
+                    }
+                }
 
                 e.removed.forEach(removedCameraDevice => {
-                    this.state.cameraDeviceOptions.forEach((value, index) => {
-                        if(value.key === removedCameraDevice.id) {
-                            this.state.cameraDeviceOptions.splice(index, 1);
-                            if(removedCameraDevice.id === this.state.selectedCameraDeviceId) {
-                                const cameraDevice = this.deviceManager.getCameraList()[0];
-                                this.setState({selectedCameraDeviceId: cameraDevice.id});
-                            }
-                        }
-                    });
+                    this.setState( prevState => ({
+                        cameraDeviceOptions: prevState.cameraDeviceOptions.filter(option => { return option.key !== removedCameraDevice.id })
+                    }))
                 });
+
+                // If the current camera being used is removed, pick a new random one
+                if ( !this.state.cameraDeviceOptions.find(option => { return option.key === this.state.selectedCameraDeviceId}) ) {
+                    const newSelectedCameraId = this.state.cameraDeviceOptions[0]?.key;
+                    const cameras = await this.deviceManager.getCameras();
+                    const videoDeviceInfo = cameras.find(c => { return c.id === newSelectedCameraId });
+                    await this.call.localVideoStreams[0]?.switchSource(videoDeviceInfo);
+                    this.setState({ selectedCameraDeviceId: newSelectedCameraId });
+                }
+
+
             });
 
             this.deviceManager.on('audioDevicesUpdated', e => {
-                e.added.forEach(audioDevice => {
-                    if (audioDevice.deviceType === 'Speaker') {
-                        this.state.speakerDeviceOptions.push({key: audioDevice.id, text: audioDevice.name});
-
-                    } else if(audioDevice.deviceType === 'Microphone') {
-                        this.state.microphoneDeviceOptions.push({key: audioDevice.id, text: audioDevice.name});
+                e.added.forEach(addedAudioDevice => {
+                    const addedAudioDeviceOption = { key: addedAudioDevice.id, text: addedAudioDevice.name };
+                    if (addedAudioDevice.deviceType === 'Speaker') {
+                        this.setState(prevState => ({
+                            speakerDeviceOptions: [...prevState.speakerDeviceOptions, addedAudioDeviceOption]
+                        }));
+                    } else if(addedAudioDevice.deviceType === 'Microphone') {
+                        this.setState(prevState => ({
+                            microphoneDeviceOptions: [...prevState.microphoneDeviceOptions, addedAudioDeviceOption]
+                        }));
                     }
                 });
 
                 e.removed.forEach(removedAudioDevice => {
-                    if(removedAudioDevice.deviceType === 'Speaker') {
-                        this.state.speakerDeviceOptions.forEach((value, index) => {
-                            if(value.key === removedAudioDevice.id) {
-                                this.state.speakerDeviceOptions.splice(index, 1);
-                                if(removedAudioDevice.id === this.state.selectedSpeakerDeviceId) {
-                                    const speakerDevice = this.deviceManager.getSpeakerList()[0];
-                                    this.deviceManager.setSpeaker(speakerDevice);
-                                    this.setState({selectedSpeakerDeviceId: speakerDevice.id});
-                                }
-                            }
-                        });
+                    if (removedAudioDevice.deviceType === 'Speaker') {
+                        this.setState( prevState => ({
+                            speakerDeviceOptions: prevState.speakerDeviceOptions.filter(option => { return option.key !== removedAudioDevice.id })
+                        }))
                     } else if (removedAudioDevice.deviceType === 'Microphone') {
-                        this.state.microphoneDeviceOptions.forEach((value, index) => {
-                            if(value.key === removedAudioDevice.id) {
-                                this.state.microphoneDeviceOptions.splice(index, 1);
-                                if(removedAudioDevice.id === this.state.selectedMicrophoneDeviceId) {
-                                    const microphoneDevice = this.deviceManager.getMicrophoneList()[0];
-                                    this.deviceManager.setMicrophone(microphoneDevice);
-                                    this.setState({selectedMicrophoneDeviceId: microphoneDevice.id});
-                                }
-                            }
-                        });
+                        this.setState( prevState => ({
+                            microphoneDeviceOptions: prevState.microphoneDeviceOptions.filter(option => { return option.key !== removedAudioDevice.id })
+                        }))
                     }
                 });
             });
 
-            const onCallStateChanged = () => {
-                console.log('callStateChanged ', this.state.callState);
+            this.deviceManager.on('selectedSpeakerChanged', () => {
+                this.setState({ selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id });
+            });
+
+            this.deviceManager.on('selectedMicrophoneChanged', () => {
+                this.setState({ selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id });
+            });
+
+            const callStateChanged = () => {
+                console.log('Call state changed ', this.state.callState);
                 this.setState({callState: this.call.state});
 
                 if (this.state.callState !== 'None' &&
@@ -115,11 +129,11 @@ export default class CallCard extends React.Component {
                     this.selectedMicrophoneDeviceId = microphoneDevices[0]?.id;
                 }
             }
-            onCallStateChanged();
-            this.call.on('callStateChanged', onCallStateChanged);
+            callStateChanged();
+            this.call.on('stateChanged', callStateChanged);
 
-            this.call.on('callIdChanged', () => {
-                console.log('callIdChanged ', this.call.id);
+            this.call.on('idChanged', () => {
+                console.log('Call id Changed ', this.call.id);
                 this.setState({ callId: this.call.id});
             });
 
@@ -141,11 +155,12 @@ export default class CallCard extends React.Component {
                 e.added.forEach(p => {
                     console.log('participantAdded', p);
                     this.subscribeToRemoteParticipant(p);
-                    this.setState({remoteParticipants: this.call.remoteParticipants});
+                    this.setState(prevState => ({ remoteParticipants: [...prevState.remoteParticipants, p] }));
                 });
                 e.removed.forEach(p => {
                     console.log('participantRemoved', p);
-                    this.setState({remoteParticipants: this.call.remoteParticipants});
+                    this.setState({ remoteParticipants: this.state.remoteParticipants.filter(remoteParticipant => { return remoteParticipant !== p }) });
+                    this.setState({ streams: this.state.allRemoteParticipantStreams.filter(s => { return s.participant !== p }) });
                 });
             });
         }
@@ -156,8 +171,8 @@ export default class CallCard extends React.Component {
             console.log('displayNameChanged ', participant.displayName);
         });
 
-        participant.on('participantStateChanged', () => {
-            console.log('participantStateChanged', participant.identifier.communicationUserId, participant.state);
+        participant.on('stateChanged', () => {
+            console.log('Participant state changed', participant.identifier.communicationUserId, participant.state);
             this.setState({remoteParticipants: this.call.remoteParticipants});
         });
 
@@ -166,7 +181,7 @@ export default class CallCard extends React.Component {
                 let participantStreamTuples = participantStreams.map(stream => { return { stream, participant }});
                 participantStreamTuples.forEach(participantStreamTuple => {
                     if (!this.state.allRemoteParticipantStreams.find((v) => { return v === participantStreamTuple }) ) {
-                        this.setState( prevState => ({
+                        this.setState(prevState => ({
                             allRemoteParticipantStreams: [...prevState.allRemoteParticipantStreams, participantStreamTuple]
                         }));
                     }
@@ -178,9 +193,9 @@ export default class CallCard extends React.Component {
                 participantStreams.forEach(streamToRemove => {
                     const tupleToRemove = this.state.allRemoteParticipantStreams.find((v) => { return v.stream === streamToRemove})
                     if(tupleToRemove) {
-                        this.setState( prevState => ({
-                            allRemoteParticipantStreams: prevState.allRemoteParticipantStreams.splice(prevState.allRemoteParticipantStreams.indexOf(tupleToRemove), 1)
-                        }));
+                        this.setState({
+                            allRemoteParticipantStreams: this.state.allRemoteParticipantStreams.filter(streamTuple => { return streamTuple !== tupleToRemove })
+                        });
                     }
                 });
         }
@@ -194,51 +209,14 @@ export default class CallCard extends React.Component {
         participant.on('videoStreamsUpdated', handleVideoStreamsUpdated);
     }
 
-    async handleAcceptCall() {
-        const cameraDevice = this.deviceManager.getCameraList()[0];
-        let localVideoStream;
-        if(!cameraDevice || cameraDevice.id === 'camera:') {
-            this.props.onShowCameraNotFoundWarning(true);
-        } else if (cameraDevice) {
-            this.setState({ selectedCameraDeviceId: cameraDevice.id });
-            localVideoStream = new LocalVideoStream(cameraDevice);
-        }
-
-        const speakerDevice = this.deviceManager.getSpeakerList()[0];
-        if(!speakerDevice || speakerDevice.id === 'speaker:') {
-            this.props.onShowSpeakerNotFoundWarning(true);
-        } else if(speakerDevice) {
-            this.setState({selectedSpeakerDeviceId: speakerDevice.id});
-            this.deviceManager.setSpeaker(speakerDevice);
-        }
-
-        const microphoneDevice = this.deviceManager.getMicrophoneList()[0];
-        if(!microphoneDevice || microphoneDevice.id === 'microphone:') {
-            this.props.onShowMicrophoneNotFoundWarning(true);
-        } else {
-            this.setState({selectedMicrophoneDeviceId: microphoneDevice.id});
-            this.deviceManager.setMicrophone(microphoneDevice);
-        }
-
-        this.call.accept({
-            videoOptions: this.state.videoOn && cameraDevice ? { localVideoStreams: [localVideoStream] } : undefined
-        }).catch((e) => console.error(e));
-    }
-
-    getIncomingActionContent() {
-        return (
-            <>
-                <DefaultButton
-                    className="answer-button my-3"
-                    onClick={() => this.handleAcceptCall()}>
-                    <i className="fas fa-phone"></i>Accept
-                </DefaultButton>
-            </>
-        );
-    }
-
     async handleVideoOnOff () {
         try {
+            const cameras = await this.deviceManager.getCameras();
+            const cameraDeviceInfo = cameras.find(cameraDeviceInfo => {
+                return cameraDeviceInfo.id === this.state.selectedCameraDeviceId
+            });
+            const localVideoStream = new LocalVideoStream(cameraDeviceInfo);
+
             if (this.call.state === 'None' || 
                 this.call.state === 'Connecting' ||
                 this.call.state === 'Incoming') {
@@ -249,10 +227,7 @@ export default class CallCard extends React.Component {
                     }
                     await this.watchForCallFinishConnecting();
                     if(this.state.videoOn) {
-                        const cameraDeviceInfo = this.deviceManager.getCameraList().find(cameraDeviceInfo => {
-                            return cameraDeviceInfo.id === this.state.selectedCameraDeviceId
-                        });
-                        this.call.startVideo(new LocalVideoStream(cameraDeviceInfo)).catch(error => {});
+                        this.call.startVideo(localVideoStream).catch(error => {});
                     } else {
                         this.call.stopVideo(this.call.localVideoStreams[0]).catch(error => {});
                     }
@@ -260,10 +235,7 @@ export default class CallCard extends React.Component {
                     if(this.call.localVideoStreams[0]) {
                         await this.call.stopVideo(this.call.localVideoStreams[0]);
                     } else {
-                        const cameraDeviceInfo = this.deviceManager.getCameraList().find(cameraDeviceInfo => {
-                            return cameraDeviceInfo.id === this.state.selectedCameraDeviceId
-                        });
-                        await this.call.startVideo(new LocalVideoStream(cameraDeviceInfo));
+                        await this.call.startVideo(localVideoStream);
                     }
             }
 
@@ -300,8 +272,8 @@ export default class CallCard extends React.Component {
 
     async handleHoldUnhold() {
         try {
-            if(this.call.state === 'Hold') {
-                this.call.unhold();
+            if(this.call.state === 'LocalHold' || this.call.state === 'RemoteHold') {
+                this.call.resume();
             } else {
                 this.call.hold();
             }
@@ -323,28 +295,25 @@ export default class CallCard extends React.Component {
         }
     }
 
-    cameraDeviceSelectionChanged = (event, item) => {
-        const cameraDeviceInfo = this.deviceManager.getCameraList().find(cameraDeviceInfo => {
-            return cameraDeviceInfo.id === item.key
-        });
+    cameraDeviceSelectionChanged = async (event, item) => {
+        const cameras = await this.deviceManager.getCameras();
+        const cameraDeviceInfo = cameras.find(cameraDeviceInfo => { return cameraDeviceInfo.id === item.key });
         const localVideoStream = this.call.localVideoStreams[0];
         localVideoStream.switchSource(cameraDeviceInfo);
         this.setState({selectedCameraDeviceId: cameraDeviceInfo.id});
     };
 
-    speakerDeviceSelectionChanged = (event, item) => {
-        const speakerDeviceInfo = this.deviceManager.getSpeakerList().find(speakerDeviceInfo => {
-                                                                                            return speakerDeviceInfo.id === item.key
-                                                                                        });
-        this.deviceManager.setSpeaker(speakerDeviceInfo);
+    speakerDeviceSelectionChanged = async (event, item) => {
+        const speakers = await this.deviceManager.getSpeakers();
+        const speakerDeviceInfo = speakers.find(speakerDeviceInfo => { return speakerDeviceInfo.id === item.key });
+        this.deviceManager.selectSpeaker(speakerDeviceInfo);
         this.setState({selectedSpeakerDeviceId: speakerDeviceInfo.id});
     };
 
-    microphoneDeviceSelectionChanged = (event, item) => {
-        const microphoneDeviceInfo = this.deviceManager.getMicrophoneList().find(microphoneDeviceInfo => {
-                                                                                            return microphoneDeviceInfo.id === item.key
-                                                                                        });
-        this.deviceManager.setMicrophone(microphoneDeviceInfo);
+    microphoneDeviceSelectionChanged = async (event, item) => {
+        const microphones = await this.deviceManager.getMicrophones();
+        const microphoneDeviceInfo = microphones.find(microphoneDeviceInfo => { return microphoneDeviceInfo.id === item.key });
+        this.deviceManager.selectMicrophone(microphoneDeviceInfo);
         this.setState({selectedMicrophoneDeviceId: microphoneDeviceInfo.id});
     };
 
@@ -384,7 +353,7 @@ export default class CallCard extends React.Component {
                             </div>
                             <div>
                                 {
-                                    this.callState === 'Connected' && this.state.showLocalVideo &&
+                                    this.state.showLocalVideo &&
                                     <div className="mb-3">
                                         <LocalVideoPreviewCard selectedCameraDeviceId={this.state.selectedCameraDeviceId} deviceManager={this.deviceManager}/>
                                     </div>
@@ -396,8 +365,9 @@ export default class CallCard extends React.Component {
                         {
                             <div className="video-grid-row">
                                 {
+                                    this.state.callState === 'Connected' &&
                                     this.state.allRemoteParticipantStreams.map(v =>
-                                        <StreamMedia key={`${utils.getIdentifierText(v.participant.identifier)}${v.stream.id}`} stream={v.stream} remoteParticipant={v.participant}/>
+                                        <StreamMedia key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`} stream={v.stream} remoteParticipant={v.participant}/>
                                     )
                                 }
                             </div>
@@ -437,17 +407,17 @@ export default class CallCard extends React.Component {
                                         }
                                     </span>
                                     {
-                                        (this.state.callState === 'Connected' || this.state.callState === 'Hold') &&
+                                        (this.state.callState === 'Connected' || this.state.callState === 'LocalHold' || this.state.callState === 'RemoteHold') &&
                                         <span className="in-call-button"
-                                            title={`${this.state.callState === 'Hold' ? 'Unhold' : 'Hold'} call`} 
+                                            title={`${this.state.callState === 'LocalHold' || this.state.callState === 'RemoteHold' ? 'Unhold' : 'Hold'} call`} 
                                             variant="secondary"
                                             onClick={() => this.handleHoldUnhold()}>
                                             {
-                                                this.state.callState === 'Hold' &&
+                                                (this.state.callState === 'LocalHold' || this.state.callState === 'RemoteHold') &&
                                                 <Icon iconName="Pause"/>
                                             }
                                             {
-                                                this.state.callState !== 'Hold' &&
+                                                this.state.callState === 'Connected' &&
                                                 <Icon iconName="Play"/>
                                             }
                                         </span>
@@ -472,7 +442,7 @@ export default class CallCard extends React.Component {
                                         <Icon iconName="Settings"/>
                                     </span>
                                     <span className="in-call-button"
-                                        onClick={() => this.call.hangUp({forEveryone: false}).catch((e) => console.error(e))}>
+                                        onClick={() => this.call.hangUp()}>
                                         <Icon iconName="DeclineCall"/>
                                     </span>
                                 <Panel type={PanelType.medium}
@@ -497,8 +467,8 @@ export default class CallCard extends React.Component {
                                                         onChange={this.cameraDeviceSelectionChanged}
                                                         label={'Camera'}
                                                         options={this.state.cameraDeviceOptions}
-                                                        disabled={this.deviceManager.getCameraList().length === 0 }
-                                                        placeHolder={this.deviceManager.getCameraList().length === 0 ? 'No camera devices found' :
+                                                        disabled={this.deviceManager.getCameras().length === 0 }
+                                                        placeHolder={this.deviceManager.getCameras().length === 0 ? 'No camera devices found' :
                                                                     this.state.selectedCameraDeviceId ? '' : 'Select camera'}
                                                         styles={{dropdown: { width: 400 }}}
                                                     />
@@ -515,8 +485,8 @@ export default class CallCard extends React.Component {
                                                         onChange={this.speakerDeviceSelectionChanged}
                                                         options={this.state.speakerDeviceOptions}
                                                         label={'Speaker'}
-                                                        disabled={this.deviceManager.getSpeakerList().length === 0}
-                                                        placeHolder={this.deviceManager.getSpeakerList().length === 0 ? 'No speaker devices found' :
+                                                        disabled={this.deviceManager.getSpeakers().length === 0}
+                                                        placeHolder={this.deviceManager.getSpeakers().length === 0 ? 'No speaker devices found' :
                                                                     this.state.selectedSpeakerDeviceId ? '' : 'Select speaker'}
                                                         styles={{dropdown: { width: 400 }}}
                                                     />
@@ -528,8 +498,8 @@ export default class CallCard extends React.Component {
                                                         onChange={this.microphoneDeviceSelectionChanged}
                                                         options={this.state.microphoneDeviceOptions}
                                                         label={'Microphone'}
-                                                        disabled={this.deviceManager.getMicrophoneList().length === 0}
-                                                        placeHolder={this.deviceManager.getMicrophoneList().length === 0 ? 'No microphone devices found' :
+                                                        disabled={this.deviceManager.getMicrophones().length === 0}
+                                                        placeHolder={this.deviceManager.getMicrophones().length === 0 ? 'No microphone devices found' :
                                                                     this.state.selectedMicrophoneDeviceId ? '' : 'Select microphone'}
                                                         styles={{dropdown: { width: 400 }}}
                                                     />
@@ -537,11 +507,6 @@ export default class CallCard extends React.Component {
                                             </div>
                                         </div>
                                 </Panel>
-                            </div>
-                            <div className="text-center">
-                            {
-                                this.call.direction === 'Incoming' && this.call.state === 'Incoming' ? this.getIncomingActionContent() : undefined
-                            }
                             </div>
                         </div>
                     </div>
