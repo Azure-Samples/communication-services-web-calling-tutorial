@@ -46,12 +46,10 @@ module.exports = {
     ],
     devServer: {
         open: true,
-        before: function(app, server, compiler) {
-            var bodyParser = require('body-parser');
+        before: function(app) {
             app.post('/tokens/provisionUser', async (req, res) => {
                 try {
-                    let communicationUserId;
-                    communicationUserId = await communicationIdentityClient.createUser();
+                    let communicationUserId = await communicationIdentityClient.createUser();
                     const tokenResponse = await communicationIdentityClient.issueToken(communicationUserId, ["voip"]);
                     res.json(tokenResponse);
                 } catch (error) {

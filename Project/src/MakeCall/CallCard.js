@@ -19,7 +19,7 @@ export default class CallCard extends React.Component {
             callState: this.call.state,
             callId: this.call.id,
             remoteParticipants: this.call.remoteParticipants,
-            streams: [],
+            allRemoteParticipantStreams: [],
             videoOn: true,
             micMuted: false,
             onHold: this.call.state === 'Hold',
@@ -161,38 +161,36 @@ export default class CallCard extends React.Component {
             this.setState({remoteParticipants: this.call.remoteParticipants});
         });
 
-        const addToListOfAllParticipantStreams = (participantStreams) => {
+        const addToListOfAllRemoteParticipantStreams = (participantStreams) => {
             if(participantStreams) {
                 let participantStreamTuples = participantStreams.map(stream => { return { stream, participant }});
-                const tuplesToAdd = [];
                 participantStreamTuples.forEach(participantStreamTuple => {
-                    if (!this.state.streams.find((v) => { return v === participantStreamTuple }) ) {
-                        tuplesToAdd.push(participantStreamTuple);
+                    if (!this.state.allRemoteParticipantStreams.find((v) => { return v === participantStreamTuple }) ) {
+                        this.setState( prevState => ({
+                            allRemoteParticipantStreams: [...prevState.allRemoteParticipantStreams, participantStreamTuple]
+                        }));
                     }
                 })
-                this.setState({ streams: this.state.streams.concat(tuplesToAdd) });
             }
         }
 
-        const removeFromListOfAllParticipantStreams = (participantStreams) => {
-            if(participantStreams) {
-                let participantStreamTuples = participantStreams.map(stream => { return { stream, participant }});
-                let arr = this.state.streams;
-                arr.forEach((tuple, i) => {
-                    if (participantStreamTuples.find((v) => { return v === tuple})) {
-                        streams.splice(i);
+        const removeFromListOfAllRemoteParticipantStreams = (participantStreams) => {
+                participantStreams.forEach(streamToRemove => {
+                    const tupleToRemove = this.state.allRemoteParticipantStreams.find((v) => { return v.stream === streamToRemove})
+                    if(tupleToRemove) {
+                        this.setState( prevState => ({
+                            allRemoteParticipantStreams: prevState.allRemoteParticipantStreams.splice(prevState.allRemoteParticipantStreams.indexOf(tupleToRemove), 1)
+                        }));
                     }
                 });
-                this.setState({ streams: arr });
-            }
         }
 
         const handleVideoStreamsUpdated = (e) => {
-            addToListOfAllParticipantStreams(e.added);
-            removeFromListOfAllParticipantStreams(e.removed);
+            addToListOfAllRemoteParticipantStreams(e.added);
+            removeFromListOfAllRemoteParticipantStreams(e.removed);
         }
 
-        addToListOfAllParticipantStreams(participant.videoStreams);
+        addToListOfAllRemoteParticipantStreams(participant.videoStreams);
         participant.on('videoStreamsUpdated', handleVideoStreamsUpdated);
     }
 
@@ -378,8 +376,8 @@ export default class CallCard extends React.Component {
                                     }
                                     <ul className="participants-panel-list">
                                         {
-                                            this.state.remoteParticipants.map(remoteParticipant =>
-                                                <RemoteParticipantCard remoteParticipant={remoteParticipant} call={this.call}/>
+                                            this.call.remoteParticipants.map(remoteParticipant =>
+                                                <RemoteParticipantCard key={`${this.call.id}-${utils.getIdentifierText(remoteParticipant.identifier)}`} remoteParticipant={remoteParticipant} call={this.call}/>
                                             )
                                         }
                                     </ul>
@@ -398,9 +396,8 @@ export default class CallCard extends React.Component {
                         {
                             <div className="video-grid-row">
                                 {
-                                    this.state.callState === 'Connected' &&
-                                    this.state.streams.map((v, index) =>
-                                        <StreamMedia key={index} stream={v.stream} remoteParticipant={v.participant}/>
+                                    this.state.allRemoteParticipantStreams.map(v =>
+                                        <StreamMedia key={`${utils.getIdentifierText(v.participant.identifier)}${v.stream.id}`} stream={v.stream} remoteParticipant={v.participant}/>
                                     )
                                 }
                             </div>
@@ -543,7 +540,7 @@ export default class CallCard extends React.Component {
                             </div>
                             <div className="text-center">
                             {
-                                this.state.callState === 'Incoming' ? this.getIncomingActionContent() : undefined
+                                this.call.direction === 'Incoming' && this.call.state === 'Incoming' ? this.getIncomingActionContent() : undefined
                             }
                             </div>
                         </div>
