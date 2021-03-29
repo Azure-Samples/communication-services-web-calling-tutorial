@@ -10,6 +10,7 @@ if(!config || !config.connectionString || config.connectionString.indexOf('endpo
 
 const communicationIdentityClient = new  CommunicationIdentityClient(config.connectionString);
 
+const PORT = process.env.port || 8080;
 
 module.exports = {
     devtool: 'inline-source-map',
@@ -46,6 +47,7 @@ module.exports = {
     ],
     devServer: {
         open: true,
+        port: PORT,
         before: function(app) {
             app.post('/tokens/provisionUser', async (req, res) => {
                 try {

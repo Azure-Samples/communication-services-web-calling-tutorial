@@ -1,12 +1,12 @@
 import React from "react";
-import { PrimaryButton } from 'office-ui-fabric-react'
+import { TextField, PrimaryButton } from 'office-ui-fabric-react'
 import { utils } from "../Utils/Utils";
 
 export default class Login extends React.Component {
     constructor(props) {
         super(props);
         this.userDetailsResponse = undefined;
-
+        this.displayName = undefined;
         this.state = {
             showUserProvisioningAndSdkInitializationCode: false,
             showSpinner: false,
@@ -20,7 +20,7 @@ export default class Login extends React.Component {
             this.setState({ showSpinner: true});
             this.userDetailsResponse = await utils.provisionNewUser();
             this.setState({ id: utils.getIdentifierText(this.userDetailsResponse.user) });
-            await this.props.onLoggedIn({ id: this.state.id, token: this.userDetailsResponse.token });
+            await this.props.onLoggedIn({ id: this.state.id, token: this.userDetailsResponse.token, displayName: this.displayName });
             this.setState({ loggedIn: true });
         } catch (error) {
             console.log(error);
@@ -52,7 +52,7 @@ app.get('/tokens/provisionUser', async (request, response) => {
  *********************************************************************************************************/
 import { CallClient, Features } from '@azure/communication-calling';
 import { AzureCommunicationTokenCredential } from '@azure/communication-common';
-import { createClientLogger, setLogLevel } from '@azure/logger';
+import { AzureLogger, setLogLevel } from '@azure/logger';
 
 export class MyCallingApp {
     constructor() {
@@ -67,19 +67,13 @@ export class MyCallingApp {
         const token = response.token;
         const tokenCredential = new AzureCommunicationTokenCredential(token);
 
-        // Create Azure logger
-        const logger = createClientLogger('ACS');
+        // Set log level for the logger
         setLogLevel('verbose');
         // Redirect logger output to wherever desired
-        logger.verbose.log = (...args) => { console.log(...args); };
-        logger.info.log = (...args) => { console.info(...args) ; };
-        logger.warning.log = (...args) => { console.warn(...args); };
-        logger.error.log = (...args) => { console.error(...args); };
-        const options = { logger };
-    
+        AzureLogger.log = (...args) => { console.log(...args); };
         // CallClient is the entrypoint for the SDK. Use it to
         // to instantiate a CallClient and to access the DeviceManager
-        this.callClient = new CallClient(options);
+        this.callClient = new CallClient();
         this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: 'Optional ACS user name'});
         this.deviceManager = await this.callClient.getDeviceManager();
 
@@ -94,16 +88,16 @@ export class MyCallingApp {
                 addedCall.on('stateChanged', callStateChangedHandler);
 
                 // Get the unique Id for this Call
-                addeeCall.id;
+                addedCall.id;
 
                 // Subscribe to call id changed event
                 addedCall.on('idChanged', callIdChangedHandler);
 
-                // Indicates if recording is active in current call
-                addedCall.api(Features.Recording).isRecordingActive;
+                // Wether microphone is muted or not
+                addedCall.isMuted;
 
-                // Subscribe to is recording active event
-                addedCall.api(Features.Recording).on('isRecordingActiveChanged', isRecordingActiveChangedHandler);
+                // Subscribe to isMuted changed event
+                addedCall.on('isMutedChanged', isMutedChangedHandler);
 
                 // Subscribe to current remote participants in the call
                 addedCall.remoteParticipants.forEach(participant => {
@@ -209,14 +203,24 @@ export class MyCallingApp {
                     }
                     {
                         !this.state.loggedIn &&
-                        <div className="mt-3">
-                            <PrimaryButton className="primary-button mt-3"
-                                iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
-                                label="Provision an user" 
-                                disabled={this.state.disableInitializeButton}
-                                onClick={() => this.provisionNewUser()}>
-                                    Provision user and initialize SDK
-                            </PrimaryButton>
+                        <div>
+                            <div className="ms-Grid-row">
+                                <div className="ms-Grid-col ms-sm12 ms-lg6 ms-xl6 ms-xxl3">
+                                    <TextField className="mt-3"
+                                                defaultValue={undefined}
+                                                label="Optional display name"
+                                                onChange={(e) => { this.displayName = e.target.value }} />
+                                </div>
+                            </div>
+                            <div className="mt-1">
+                                <PrimaryButton className="primary-button mt-3"
+                                    iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
+                                    label="Provision an user" 
+                                    disabled={this.state.disableInitializeButton}
+                                    onClick={() => this.provisionNewUser()}>
+                                        Provision user and initialize SDK
+                                </PrimaryButton>
+                            </div>
                         </div>
                     }
                 </div>

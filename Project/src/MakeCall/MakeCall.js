@@ -11,7 +11,7 @@ import { Icon } from '@fluentui/react/lib/Icon';
 import IncomingCallCard from './IncomingCallCard';
 import CallCard from '../MakeCall/CallCard'
 import Login from './Login';
-import { createClientLogger, setLogLevel } from '@azure/logger';
+import { setLogLevel } from '@azure/logger';
 
 export default class MakeCall extends React.Component {
     constructor(props) {
@@ -46,18 +46,12 @@ export default class MakeCall extends React.Component {
     }
 
     handleLogIn = async (userDetails) => {
-        if(userDetails) {
+        if (userDetails) {
             try {
                 const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
-                const logger = createClientLogger('ACS');
                 setLogLevel('verbose');
-                logger.verbose.log = (...args) => { console.log(...args); };
-                logger.info.log = (...args) => { console.info(...args) ; };
-                logger.warning.log = (...args) => { console.warn(...args); };
-                logger.error.log = (...args) => { console.error(...args); };
-                const options = { logger: logger };
-                this.callClient = new CallClient(options);
-                this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.id });
+                this.callClient = new CallClient();
+                this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
                 window.callAgent = this.callAgent;
                 this.deviceManager = await this.callClient.getDeviceManager();
                 await this.deviceManager.askDevicePermission({ audio: true, video: true });
@@ -104,7 +98,11 @@ export default class MakeCall extends React.Component {
         this.setState({ call: null, incomingCall: null });
     }
 
-    placeCall = async() => {
+    placeVideoCall = async () => {
+        this.placeCall(true);
+    };
+
+    placeCall = async (withVideo) => {
         try {
             let identitiesToCall = [];
             const userIdsArray = this.destinationUserIds.value.split(',');
@@ -113,7 +111,11 @@ export default class MakeCall extends React.Component {
             userIdsArray.forEach((userId, index) => {
                 if (userId) {
                     userId = userId.trim();
-                    userId = { communicationUserId: userId };
+                    if (userId === '8:echo123') {
+                        userId = { id: userId };
+                    } else {
+                        userId = { communicationUserId: userId };
+                    }
                     if (!identitiesToCall.find(id => { return id === userId })) {
                         identitiesToCall.push(userId);
                     }
@@ -130,7 +132,7 @@ export default class MakeCall extends React.Component {
                 }
             });
 
-            const callOptions = await this.getCallOptions();
+            const callOptions = await this.getCallOptions(withVideo);
 
             if (this.alternateCallerId.value !== '') {
                 callOptions.alternateCallerId = { phoneNumber: this.alternateCallerId.value.trim() };
@@ -144,9 +146,9 @@ export default class MakeCall extends React.Component {
         }
     };
 
-    joinGroup = async() => {
+    joinGroup = async () => {
         try {
-            const callOptions = await this.getCallOptions();
+            const callOptions = await this.getCallOptions(false);
             this.callAgent.join({ groupId: this.destinationGroup.value }, callOptions);
         } catch (e) {
             console.error('Failed to join a call', e);
@@ -154,29 +156,17 @@ export default class MakeCall extends React.Component {
         }
     };
 
-    joinTeamsMeeting = async() => {
+    joinGroupWithVideo = async () => {
         try {
-            const callOptions = await this.getCallOptions();
-            if(this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
-                this.callAgent.join({ meetingLink: this.meetingLink.value}, callOptions);
-
-            } else if(!this.meetingLink.value && this.messageId.value && this.threadId.value && this.tenantId && this.organizerId) {
-                this.callAgent.join({
-                                messageId: this.messageId.value,
-                                threadId: this.threadId.value,
-                                tenantId: this.tenantId.value,
-                                organizerId: this.organizerId.value
-                            }, callOptions);
-            } else {
-                throw new Error('Please enter Teams meeting link or Teams meeting coordinate');
-            }
+            const callOptions = await this.getCallOptions(true);
+            this.callAgent.join({ groupId: this.destinationGroup.value }, callOptions);
         } catch (e) {
-            console.error('Failed to join teams meeting:', e);
-            this.setState({ callError: 'Failed to join teams meeting: ' + e });
+            console.error('Failed to join a call', e);
+            this.setState({ callError: 'Failed to join a call: ' + e });
         }
     };
 
-    async getCallOptions() {
+    async getCallOptions(withVideo) {
         let callOptions = {
             videoOptions: {
                 localVideoStreams: undefined
@@ -190,32 +180,36 @@ export default class MakeCall extends React.Component {
         let speakerWarning = undefined;
         let microphoneWarning = undefined;
 
-        try {
-            const cameras = await this.deviceManager.getCameras();
-            const cameraDevice = cameras[0];
-            if(!cameraDevice || cameraDevice.id === 'camera:') {
-                throw new Error('No camera devices found.');
-            } else if (cameraDevice) {
-                this.setState({
-                    selectedCameraDeviceId: cameraDevice.id,
-                    cameraDeviceOptions: cameras.map(camera => { return { key: camera.id, text: camera.name }})
-                });
-                const localVideoStream = new LocalVideoStream(cameraDevice);
-                callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
+        const cameras = await this.deviceManager.getCameras();
+        const cameraDevice = cameras[0];
+        if (!cameraDevice || cameraDevice.id === 'camera:') {
+            throw new Error('No camera devices found.');
+        } else if (cameraDevice) {
+            this.setState({
+                selectedCameraDeviceId: cameraDevice.id,
+                cameraDeviceOptions: cameras.map(camera => { return { key: camera.id, text: camera.name } })
+            });
+        }
+        if (withVideo) {
+            try {
+                if (cameraDevice) {
+                    const localVideoStream = new LocalVideoStream(cameraDevice);
+                    callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
+                }
+            } catch (e) {
+                cameraWarning = e.message;
             }
-        } catch(e) {
-            cameraWarning = e.message;
         }
 
         try {
             const speakers = await this.deviceManager.getSpeakers();
             const speakerDevice = speakers[0];
-            if(!speakerDevice || speakerDevice.id === 'speaker:') {
+            if (!speakerDevice || speakerDevice.id === 'speaker:') {
                 throw new Error('No speaker devices found.');
-            } else if(speakerDevice) {
+            } else if (speakerDevice) {
                 this.setState({
                     selectedSpeakerDeviceId: speakerDevice.id,
-                    speakerDeviceOptions: speakers.map(speaker => { return { key: speaker.id, text: speaker.name }})
+                    speakerDeviceOptions: speakers.map(speaker => { return { key: speaker.id, text: speaker.name } })
                 });
                 await this.deviceManager.selectSpeaker(speakerDevice);
             }
@@ -226,12 +220,12 @@ export default class MakeCall extends React.Component {
         try {
             const microphones = await this.deviceManager.getMicrophones();
             const microphoneDevice = microphones[0];
-            if(!microphoneDevice || microphoneDevice.id === 'microphone:') {
+            if (!microphoneDevice || microphoneDevice.id === 'microphone:') {
                 throw new Error('No microphone devices found.');
             } else {
                 this.setState({
                     selectedMicrophoneDeviceId: microphoneDevice.id,
-                    microphoneDeviceOptions: microphones.map(microphone => { return { key: microphone.id, text: microphone.name }})
+                    microphoneDeviceOptions: microphones.map(microphone => { return { key: microphone.id, text: microphone.name } })
                 });
                 await this.deviceManager.selectMicrophone(microphoneDevice);
             }
@@ -239,7 +233,7 @@ export default class MakeCall extends React.Component {
             microphoneWarning = e.message;
         }
 
-        if(cameraWarning || speakerWarning || microphoneWarning) {
+        if (cameraWarning || speakerWarning || microphoneWarning) {
             this.setState({
                 deviceManagerWarning:
                     `${cameraWarning ? cameraWarning + ' ' : ''}
@@ -295,34 +289,8 @@ this.callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
 // Join a group call
 this.currentCall = this.callAgent.join({groupId: <GUID>}, this.callOptions);
 
-/*******************************/
-/*  Joining a Teams meetings   */
-/*******************************/
-// Join a Teams meeting using a meeting link. To get a Teams meeting link, go to the Teams meeting and
-// open the participants roster, then click on the 'Share Invite' button and then click on 'Copy link meeting' button.
-this.currentCall = this.callAgent.join({meetingLink: <meeting link>}, this.callOptions);
-
-// Join a Teams meeting using meeting coordinates. Coordinates can be derived from the meeting link
-// Teams meeting link example
-const meetingLink = 'https://teams.microsoft.com/l/meetup-join/19:meeting_NjNiNzE3YzMtYzcxNi00ZGQ3LTk2YmYtMjNmOTE1MTVhM2Jl@thread.v2/0?context=%7B%22Tid%22:%2272f988bf-86f1-41af-91ab-2d7cd011db47%22,%22Oid%22:%227e353a91-0f71-4724-853b-b30ee4ca6a42%22%7D'
-const url = new URL(meetingLink);
-// Derive the coordinates (threadId, messageId, tenantId, and organizerId)
-const pathNameSplit = url.pathname.split('/');
-const threadId = decodeURIComponent(pathNameSplit[3]);
-const messageId = pathNameSplit[4];
-const meetingContext = JSON.parse(decodeURIComponent(url.search.replace('?context=', '')));
-const organizerId = meetingContext.Oid;
-const tenantId = meetingContext.Tid;
-this.currentCall = this.callAgent.join({
-                                threadId,
-                                messageId,
-                                tenantId,
-                                organizerId
-                            }, this.callOptions);
-
         `;
 
-        
         const streamingSampleCode = `
 /************************************************/
 /*     Local Video and Local Screen-sharing     */
@@ -392,7 +360,7 @@ const handleRemoteStream = (stream) => {
     let componentContainer = document.getElementById(this.componentId);
     componentContainer.hidden = true;
 
-    let renderer = new Renderer(this.stream);
+    let renderer = new VideoStreamRenderer(this.stream);
     let view;
     let videoContainer;
 
@@ -410,7 +378,6 @@ const handleRemoteStream = (stream) => {
             await renderStream();
         } else {
             componentContainer.hidden = true;
-
         }
     });
 
@@ -528,7 +495,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
 
         return (
             <div>
-                <Login onLoggedIn={this.handleLogIn}/>
+                <Login onLoggedIn={this.handleLogIn} />
                 <div className="card">
                     <div className="ms-Grid">
                         <div className="ms-Grid-row">
@@ -536,9 +503,9 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
                                     className="code-button"
-                                    iconProps={{iconName: 'TransferCall', style: {verticalAlign: 'middle', fontSize: 'large'}}}
+                                    iconProps={{ iconName: 'TransferCall', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showCallSampleCode ? 'Hide' : 'Show'} code`}
-                                    onClick={() => this.setState({showCallSampleCode: !this.state.showCallSampleCode})}>
+                                    onClick={() => this.setState({ showCallSampleCode: !this.state.showCallSampleCode })}>
                                 </PrimaryButton>
                             </div>
                         </div>
@@ -546,17 +513,17 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         {
                             this.state.showCallSampleCode &&
                             <pre>
-                                <code style={{color: '#b3b0ad'}}>
+                                <code style={{ color: '#b3b0ad' }}>
                                     {callSampleCode}
                                 </code>
                             </pre>
                         }
                         {
-                            this.state.callError && 
+                            this.state.callError &&
                             <MessageBar
                                 messageBarType={MessageBarType.error}
                                 isMultiline={false}
-                                onDismiss={ () => { this.setState({ callError: undefined }) }}
+                                onDismiss={() => { this.setState({ callError: undefined }) }}
                                 dismissButtonAriaLabel="Close">
                                 <b>{this.state.callError}</b>
                             </MessageBar>
@@ -566,105 +533,91 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <MessageBar
                                 messageBarType={MessageBarType.warning}
                                 isMultiline={false}
-                                onDismiss={ () => { this.setState({ deviceManagerWarning: undefined }) }}
+                                onDismiss={() => { this.setState({ deviceManagerWarning: undefined }) }}
                                 dismissButtonAriaLabel="Close">
-                                    <b>{this.state.deviceManagerWarning}</b>
+                                <b>{this.state.deviceManagerWarning}</b>
                             </MessageBar>
                         }
                         {
                             !this.state.incomingCall && !this.state.call &&
                             <div className="ms-Grid-row mt-3">
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-lg12 ms-sm12 ms-xl12 ms-xxl4">
+                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxlPush1 ms-xxl4">
                                     <h3 className="mb-1">Place a call</h3>
                                     <div>Enter an Identity to make a call to.</div>
                                     <div>You can specify multiple Identities to call by using "," separated values.</div>
                                     <div>If calling a Phone Identity, your Alternate Caller Id must be specified. </div>
                                     <TextField disabled={this.state.call || !this.state.loggedIn}
-                                                label="Destination Identity or Identities"
-                                                componentRef={(val) => this.destinationUserIds = val} />
-                                    <div className="ms-Grid-row">
+                                        label="Destination Identity or Identities"
+                                        componentRef={(val) => this.destinationUserIds = val} />
+                                    <div className="ms-Grid-row mb-3 mt-3">
                                         <div className="ms-Grid-col ms-lg6 ms-sm12">
-                                            <TextField className="mb-3"
-                                                        disabled={this.state.call || !this.state.loggedIn}
-                                                        label="Destination Phone Identity or Phone Identities"
-                                                        componentRef={(val) => this.destinationPhoneIds = val} />
-                                        </div>
-                                        <div className="ms-Grid-col ms-lg6 ms-sm12 mb-3">
                                             <TextField disabled={this.state.call || !this.state.loggedIn}
-                                                        label="Alternate Caller Id (For calling phone numbers only)"
-                                                        componentRef={(val) => this.alternateCallerId = val} />
+                                                label="Destination Phone Identity or Phone Identities"
+                                                componentRef={(val) => this.destinationPhoneIds = val} />
+                                        </div>
+                                        <div className="ms-Grid-col ms-lg6 ms-sm12">
+                                            <TextField disabled={this.state.call || !this.state.loggedIn}
+                                                label="Alternate Caller Id (For calling phone numbers only)"
+                                                componentRef={(val) => this.alternateCallerId = val} />
                                         </div>
                                     </div>
                                     <PrimaryButton className="primary-button"
-                                                    iconProps={{iconName: 'Phone', style: {verticalAlign: 'middle', fontSize: 'large'}}}
-                                                    text="Place call" 
-                                                    disabled={this.state.call || !this.state.loggedIn}
-                                                    label="Place call"
-                                                    onClick={this.placeCall}>
+                                        iconProps={{ iconName: 'Phone', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                        text="Place call"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        label="Place call"
+                                        onClick={() => this.placeCall(false)}>
+                                    </PrimaryButton>
+                                    <PrimaryButton className="primary-button"
+                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                        text="Place call with video"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        label="Place call with video"
+                                        onClick={() => this.placeVideoCall()}>
                                     </PrimaryButton>
                                 </div>
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-lg12 ms-sm12 ms-xl12 ms-xxl4">
+                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxlPush3 ms-xxl4">
                                     <h3 className="mb-1">Join a group call</h3>
                                     <div>Group Id must be in GUID format.</div>
                                     <TextField className="mb-3"
-                                                disabled={this.state.call || !this.state.loggedIn}
-                                                label="Group Id"
-                                                placeholder="29228d3e-040e-4656-a70e-890ab4e173e5"
-                                                defaultValue="29228d3e-040e-4656-a70e-890ab4e173e5"
-                                                componentRef={(val) => this.destinationGroup = val} />
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        label="Group Id"
+                                        placeholder="29228d3e-040e-4656-a70e-890ab4e173e5"
+                                        defaultValue="29228d3e-040e-4656-a70e-890ab4e173e5"
+                                        componentRef={(val) => this.destinationGroup = val} />
                                     <PrimaryButton className="primary-button"
-                                                    iconProps={{iconName: 'Group', style: {verticalAlign: 'middle', fontSize: 'large'}}}
-                                                    text="Join group"
-                                                    disabled={this.state.call || !this.state.loggedIn}
-                                                    label="Join group call"
-                                                    onClick={this.joinGroup}>
+                                        iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                        text="Join group"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        label="Join group call"
+                                        onClick={() => this.joinGroup()}>
                                     </PrimaryButton>
-                                </div>
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-lg12 ms-sm12 ms-xl12 ms-xxl4">
-                                    <h3 className="mb-1">Join a Teams meeting</h3>
-                                    <div>Enter meeting link</div>
-                                    <TextField className="mb-3"
-                                                disabled={this.state.call || !this.state.loggedIn}
-                                                label="Meeting link"
-                                                componentRef={(val) => this.meetingLink = val}/>
-                                    <div> Or enter meeting coordinates (Thread Id, Message Id, Organizer Id, and Tenant Id)</div>
-                                    <TextField disabled={this.state.call || !this.state.loggedIn}
-                                                label="Thread Id"
-                                                componentRef={(val) => this.threadId = val}/>
-                                    <TextField disabled={this.state.call || !this.state.loggedIn}
-                                                label="Message Id"
-                                                componentRef={(val) => this.messageId = val}/>
-                                    <TextField disabled={this.state.call || !this.state.loggedIn}
-                                                label="Organizer Id"
-                                                componentRef={(val) => this.organizerId = val}/>
-                                    <TextField className="mb-3"
-                                                disabled={this.state.call || !this.state.loggedIn}
-                                                label="Tenant Id"
-                                                componentRef={(val) => this.tenantId = val}/>
                                     <PrimaryButton className="primary-button"
-                                                    iconProps={{iconName: 'Group', style: {verticalAlign: 'middle', fontSize: 'large'}}}
-                                                    text="Join meeting"
-                                                    disabled={this.state.call || !this.state.loggedIn}
-                                                    onClick={this.joinTeamsMeeting}>
+                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                        text="Join group with video"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        label="Join group call with video"
+                                        onClick={() => this.joinGroupWithVideo()}>
                                     </PrimaryButton>
                                 </div>
                             </div>
                         }
                         {
                             this.state.call && <CallCard call={this.state.call}
-                                                    deviceManager={this.deviceManager}
-                                                    cameraDeviceOptions={this.state.cameraDeviceOptions}
-                                                    speakerDeviceOptions={this.state.speakerDeviceOptions}
-                                                    microphoneDeviceOptions={this.state.microphoneDeviceOptions}
-                                                    onShowCameraNotFoundWarning={(show) => {this.setState({showCameraNotFoundWarning: show}) }}
-                                                    onShowSpeakerNotFoundWarning={(show) => {this.setState({showSpeakerNotFoundWarning: show}) }}
-                                                    onShowMicrophoneNotFoundWarning={(show) => {this.setState({showMicrophoneNotFoundWarning: show}) }}/>
+                                deviceManager={this.deviceManager}
+                                cameraDeviceOptions={this.state.cameraDeviceOptions}
+                                speakerDeviceOptions={this.state.speakerDeviceOptions}
+                                microphoneDeviceOptions={this.state.microphoneDeviceOptions}
+                                onShowCameraNotFoundWarning={(show) => { this.setState({ showCameraNotFoundWarning: show }) }}
+                                onShowSpeakerNotFoundWarning={(show) => { this.setState({ showSpeakerNotFoundWarning: show }) }}
+                                onShowMicrophoneNotFoundWarning={(show) => { this.setState({ showMicrophoneNotFoundWarning: show }) }} />
                         }
                         {
                             this.state.incomingCall && !this.state.call && (<IncomingCallCard
-                                                                                incomingCall={this.state.incomingCall}
-                                                                                acceptCallOptions={async () => await this.getCallOptions()}
-                                                                                onReject={() => {this.setState({ incomingCall: undefined })}}/>)
+                                incomingCall={this.state.incomingCall}
+                                acceptCallOptions={async () => await this.getCallOptions()}
+                                acceptCallWithVideoOptions={async () => await this.getCallOptions(true)}
+                                onReject={() => { this.setState({ incomingCall: undefined }) }} />)
                         }
                     </div>
                 </div>
@@ -674,16 +627,16 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Video, Screen sharing, and local video preview</h2>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton className="code-button"
-                                    iconProps={{iconName: 'Video', style: {verticalAlign: 'middle', fontSize: 'large'}}}
+                                    iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showStreamingSampleCode ? 'Hide' : 'Show'} code`}
-                                    onClick={() => this.setState({showStreamingSampleCode: !this.state.showStreamingSampleCode})}>
+                                    onClick={() => this.setState({ showStreamingSampleCode: !this.state.showStreamingSampleCode })}>
                                 </PrimaryButton>
                             </div>
                         </div>
                         {
                             this.state.showStreamingSampleCode &&
                             <pre>
-                                <code style={{color: '#b3b0ad'}}>
+                                <code style={{ color: '#b3b0ad' }}>
                                     {streamingSampleCode}
                                 </code>
                             </pre>
@@ -692,7 +645,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             Video - try it out.
                         </h3>
                         <div>
-                            From your current call, toggle your video on and off by clicking on the <Icon className="icon-text-xlarge" iconName="Video"/> icon.
+                            From your current call, toggle your video on and off by clicking on the <Icon className="icon-text-xlarge" iconName="Video" /> icon.
                             When you start you start your video, remote participants can see your video by receiving a stream and rendering it in an HTML element.
                         </div>
                         <br></br>
@@ -700,7 +653,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             Screen sharing - try it out.
                         </h3>
                         <div>
-                            From your current call, toggle your screen sharing on and off by clicking on the <Icon className="icon-text-xlarge" iconName="TVMonitor"/> icon.
+                            From your current call, toggle your screen sharing on and off by clicking on the <Icon className="icon-text-xlarge" iconName="TVMonitor" /> icon.
                             When you start sharing your screen, remote participants can see your screen by receiving a stream and rendering it in an HTML element.
                         </div>
                     </div>
@@ -710,18 +663,18 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         <div className="ms-Grid-row">
                             <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Mute / Unmute</h2>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
-                                <PrimaryButton 
+                                <PrimaryButton
                                     className="code-button"
-                                    iconProps={{iconName: 'Microphone', style: {verticalAlign: 'middle', fontSize: 'large'}}}
+                                    iconProps={{ iconName: 'Microphone', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showMuteUnmuteSampleCode ? 'Hide' : 'Show'} code`}
-                                    onClick={() => this.setState({showMuteUnmuteSampleCode: !this.state.showMuteUnmuteSampleCode})}>
+                                    onClick={() => this.setState({ showMuteUnmuteSampleCode: !this.state.showMuteUnmuteSampleCode })}>
                                 </PrimaryButton>
                             </div>
                         </div>
                         {
                             this.state.showMuteUnmuteSampleCode &&
                             <pre>
-                                <code style={{color: '#b3b0ad'}}>
+                                <code style={{ color: '#b3b0ad' }}>
                                     {muteUnmuteSampleCode}
                                 </code>
                             </pre>
@@ -730,7 +683,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             Try it out.
                         </h3>
                         <div>
-                            From your current call, toggle your microphone on and off by clicking on the <Icon className="icon-text-xlarge" iconName="Microphone"/> icon.
+                            From your current call, toggle your microphone on and off by clicking on the <Icon className="icon-text-xlarge" iconName="Microphone" /> icon.
                             When you mute or unmute your microphone, remote participants can receive an event about wether your micrphone is muted or unmuted.
                         </div>
                     </div>
@@ -742,16 +695,16 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
                                     className="code-button"
-                                    iconProps={{iconName: 'Play', style: {verticalAlign: 'middle', fontSize: 'large'}}}
+                                    iconProps={{ iconName: 'Play', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showHoldUnholdSampleCode ? 'Hide' : 'Show'} code`}
-                                    onClick={() => this.setState({showHoldUnholdSampleCode: !this.state.showHoldUnholdSampleCode})}>
+                                    onClick={() => this.setState({ showHoldUnholdSampleCode: !this.state.showHoldUnholdSampleCode })}>
                                 </PrimaryButton>
                             </div>
                         </div>
                         {
                             this.state.showHoldUnholdSampleCode &&
                             <pre>
-                                <code style={{color: '#b3b0ad'}}>
+                                <code style={{ color: '#b3b0ad' }}>
                                     {holdUnholdSampleCode}
                                 </code>
                             </pre>
@@ -760,7 +713,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             Try it out.
                         </h3>
                         <div>
-                            From your current call, toggle hold call and unhold call on by clicking on the <Icon className="icon-text-xlarge" iconName="Play"/> icon.
+                            From your current call, toggle hold call and unhold call on by clicking on the <Icon className="icon-text-xlarge" iconName="Play" /> icon.
                             When you hold or unhold the call, remote participants can receive other participant state changed events. Also, the call state changes.
                         </div>
                     </div>
@@ -772,16 +725,16 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
                                     className="code-button"
-                                    iconProps={{iconName: 'Settings', style: {verticalAlign: 'middle', fontSize: 'large'}}}
+                                    iconProps={{ iconName: 'Settings', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showDeviceManagerSampleCode ? 'Hide' : 'Show'} code`}
-                                    onClick={() => this.setState({showDeviceManagerSampleCode: !this.state.showDeviceManagerSampleCode})}>
+                                    onClick={() => this.setState({ showDeviceManagerSampleCode: !this.state.showDeviceManagerSampleCode })}>
                                 </PrimaryButton>
                             </div>
                         </div>
                         {
                             this.state.showDeviceManagerSampleCode &&
                             <pre>
-                                <code style={{color: '#b3b0ad'}}>
+                                <code style={{ color: '#b3b0ad' }}>
                                     {deviceManagerSampleCode}
                                 </code>
                             </pre>
@@ -790,7 +743,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             Try it out.
                         </h3>
                         <div>
-                            From your current call, click on the <Icon className="icon-text-xlarge" iconName="Settings"/> icon to open up the settings panel.
+                            From your current call, click on the <Icon className="icon-text-xlarge" iconName="Settings" /> icon to open up the settings panel.
                             The DeviceManager is used to select the devices (camera, microphone, and speakers) to use across the call stack and to preview your camera.
                         </div>
                     </div>
