@@ -1,20 +1,25 @@
-import { isCommunicationUserIdentifier, isPhoneNumberIdentifier, isCallingApplicationIdentifier } from '@azure/communication-common';
+import {
+    isCommunicationUserIdentifier,
+    isPhoneNumberIdentifier,
+    isMicrosoftTeamsUserIdentifier,
+    isUnknownIdentifier
+} from '@azure/communication-common';
 
 export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    provisionNewUser: async () => {
+    provisionNewUser: async (userId) => {
         let response = await fetch('/tokens/provisionUser', {
             method: 'POST',
+            body: { userId },
             headers: {
                 'Accept': 'application/json, text/plain, */*',
                 'Content-Type': 'application/json'
             },
         });
 
-        if (response.ok)
-        {
+        if (response.ok) {
             return response.json();
         }
 
@@ -25,10 +30,12 @@ export const utils = {
             return identifier.communicationUserId;
         } else if (isPhoneNumberIdentifier(identifier)) {
             return identifier.phoneNumber;
-        } else if(isCallingApplicationIdentifier(identifier)) {
-            return identifier.callingApplicationId;
+        } else if (isMicrosoftTeamsUserIdentifier(identifier)) {
+            return identifier.microsoftTeamsUserId;
+        } else if (isUnknownIdentifier(identifier) && identifier.id === '8:echo123'){
+            return 'Echo Bot';
         } else {
-            return 'Unknwon Identifier';
+            return 'Unknown Identifier';
         }
     }
 }

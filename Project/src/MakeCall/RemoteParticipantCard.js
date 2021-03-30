@@ -13,7 +13,8 @@ export default class RemoteParticipantCard extends React.Component {
         this.state = {
             isSpeaking: this.remoteParticipant.isSpeaking,
             state: this.remoteParticipant.state,
-            isMuted: this.remoteParticipant.isMuted
+            isMuted: this.remoteParticipant.isMuted,
+            displayName: this.remoteParticipant.displayName?.trim()
         };
     }
 
@@ -29,6 +30,10 @@ export default class RemoteParticipantCard extends React.Component {
         this.remoteParticipant.on('isSpeakingChanged', () => {
             this.setState({ isSpeaking: this.remoteParticipant.isSpeaking });
         })
+
+        this.remoteParticipant.on('displayNameChanged', () => {
+            this.setState({ displayName: this.remoteParticipant.displayName?.trim() });
+        })
     }
 
     handleRemoveParticipant(e, identifier) {
@@ -43,7 +48,7 @@ export default class RemoteParticipantCard extends React.Component {
                     <div className="ms-Grid-col ms-lg11 ms-sm10">
                     <Persona className={this.state.isSpeaking ? `speaking-border-for-initials` : ``}
                             size={PersonaSize.size40}
-                            text={ utils.getIdentifierText(this.remoteParticipant.identifier) }
+                            text={ this.state.displayName ? this.state.displayName : utils.getIdentifierText(this.remoteParticipant.identifier) }
                             secondaryText={this.state.state}
                             styles={{ primaryText: {color: '#edebe9'}, secondaryText: {color: '#edebe9'} }}/>
                     </div>

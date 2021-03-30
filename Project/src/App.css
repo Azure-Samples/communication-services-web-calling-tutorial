@@ -165,16 +165,16 @@ ul {
   background-color: #ca5010;
   border: 1px solid #ca5010;
   outline: none;
+  margin-right: 1em;
+  margin-bottom: 1em;
 }
 
 .primary-button:hover {
-  color: #edebe9;
   background-color: #8e562e;
   border: 1px solid #8e562e ;
-  outline: none;
 }
 
-.primary-button:disabled, .primary-button:disabled {
+.primary-button:disabled {
   background-color: #605e5c;
   border-color: #605e5c;
   outline: none;
@@ -220,14 +220,6 @@ ul {
 
 .in-call-button:nth-last-child(2) {
   border-left: 2px solid #edebe9;
-}
-
-.incoming-call-button:first-child {
-  background: #3a9414;
-}
-
-.in-call-button:last-child, .incoming-call-button:last-child {
-  background-color: #a4262c;
 }
 
 .in-call-button > i, .incoming-call-button > i {

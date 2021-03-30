@@ -1,6 +1,6 @@
 import React, { useEffect, createRef } from "react";
 import { utils } from '../Utils/Utils';
-import { Renderer } from "@azure/communication-calling";
+import { VideoStreamRenderer } from "@azure/communication-calling";
 export default class StreamMedia extends React.Component {
     constructor(props) {
         super(props);
@@ -9,7 +9,8 @@ export default class StreamMedia extends React.Component {
         this.componentId = `${utils.getIdentifierText(this.remoteParticipant.identifier)}-${this.stream.mediaStreamType}-${this.stream.id}`;
         this.videoContainerId = this.componentId + '-videoContainer';
         this.state = {
-            isSpeaking: false
+            isSpeaking: false,
+            displayName: this.remoteParticipant.displayName?.trim()
         };
     }
 
@@ -24,30 +25,53 @@ export default class StreamMedia extends React.Component {
             this.setState({ isSpeaking: this.remoteParticipant.isSpeaking });
         });
 
-        console.log('StreamMedia', this.stream, this.id);
-        let renderer = new Renderer(this.stream);
+        this.remoteParticipant.on('displayNameChanged', () => {
+            this.setState({ displayName: this.remoteParticipant.displayName?.trim() });
+        })
+
+        console.log(`[App][StreamMedia][id=${this.stream.id}] handle new stream`);
+        console.log(`[App][StreamMedia][id=${this.stream.id}] stream info - streamId=${this.stream.id}, streamType=${this.stream.mediaStreamType} isAvailable=${this.stream.isAvailable}`);
+        let renderer = new VideoStreamRenderer(this.stream);
         let view;
         let videoContainer;
 
         const renderStream = async () => {
-            if(!view) {
-                view = await renderer.createView();
+            console.info(`[App][StreamMedia][id=${this.stream.id}][renderStream] attempt to render stream type=${this.stream.mediaStreamType}, id=${this.stream.id}`);
+            if (!view) {
+                console.info(`[App][StreamMedia][id=${this.stream.id}][renderStream] call createView`);
+                try {
+                    view = await renderer.createView();
+                } catch (e) {
+                    console.warn(`[App][StreamMedia][id=${this.stream.id}][renderStream] createView failed`);
+                    console.error(e);
+                }
+                console.info(`[App][StreamMedia][id=${this.stream.id}][renderStream] createView resolved`);
             }
             videoContainer = document.getElementById(this.videoContainerId);
-            if(!videoContainer?.hasChildNodes()) { videoContainer.appendChild(view.target); }
+            console.info(`[App][StreamMedia][id=${this.stream.id}][renderStream] view created`);
+            if (!videoContainer?.hasChildNodes()) {
+                console.info(`[App][StreamMedia][id=${this.stream.id}][renderStream] videoContainer appending view`);
+                videoContainer.appendChild(view.target);
+            } else {
+                console.warn(`[App][StreamMedia][id=${this.stream.id}][renderStream] unable to append view container has child nodes!`);
+            }
         }
 
+        console.log(`[App][StreamMedia][id=${this.stream.id}] subscribing to isAvailableChanged`);
         this.stream.on('isAvailableChanged', async () => {
-            console.log(`stream=${this.stream.type}, isAvailableChanged=${this.stream.isAvailable}`);
+            console.log(`[App][StreamMedia][id=${this.stream.id}][isAvailableChanged] triggered`);
+            
             if (this.stream.isAvailable) {
+                console.log(`[App][StreamMedia][id=${this.stream.id}][isAvailableChanged] isAvailable=${this.stream.isAvailable}`);
                 componentContainer.hidden = false;
                 await renderStream();
             } else {
+                console.log(`[App][StreamMedia][id=${this.stream.id}][isAvailableChanged] isAvailable=${this.stream.isAvailable}`);
                 componentContainer.hidden = true;
 
             }
         });
-
+        console.log(`[App][StreamMedia][id=${this.stream.id}] checking initial value - isAvailable=${this.stream.isAvailable}`);
         if (this.stream.isAvailable) {
             componentContainer.hidden = false;
             await renderStream();
@@ -57,7 +81,7 @@ export default class StreamMedia extends React.Component {
     render() {
         return (
             <div id={this.componentId} className="py-3 ms-Grid-col ms-sm-12 ms-lg12 ms-xl12 ms-xxl4">
-                <h4 className="video-title">{utils.getIdentifierText(this.remoteParticipant.identifier)}</h4>
+                <h4 className="video-title">{this.state.displayName ? this.state.displayName : utils.getIdentifierText(this.remoteParticipant.identifier)}</h4>
                 <div className={`w-100 ${this.state.isSpeaking ? `speaking-border-for-video` : ``}`} id={this.videoContainerId}></div>
             </div>
         );
