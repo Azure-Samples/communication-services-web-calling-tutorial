@@ -33,14 +33,17 @@ export default class IncomingCallCard extends React.Component {
                 </div>
                 <div className="ms-Grid-row text-center">
                     <span className="incoming-call-button"
+                        title={'Answer call with video off'}
                         onClick={() => this.incomingCall.accept(this.acceptCallOptions)}>
                         <Icon iconName="IncomingCall"/>
                     </span>
                     <span className="incoming-call-button"
+                        title={'Answer call with video on'}
                         onClick={() => this.incomingCall.accept(this.acceptCallWithVideoOptions)}>
                         <Icon iconName="Video"/>
                     </span>
                     <span className="incoming-call-button"
+                        title={'Reject call'}
                         onClick={() => { this.incomingCall.reject(); this.props.onReject(); }}>
                         <Icon iconName="DeclineCall"/>
                     </span>

@@ -151,7 +151,6 @@ export default class CallCard extends React.Component {
                 e.added.forEach(p => {
                     console.log('participantAdded', p);
                     this.subscribeToRemoteParticipant(p);
-                    this.setState(prevState => ({ remoteParticipants: [...prevState.remoteParticipants, p] }));
                 });
                 e.removed.forEach(p => {
                     console.log('participantRemoved', p);
@@ -170,13 +169,16 @@ export default class CallCard extends React.Component {
     }
 
     subscribeToRemoteParticipant(participant) {
+        if (!this.state.remoteParticipants.find((p) => { return p === participant })) {
+            this.setState(prevState => ({ remoteParticipants: [...prevState.remoteParticipants, participant] }));
+        }
+
         participant.on('displayNameChanged', () => {
             console.log('displayNameChanged ', participant.displayName);
         });
 
         participant.on('stateChanged', () => {
             console.log('Participant state changed', participant.identifier.communicationUserId, participant.state);
-            this.setState({ remoteParticipants: this.call.remoteParticipants });
         });
 
         const addToListOfAllRemoteParticipantStreams = (participantStreams) => {
@@ -372,7 +374,7 @@ export default class CallCard extends React.Component {
                                 <ul className="participants-panel-list">
                                     {
                                         this.state.remoteParticipants.map(remoteParticipant =>
-                                            <RemoteParticipantCard key={`${this.call.id}-${utils.getIdentifierText(remoteParticipant.identifier)}`} remoteParticipant={remoteParticipant} call={this.call} />
+                                            <RemoteParticipantCard key={`${utils.getIdentifierText(remoteParticipant.identifier)}`} remoteParticipant={remoteParticipant} call={this.call} />
                                         )
                                     }
                                 </ul>

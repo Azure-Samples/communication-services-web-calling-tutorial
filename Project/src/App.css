@@ -222,14 +222,6 @@ ul {
   border-left: 2px solid #edebe9;
 }
 
-.incoming-call-button:first-child {
-  background: #3a9414;
-}
-
-.incoming-call-button:last-child {
-  background-color: #a4262c;
-}
-
 .in-call-button > i, .incoming-call-button > i {
   vertical-align: middle;
 }

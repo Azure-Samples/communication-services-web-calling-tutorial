@@ -339,28 +339,27 @@ this.currentCall.on('isScreenSharingOnChanged', this.handleIsScreenSharingOnChan
 /**************************************************************************************/
 /*     Handling Video streams and Screen-sharing streams from remote participants     */
 /**************************************************************************************/
-
 // Handle remote participant video and screen-sharing streams
-addedParticipant.videoStreams.forEach(stream => handleRemoteStream(stream))
+remoteParticipant.videoStreams.forEach(videoStream => subscribeToRemoteVideoStream(videoStream))
 
 // Handle remote participant 'videoStreamsUpdated' event. This is for videos and screen-shrings streams.
-addedParticipant.on('videoStreamsUpdated', videoStreams => {
+remoteParticipant.on('videoStreamsUpdated', videoStreams => {
     videoStreams.added.forEach(addedStream => {
-        handleRemoteStream(addedStream)
+        subscribeToRemoteVideoStream(addedStream)
     });
 
     videoStreams.removed.forEach(removedStream => {
-        handleRemoveStream(removedStream);
+        unsubscribeFromRemoteVideoStream(removedStream);
     });
 });
 
 // Render remote streams on UI. Do this logic in a UI component.
 // Please refer to /src/MakeCall/StreamMedia.js of this app for an example of how to render streams on the UI:
-const handleRemoteStream = (stream) => {
+const subscribeToRemoteVideoStream = (stream) => {
     let componentContainer = document.getElementById(this.componentId);
     componentContainer.hidden = true;
 
-    let renderer = new VideoStreamRenderer(this.stream);
+    let renderer = new VideoStreamRenderer(stream);
     let view;
     let videoContainer;
 
@@ -372,8 +371,8 @@ const handleRemoteStream = (stream) => {
         if(!videoContainer?.hasChildNodes()) { videoContainer.appendChild(view.target); }
     }
 
-    this.stream.on('isAvailableChanged', async () => {
-        if (this.stream.isAvailable) {
+    stream.on('isAvailableChanged', async () => {
+        if (stream.isAvailable) {
             componentContainer.hidden = false;
             await renderStream();
         } else {
@@ -381,7 +380,7 @@ const handleRemoteStream = (stream) => {
         }
     });
 
-    if (this.stream.isAvailable) {
+    if (stream.isAvailable) {
         componentContainer.hidden = false;
         await renderStream();
     }
