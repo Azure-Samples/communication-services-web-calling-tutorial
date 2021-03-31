@@ -98,10 +98,6 @@ export default class MakeCall extends React.Component {
         this.setState({ call: null, incomingCall: null });
     }
 
-    placeVideoCall = async () => {
-        this.placeCall(true);
-    };
-
     placeCall = async (withVideo) => {
         try {
             let identitiesToCall = [];
@@ -146,9 +142,9 @@ export default class MakeCall extends React.Component {
         }
     };
 
-    joinGroup = async () => {
+    joinGroup = async (withVideo) => {
         try {
-            const callOptions = await this.getCallOptions(false);
+            const callOptions = await this.getCallOptions(withVideo);
             this.callAgent.join({ groupId: this.destinationGroup.value }, callOptions);
         } catch (e) {
             console.error('Failed to join a call', e);
@@ -156,15 +152,27 @@ export default class MakeCall extends React.Component {
         }
     };
 
-    joinGroupWithVideo = async () => {
+    joinTeamsMeeting = async (withVideo) => {
         try {
-            const callOptions = await this.getCallOptions(true);
-            this.callAgent.join({ groupId: this.destinationGroup.value }, callOptions);
+            const callOptions = await this.getCallOptions(withVideo);
+            if(this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
+                this.callAgent.join({ meetingLink: this.meetingLink.value}, callOptions);
+
+            } else if(!this.meetingLink.value && this.messageId.value && this.threadId.value && this.tenantId && this.organizerId) {
+                this.callAgent.join({
+                                messageId: this.messageId.value,
+                                threadId: this.threadId.value,
+                                tenantId: this.tenantId.value,
+                                organizerId: this.organizerId.value
+                            }, callOptions);
+            } else {
+                throw new Error('Please enter Teams meeting link or Teams meeting coordinate');
+            }
         } catch (e) {
-            console.error('Failed to join a call', e);
-            this.setState({ callError: 'Failed to join a call: ' + e });
+            console.error('Failed to join teams meeting:', e);
+            this.setState({ callError: 'Failed to join teams meeting: ' + e });
         }
-    };
+    }
 
     async getCallOptions(withVideo) {
         let callOptions = {
@@ -182,19 +190,18 @@ export default class MakeCall extends React.Component {
 
         const cameras = await this.deviceManager.getCameras();
         const cameraDevice = cameras[0];
-        if (!cameraDevice || cameraDevice.id === 'camera:') {
-            throw new Error('No camera devices found.');
-        } else if (cameraDevice) {
+        if (cameraDevice && cameraDevice?.id !== 'camera:') {
             this.setState({
-                selectedCameraDeviceId: cameraDevice.id,
+                selectedCameraDeviceId: cameraDevice?.id,
                 cameraDeviceOptions: cameras.map(camera => { return { key: camera.id, text: camera.name } })
             });
         }
         if (withVideo) {
             try {
-                if (cameraDevice) {
-                    const localVideoStream = new LocalVideoStream(cameraDevice);
-                    callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
+                if (!cameraDevice || cameraDevice?.id === 'camera:') {
+                    throw new Error('No camera devices found.');
+                } else if (cameraDevice) {
+                    callOptions.videoOptions = { localVideoStreams: [new LocalVideoStream(cameraDevice)] };
                 }
             } catch (e) {
                 cameraWarning = e.message;
@@ -289,6 +296,29 @@ this.callOptions.videoOptions = { localVideoStreams: [localVideoStream] };
 // Join a group call
 this.currentCall = this.callAgent.join({groupId: <GUID>}, this.callOptions);
 
+/*******************************/
+/*  Joining a Teams meetings   */
+/*******************************/
+// Join a Teams meeting using a meeting link. To get a Teams meeting link, go to the Teams meeting and
+// open the participants roster, then click on the 'Share Invite' button and then click on 'Copy link meeting' button.
+this.currentCall = this.callAgent.join({meetingLink: <meeting link>}, this.callOptions);
+// Join a Teams meeting using meeting coordinates. Coordinates can be derived from the meeting link
+// Teams meeting link example
+const meetingLink = 'https://teams.microsoft.com/l/meetup-join/19:meeting_NjNiNzE3YzMtYzcxNi00ZGQ3LTk2YmYtMjNmOTE1MTVhM2Jl@thread.v2/0?context=%7B%22Tid%22:%2272f988bf-86f1-41af-91ab-2d7cd011db47%22,%22Oid%22:%227e353a91-0f71-4724-853b-b30ee4ca6a42%22%7D'
+const url = new URL(meetingLink);
+// Derive the coordinates (threadId, messageId, tenantId, and organizerId)
+const pathNameSplit = url.pathname.split('/');
+const threadId = decodeURIComponent(pathNameSplit[3]);
+const messageId = pathNameSplit[4];
+const meetingContext = JSON.parse(decodeURIComponent(url.search.replace('?context=', '')));
+const organizerId = meetingContext.Oid;
+const tenantId = meetingContext.Tid;
+this.currentCall = this.callAgent.join({
+                                threadId,
+                                messageId,
+                                tenantId,
+                                organizerId
+                            }, this.callOptions);
         `;
 
         const streamingSampleCode = `
@@ -540,7 +570,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         {
                             !this.state.incomingCall && !this.state.call &&
                             <div className="ms-Grid-row mt-3">
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxlPush1 ms-xxl4">
+                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
                                     <h3 className="mb-1">Place a call</h3>
                                     <div>Enter an Identity to make a call to.</div>
                                     <div>You can specify multiple Identities to call by using "," separated values.</div>
@@ -564,18 +594,16 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                         iconProps={{ iconName: 'Phone', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                         text="Place call"
                                         disabled={this.state.call || !this.state.loggedIn}
-                                        label="Place call"
                                         onClick={() => this.placeCall(false)}>
                                     </PrimaryButton>
                                     <PrimaryButton className="primary-button"
                                         iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                         text="Place call with video"
                                         disabled={this.state.call || !this.state.loggedIn}
-                                        label="Place call with video"
-                                        onClick={() => this.placeVideoCall()}>
+                                        onClick={() => this.placeCall(true)}>
                                     </PrimaryButton>
                                 </div>
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxlPush3 ms-xxl4">
+                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
                                     <h3 className="mb-1">Join a group call</h3>
                                     <div>Group Id must be in GUID format.</div>
                                     <TextField className="mb-3"
@@ -586,17 +614,49 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                         componentRef={(val) => this.destinationGroup = val} />
                                     <PrimaryButton className="primary-button"
                                         iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join group"
+                                        text="Join group call"
                                         disabled={this.state.call || !this.state.loggedIn}
-                                        label="Join group call"
-                                        onClick={() => this.joinGroup()}>
+                                        onClick={() => this.joinGroup(false)}>
                                     </PrimaryButton>
                                     <PrimaryButton className="primary-button"
                                         iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join group with video"
+                                        text="Join group call with video"
                                         disabled={this.state.call || !this.state.loggedIn}
-                                        label="Join group call with video"
-                                        onClick={() => this.joinGroupWithVideo()}>
+                                        onClick={() => this.joinGroup(true)}>
+                                    </PrimaryButton>
+                                </div>
+                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                    <h3 className="mb-1">Join a Teams meeting</h3>
+                                    <div>Enter meeting link</div>
+                                    <TextField className="mb-3"
+                                                disabled={this.state.call || !this.state.loggedIn}
+                                                label="Meeting link"
+                                                componentRef={(val) => this.meetingLink = val}/>
+                                    <div> Or enter meeting coordinates (Thread Id, Message Id, Organizer Id, and Tenant Id)</div>
+                                    <TextField disabled={this.state.call || !this.state.loggedIn}
+                                                label="Thread Id"
+                                                componentRef={(val) => this.threadId = val}/>
+                                    <TextField disabled={this.state.call || !this.state.loggedIn}
+                                                label="Message Id"
+                                                componentRef={(val) => this.messageId = val}/>
+                                    <TextField disabled={this.state.call || !this.state.loggedIn}
+                                                label="Organizer Id"
+                                                componentRef={(val) => this.organizerId = val}/>
+                                    <TextField className="mb-3"
+                                                disabled={this.state.call || !this.state.loggedIn}
+                                                label="Tenant Id"
+                                                componentRef={(val) => this.tenantId = val}/>
+                                    <PrimaryButton className="primary-button"
+                                                    iconProps={{iconName: 'Group', style: {verticalAlign: 'middle', fontSize: 'large'}}}
+                                                    text="Join Teams meeting"
+                                                    disabled={this.state.call || !this.state.loggedIn}
+                                                    onClick={() => this.joinTeamsMeeting(false)}>
+                                    </PrimaryButton>
+                                    <PrimaryButton className="primary-button"
+                                                    iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                                    text="Join Teams meeting with video"
+                                                    disabled={this.state.call || !this.state.loggedIn}
+                                                    onClick={() => this.joinTeamsMeeting(true)}>
                                     </PrimaryButton>
                                 </div>
                             </div>
@@ -604,6 +664,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         {
                             this.state.call && <CallCard call={this.state.call}
                                 deviceManager={this.deviceManager}
+                                selectedCameraDeviceId={this.state.selectedCameraDeviceId}
                                 cameraDeviceOptions={this.state.cameraDeviceOptions}
                                 speakerDeviceOptions={this.state.speakerDeviceOptions}
                                 microphoneDeviceOptions={this.state.microphoneDeviceOptions}
