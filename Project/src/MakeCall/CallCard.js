@@ -28,7 +28,7 @@ export default class CallCard extends React.Component {
             cameraDeviceOptions: props.cameraDeviceOptions ? props.cameraDeviceOptions : [],
             speakerDeviceOptions: props.speakerDeviceOptions ? props.speakerDeviceOptions : [],
             microphoneDeviceOptions: props.microphoneDeviceOptions ? props.microphoneDeviceOptions : [],
-            selectedCameraDeviceId: this.call.localVideoStreams[0]?.source.id,
+            selectedCameraDeviceId: props.selectedCameraDeviceId,
             selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id,
             selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id,
             showSettings: false,
@@ -489,15 +489,13 @@ export default class CallCard extends React.Component {
                                                 Show/Hide
                                                 </DefaultButton>
                                             {
-                                                this.state.cameraDeviceOptions.length > 0 && this.state.callState === 'Connected' &&
+                                                this.state.callState === 'Connected' &&
                                                 <Dropdown
                                                     selectedKey={this.state.selectedCameraDeviceId}
                                                     onChange={this.cameraDeviceSelectionChanged}
                                                     label={'Camera'}
                                                     options={this.state.cameraDeviceOptions}
-                                                    disabled={this.deviceManager.getCameras().length === 0}
-                                                    placeHolder={this.deviceManager.getCameras().length === 0 ? 'No camera devices found' :
-                                                        this.state.selectedCameraDeviceId ? '' : 'Select camera'}
+                                                    placeHolder={this.state.cameraDeviceOptions.length === 0 ? 'No camera devices found' : this.state.selectedCameraDeviceId }
                                                     styles={{ dropdown: { width: 400 } }}
                                                 />
                                             }
@@ -507,28 +505,24 @@ export default class CallCard extends React.Component {
                                         <h3>Sound Settings</h3>
                                         <div className="pl-2">
                                             {
-                                                this.state.speakerDeviceOptions.length > 0 && this.state.callState === 'Connected' &&
+                                                this.state.callState === 'Connected' &&
                                                 <Dropdown
                                                     selectedKey={this.state.selectedSpeakerDeviceId}
                                                     onChange={this.speakerDeviceSelectionChanged}
                                                     options={this.state.speakerDeviceOptions}
                                                     label={'Speaker'}
-                                                    disabled={this.deviceManager.getSpeakers().length === 0}
-                                                    placeHolder={this.deviceManager.getSpeakers().length === 0 ? 'No speaker devices found' :
-                                                        this.state.selectedSpeakerDeviceId ? '' : 'Select speaker'}
+                                                    placeHolder={this.state.speakerDeviceOptions.length === 0 ? 'No speaker devices found' : this.state.selectedSpeakerDeviceId}
                                                     styles={{ dropdown: { width: 400 } }}
                                                 />
                                             }
                                             {
-                                                this.state.microphoneDeviceOptions.length > 0 && this.state.callState === 'Connected' &&
+                                                this.state.callState === 'Connected' &&
                                                 <Dropdown
                                                     selectedKey={this.state.selectedMicrophoneDeviceId}
                                                     onChange={this.microphoneDeviceSelectionChanged}
                                                     options={this.state.microphoneDeviceOptions}
                                                     label={'Microphone'}
-                                                    disabled={this.deviceManager.getMicrophones().length === 0}
-                                                    placeHolder={this.deviceManager.getMicrophones().length === 0 ? 'No microphone devices found' :
-                                                        this.state.selectedMicrophoneDeviceId ? '' : 'Select microphone'}
+                                                    placeHolder={this.state.microphoneDeviceOptions.length === 0 ? 'No microphone devices found' : this.state.selectedMicrophoneDeviceId}
                                                     styles={{ dropdown: { width: 400 } }}
                                                 />
                                             }
