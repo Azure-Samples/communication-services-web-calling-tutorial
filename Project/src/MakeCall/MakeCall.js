@@ -189,6 +189,10 @@ export default class MakeCall extends React.Component {
         let speakerWarning = undefined;
         let microphoneWarning = undefined;
 
+        // On iOS, device permissions are lost after a little while, so re-ask for permissions
+        await this.deviceManager.askDevicePermission({ video: true });
+        await this.deviceManager.askDevicePermission({ audio: true });
+
         const cameras = await this.deviceManager.getCameras();
         const cameraDevice = cameras[0];
         if (cameraDevice && cameraDevice?.id !== 'camera:') {
@@ -532,7 +536,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Placing and receiving calls</h2>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
-                                    className="code-button"
+                                    className="primary-button"
                                     iconProps={{ iconName: 'TransferCall', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showCallSampleCode ? 'Hide' : 'Show'} code`}
                                     onClick={() => this.setState({ showCallSampleCode: !this.state.showCallSampleCode })}>
@@ -576,28 +580,33 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                     <div>Enter an Identity to make a call to.</div>
                                     <div>You can specify multiple Identities to call by using "," separated values.</div>
                                     <div>If calling a Phone Identity, your Alternate Caller Id must be specified. </div>
-                                    <TextField disabled={this.state.call || !this.state.loggedIn}
+                                    <TextField
+                                        disabled={this.state.call || !this.state.loggedIn}
                                         label="Destination Identity or Identities"
                                         componentRef={(val) => this.destinationUserIds = val} />
                                     <div className="ms-Grid-row mb-3 mt-3">
                                         <div className="ms-Grid-col ms-lg6 ms-sm12">
-                                            <TextField disabled={this.state.call || !this.state.loggedIn}
+                                            <TextField
+                                                disabled={this.state.call || !this.state.loggedIn}
                                                 label="Destination Phone Identity or Phone Identities"
                                                 componentRef={(val) => this.destinationPhoneIds = val} />
                                         </div>
                                         <div className="ms-Grid-col ms-lg6 ms-sm12">
-                                            <TextField disabled={this.state.call || !this.state.loggedIn}
+                                            <TextField
+                                                disabled={this.state.call || !this.state.loggedIn}
                                                 label="Alternate Caller Id (For calling phone numbers only)"
                                                 componentRef={(val) => this.alternateCallerId = val} />
                                         </div>
                                     </div>
-                                    <PrimaryButton className="primary-button"
+                                    <PrimaryButton
+                                        className="primary-button"
                                         iconProps={{ iconName: 'Phone', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                         text="Place call"
                                         disabled={this.state.call || !this.state.loggedIn}
                                         onClick={() => this.placeCall(false)}>
                                     </PrimaryButton>
-                                    <PrimaryButton className="primary-button"
+                                    <PrimaryButton
+                                        className="primary-button"
                                         iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                         text="Place call with video"
                                         disabled={this.state.call || !this.state.loggedIn}
@@ -607,19 +616,22 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                 <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
                                     <h3 className="mb-1">Join a group call</h3>
                                     <div>Group Id must be in GUID format.</div>
-                                    <TextField className="mb-3"
+                                    <TextField
+                                        className="mb-3"
                                         disabled={this.state.call || !this.state.loggedIn}
                                         label="Group Id"
                                         placeholder="29228d3e-040e-4656-a70e-890ab4e173e5"
                                         defaultValue="29228d3e-040e-4656-a70e-890ab4e173e5"
                                         componentRef={(val) => this.destinationGroup = val} />
-                                    <PrimaryButton className="primary-button"
+                                    <PrimaryButton
+                                        className="primary-button"
                                         iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                         text="Join group call"
                                         disabled={this.state.call || !this.state.loggedIn}
                                         onClick={() => this.joinGroup(false)}>
                                     </PrimaryButton>
-                                    <PrimaryButton className="primary-button"
+                                    <PrimaryButton
+                                        className="primary-button"
                                         iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                         text="Join group call with video"
                                         disabled={this.state.call || !this.state.loggedIn}
@@ -663,7 +675,9 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </div>
                         }
                         {
-                            this.state.call && <CallCard call={this.state.call}
+                            this.state.call &&
+                            <CallCard
+                                call={this.state.call}
                                 deviceManager={this.deviceManager}
                                 selectedCameraDeviceId={this.state.selectedCameraDeviceId}
                                 cameraDeviceOptions={this.state.cameraDeviceOptions}
@@ -674,11 +688,12 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                 onShowMicrophoneNotFoundWarning={(show) => { this.setState({ showMicrophoneNotFoundWarning: show }) }} />
                         }
                         {
-                            this.state.incomingCall && !this.state.call && (<IncomingCallCard
+                            this.state.incomingCall && !this.state.call &&
+                            <IncomingCallCard
                                 incomingCall={this.state.incomingCall}
                                 acceptCallOptions={async () => await this.getCallOptions()}
                                 acceptCallWithVideoOptions={async () => await this.getCallOptions(true)}
-                                onReject={() => { this.setState({ incomingCall: undefined }) }} />)
+                                onReject={() => { this.setState({ incomingCall: undefined }) }} />
                         }
                     </div>
                 </div>
@@ -687,7 +702,8 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         <div className="ms-Grid-row">
                             <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Video, Screen sharing, and local video preview</h2>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
-                                <PrimaryButton className="code-button"
+                                <PrimaryButton
+                                    className="primary-button"
                                     iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showStreamingSampleCode ? 'Hide' : 'Show'} code`}
                                     onClick={() => this.setState({ showStreamingSampleCode: !this.state.showStreamingSampleCode })}>
@@ -725,7 +741,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Mute / Unmute</h2>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
-                                    className="code-button"
+                                    className="primary-button"
                                     iconProps={{ iconName: 'Microphone', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showMuteUnmuteSampleCode ? 'Hide' : 'Show'} code`}
                                     onClick={() => this.setState({ showMuteUnmuteSampleCode: !this.state.showMuteUnmuteSampleCode })}>
@@ -755,7 +771,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Hold / Unhold</h2>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
-                                    className="code-button"
+                                    className="primary-button"
                                     iconProps={{ iconName: 'Play', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showHoldUnholdSampleCode ? 'Hide' : 'Show'} code`}
                                     onClick={() => this.setState({ showHoldUnholdSampleCode: !this.state.showHoldUnholdSampleCode })}>
@@ -785,7 +801,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Device Manager</h2>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
-                                    className="code-button"
+                                    className="primary-button"
                                     iconProps={{ iconName: 'Settings', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showDeviceManagerSampleCode ? 'Hide' : 'Show'} code`}
                                     onClick={() => this.setState({ showDeviceManagerSampleCode: !this.state.showDeviceManagerSampleCode })}>

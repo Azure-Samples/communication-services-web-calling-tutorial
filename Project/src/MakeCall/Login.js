@@ -17,7 +17,7 @@ export default class Login extends React.Component {
 
     provisionNewUser = async () => {
         try {
-            this.setState({ showSpinner: true});
+            this.setState({ showSpinner: true, disableInitializeButton: true });
             this.userDetailsResponse = await utils.provisionNewUser();
             this.setState({ id: utils.getIdentifierText(this.userDetailsResponse.user) });
             await this.props.onLoggedIn({ id: this.state.id, token: this.userDetailsResponse.token, displayName: this.displayName });
@@ -25,7 +25,7 @@ export default class Login extends React.Component {
         } catch (error) {
             console.log(error);
         } finally {
-            this.setState({ disableInitializeButton: true, showSpinner: false });
+            this.setState({ disableInitializeButton: false, showSpinner: false });
         }
     }
 
@@ -167,9 +167,9 @@ export class MyCallingApp {
             <div className="card">
                 <div className="ms-Grid">
                     <div className="ms-Grid-row">
-                        <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">User Provisioning and SDK Initialization</h2>
+                        <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">ACS User identity Provisioning and Calling SDK Initialization</h2>
                         <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
-                            <PrimaryButton className="code-button"
+                            <PrimaryButton className="primary-button"
                                 iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
                                 text={`${this.state.showUserProvisioningAndSdkInitializationCode ? 'Hide' : 'Show'} code`}
                                 onClick={() => this.setState({showUserProvisioningAndSdkInitializationCode: !this.state.showUserProvisioningAndSdkInitializationCode})}>
@@ -185,7 +185,7 @@ export class MyCallingApp {
                         </pre>
                     }
                     <div>The ACS Administration SDK can be used to create a user access token which authenticates the calling clients. </div>
-                    <div>The example code shows how to use the ACS Administration SDK from a backend service. A walkthrough of integrating the ACS Administration SDK can be found on <a className="sdk-docs-link" target="_blank" href="https://review.docs.microsoft.com/en-us/azure/project-spool/quickstarts/access-tokens?branch=pr-en-us-104477&pivots=programming-language-javascript">Microsoft Docs</a></div>
+                    <div>The example code shows how to use the ACS Administration SDK from a backend service. A walkthrough of integrating the ACS Administration SDK can be found on <a className="sdk-docs-link" target="_blank" href="https://docs.microsoft.com/en-us/azure/communication-services/quickstarts/access-tokens?pivots=programming-language-javascript">Microsoft Docs</a></div>
                     {
                         this.state.loggedIn && 
                         <div>
