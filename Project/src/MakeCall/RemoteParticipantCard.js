@@ -20,11 +20,14 @@ export default class RemoteParticipantCard extends React.Component {
 
     async componentWillMount() {
         this.remoteParticipant.on('isMutedChanged', () => {
-            this.setState({ isMuted: this.remoteParticipant.isMuted })
+            this.setState({ isMuted: this.remoteParticipant.isMuted });
+            if (this.remoteParticipant.isMuted) {
+                this.setState({ isSpeaking: false });
+            }
         });
 
         this.remoteParticipant.on('stateChanged', () => {
-            this.setState({ state: this.remoteParticipant.state })
+            this.setState({ state: this.remoteParticipant.state });
         });
 
         this.remoteParticipant.on('isSpeakingChanged', () => {

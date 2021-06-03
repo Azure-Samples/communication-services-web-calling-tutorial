@@ -1,13 +1,15 @@
 import React from "react";
 import { MessageBar, MessageBarType, DefaultButton } from 'office-ui-fabric-react'
-import StreamMedia from "./StreamMedia";
+import { Toggle } from '@fluentui/react/lib/Toggle';
+import { TooltipHost } from '@fluentui/react/lib/Tooltip';
+import StreamRenderer from "./StreamRenderer";
 import AddParticipantPopover from "./AddParticipantPopover";
 import RemoteParticipantCard from "./RemoteParticipantCard";
 import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
 import { Icon } from '@fluentui/react/lib/Icon';
 import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
-import { LocalVideoStream } from '@azure/communication-calling';
+import { LocalVideoStream, Features } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
 
 export default class CallCard extends React.Component {
@@ -33,7 +35,9 @@ export default class CallCard extends React.Component {
             selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id,
             showSettings: false,
             showLocalVideo: false,
-            callMessage: undefined
+            callMessage: undefined,
+            dominantSpeakerMode: false,
+            dominantRemoteParticipant: undefined
         };
     }
 
@@ -113,20 +117,24 @@ export default class CallCard extends React.Component {
             });
 
             const callStateChanged = () => {
-                console.log('Call state changed ', this.state.callState);
+                console.log('Call state changed ', this.call.state);
                 this.setState({ callState: this.call.state });
 
-                if (this.state.callState !== 'None' &&
-                    this.state.callState !== 'Connecting' &&
-                    this.state.callState !== 'Incoming') {
+                if (this.call.state !== 'None' &&
+                    this.call.state !== 'Connecting' &&
+                    this.call.state !== 'Incoming') {
                     if (this.callFinishConnectingResolve) {
                         this.callFinishConnectingResolve();
                     }
                 }
-                if (this.state.callState === 'Incoming') {
-                    this.selectedCameraDeviceId = cameraDevices[0]?.id;
-                    this.selectedSpeakerDeviceId = speakerDevices[0]?.id;
-                    this.selectedMicrophoneDeviceId = microphoneDevices[0]?.id;
+                if (this.call.state === 'Incoming') {
+                    this.setState({ selectedCameraDeviceId: cameraDevices[0]?.id });
+                    this.setState({ selectedSpeakerDeviceId: speakerDevices[0]?.id });
+                    this.setState({ selectedMicrophoneDeviceId: microphoneDevices[0]?.id });
+                }
+
+                if (this.call.state === 'Disconnected') {
+                    this.setState({ dominantRemoteParticipant: undefined });
                 }
             }
             callStateChanged();
@@ -138,6 +146,7 @@ export default class CallCard extends React.Component {
             });
 
             this.call.on('isMutedChanged', () => {
+                console.log('Local microphone muted changed ', this.call.isMuted);
                 this.setState({ micMuted: this.call.isMuted });
             });
 
@@ -165,6 +174,60 @@ export default class CallCard extends React.Component {
 
                 });
             });
+
+            const dominantSpeakersChangedHandler = async () => {
+                try {
+                    if(this.state.dominantSpeakerMode) {
+
+                        const newDominantSpeakerIdentifier = this.call.api(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
+                        if (newDominantSpeakerIdentifier) {
+                            console.log(`DominantSpeaker changed, new dominant speaker: ${newDominantSpeakerIdentifier ? utils.getIdentifierText(newDominantSpeakerIdentifier) : `None`}`);
+
+                            // Set the new dominant remote participant
+                            const newDominantRemoteParticipant = utils.getRemoteParticipantObjFromIdentifier(this.call, newDominantSpeakerIdentifier);
+
+                            // Get the new dominant remote participant's stream tuples
+                            const streamsToRender = [];
+                            for (const streamTuple of this.state.allRemoteParticipantStreams) {
+                                if (streamTuple.participant === newDominantRemoteParticipant && streamTuple.stream.isAvailable) {
+                                    streamsToRender.push(streamTuple);
+                                    if(!streamTuple.streamRendererComponentRef.current.getRenderer()) {
+                                        await streamTuple.streamRendererComponentRef.current.createRenderer();
+                                    };
+                                }
+                            }
+
+                            const previousDominantSpeaker = this.state.dominantRemoteParticipant;
+                            this.setState({ dominantRemoteParticipant: newDominantRemoteParticipant });
+
+                            if(previousDominantSpeaker) {
+                                // Remove the old dominant remote participant's streams
+                                this.state.allRemoteParticipantStreams.forEach(streamTuple => {
+                                    if (streamTuple.participant === previousDominantSpeaker) {
+                                        streamTuple.streamRendererComponentRef.current.disposeRenderer();
+                                    }
+                                });
+                            }
+
+                            // Render the new dominany speaker's streams
+                            streamsToRender.forEach(streamTuple => {
+                                streamTuple.streamRendererComponentRef.current.attachRenderer();
+                            })
+
+                        } else {
+                            console.warn('New dominant speaker is undefined');
+                        }
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            };
+
+            const dominantSpeakerIdentifier = this.call.api(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
+            if(dominantSpeakerIdentifier) {
+                this.setState({ dominantRemoteParticipant: utils.getRemoteParticipantObjFromIdentifier(dominantSpeakerIdentifier) })
+            }
+            this.call.api(Features.DominantSpeakers).on('dominantSpeakersChanged', dominantSpeakersChangedHandler);
         }
     }
 
@@ -183,7 +246,7 @@ export default class CallCard extends React.Component {
 
         const addToListOfAllRemoteParticipantStreams = (participantStreams) => {
             if (participantStreams) {
-                let participantStreamTuples = participantStreams.map(stream => { return { stream, participant } });
+                let participantStreamTuples = participantStreams.map(stream => { return { stream, participant, streamRendererComponentRef: React.createRef() }});
                 participantStreamTuples.forEach(participantStreamTuple => {
                     if (!this.state.allRemoteParticipantStreams.find((v) => { return v === participantStreamTuple })) {
                         this.setState(prevState => ({
@@ -286,7 +349,7 @@ export default class CallCard extends React.Component {
 
     async handleHoldUnhold() {
         try {
-            if (this.call.state === 'LocalHold' || this.call.state === 'RemoteHold') {
+            if (this.call.state === 'LocalHold') {
                 this.call.resume();
             } else {
                 this.call.hold();
@@ -304,6 +367,47 @@ export default class CallCard extends React.Component {
                 await this.call.startScreenSharing();
             }
             this.setState({ screenShareOn: this.call.isScreenSharingOn });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async toggleDominantSpeakerMode() {
+        try {
+            if (this.state.dominantSpeakerMode) {
+                // Turn off dominant speaker mode
+                this.setState({ dominantSpeakerMode: false });
+                // Render all remote participants's streams
+                for (const streamTuple of this.state.allRemoteParticipantStreams) {
+                    if(streamTuple.stream.isAvailable && !streamTuple.streamRendererComponentRef.current.getRenderer()) {
+                        await streamTuple.streamRendererComponentRef.current.createRenderer();
+                        streamTuple.streamRendererComponentRef.current.attachRenderer();
+                    }
+                }
+            } else {
+                // Turn on dominant speaker mode
+                this.setState({ dominantSpeakerMode: true });
+                // Dispose of all remote participants's stream renderers
+                const dominantSpeakerIdentifier = this.call.api(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
+                if(!dominantSpeakerIdentifier) {
+                    this.state.allRemoteParticipantStreams.forEach(v => {
+                        v.streamRendererComponentRef.current.disposeRenderer();
+                    });
+
+                    // Return, no action needed
+                    return;
+                }
+
+                // Set the dominant remote participant obj
+                const dominantRemoteParticipant = utils.getRemoteParticipantObjFromIdentifier(this.call, dominantSpeakerIdentifier);
+                this.setState({ dominantRemoteParticipant: dominantRemoteParticipant });
+                // Dispose of all the remote participants's stream renderers except for the dominant speaker
+                this.state.allRemoteParticipantStreams.forEach(v => {
+                    if(v.participant !== dominantRemoteParticipant) {
+                        v.streamRendererComponentRef.current.disposeRenderer();
+                    }
+                });
+            }
         } catch (e) {
             console.error(e);
         }
@@ -364,6 +468,29 @@ export default class CallCard extends React.Component {
                         this.state.callState === 'Connected' &&
                         <div className="ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl3">
                             <div className="participants-panel mt-1 mb-3">
+                                <Toggle label={
+                                        <div>
+                                            Dominant Speaker mode{' '}
+                                            <TooltipHost content={`Render the most dominant speaker's video streams only or render all remote participant video streams`}>
+                                                <Icon iconName="Info" aria-label="Info tooltip" />
+                                            </TooltipHost>
+                                        </div>
+                                    }
+                                    styles={{
+                                        text : { color: '#edebe9' },
+                                        label: { color: '#edebe9' },
+                                    }}
+                                    inlineLabel
+                                    onText="On"
+                                    offText="Off"
+                                    onChange={() => { this.toggleDominantSpeakerMode()}}
+                                />
+                                {
+                                    this.state.dominantSpeakerMode &&
+                                    <div>
+                                        Current dominant speaker: {this.state.dominantRemoteParticipant ? utils.getIdentifierText(this.state.dominantRemoteParticipant.identifier) : `None`}
+                                    </div>
+                                }
                                 <div className="participants-panel-title custom-row text-center">
                                     <AddParticipantPopover call={this.call} />
                                 </div>
@@ -393,9 +520,16 @@ export default class CallCard extends React.Component {
                         {
                             <div className="video-grid-row">
                                 {
-                                    this.state.callState === 'Connected' &&
+                                    (this.state.callState === 'Connected' ||
+                                    this.state.callState === 'LocalHold' ||
+                                    this.state.callState === 'RemoteHold') &&
                                     this.state.allRemoteParticipantStreams.map(v =>
-                                        <StreamMedia key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`} stream={v.stream} remoteParticipant={v.participant} />
+                                        <StreamRenderer key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`}
+                                                        ref ={v.streamRendererComponentRef}
+                                                        stream={v.stream}
+                                                        remoteParticipant={v.participant}
+                                                        dominantSpeakerMode={this.state.dominantSpeakerMode}
+                                                        dominantRemoteParticipant={this.state.dominantRemoteParticipant}/>
                                     )
                                 }
                             </div>
@@ -435,17 +569,19 @@ export default class CallCard extends React.Component {
                                     }
                                 </span>
                                 {
-                                    (this.state.callState === 'Connected' || this.state.callState === 'LocalHold' || this.state.callState === 'RemoteHold') &&
+                                    (this.state.callState === 'Connected' ||
+                                    this.state.callState === 'LocalHold' ||
+                                    this.state.callState === 'RemoteHold') &&
                                     <span className="in-call-button"
-                                        title={`${this.state.callState === 'LocalHold' || this.state.callState === 'RemoteHold' ? 'Unhold' : 'Hold'} call`}
+                                        title={`${this.state.callState === 'LocalHold' ? 'Unhold' : 'Hold'} call`}
                                         variant="secondary"
                                         onClick={() => this.handleHoldUnhold()}>
                                         {
-                                            (this.state.callState === 'LocalHold' || this.state.callState === 'RemoteHold') &&
+                                            (this.state.callState === 'LocalHold') &&
                                             <Icon iconName="Pause" />
                                         }
                                         {
-                                            this.state.callState === 'Connected' &&
+                                            (this.state.callState === 'Connected' || this.state.callState === 'RemoteHold') &&
                                             <Icon iconName="Play" />
                                         }
                                     </span>

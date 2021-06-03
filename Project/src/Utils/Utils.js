@@ -37,5 +37,29 @@ export const utils = {
         } else {
             return 'Unknown Identifier';
         }
+    },
+    getRemoteParticipantObjFromIdentifier(call, identifier) {
+        switch(identifier.kind) {
+            case 'communicationUser': {
+                return call.remoteParticipants.find(rm => {
+                    return rm.identifier.communicationUserId === identifier.communicationUserId
+                });
+            }
+            case 'microsoftTeamsUser': {
+                return call.remoteParticipants.find(rm => {
+                    return rm.identifier.microsoftTeamsUserId === identifier.microsoftTeamsUserId
+                });
+            }
+            case 'phoneNumber': {
+                return call.remoteParticipants.find(rm => {
+                    return rm.identifier.phoneNumber === identifier.phoneNumber
+                });
+            }
+            case 'unknown': {
+                return call.remoteParticipants.find(rm => {
+                    return rm.identifier.id === identifier.id
+                });
+            }
+        }
     }
 }
