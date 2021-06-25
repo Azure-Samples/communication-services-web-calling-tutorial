@@ -1,5 +1,6 @@
 import React from "react";
-import { CallClient, LocalVideoStream } from '@azure/communication-calling';
+import ReactDOM from 'react-dom';
+import { CallClient, LocalVideoStream, Features } from '@azure/communication-calling';
 import { AzureCommunicationTokenCredential } from '@azure/communication-common';
 import {
     PrimaryButton,
@@ -41,8 +42,15 @@ export default class MakeCall extends React.Component {
             selectedSpeakerDeviceId: null,
             selectedMicrophoneDeviceId: null,
             deviceManagerWarning: null,
-            callError: null
+            callError: null,
+            ufdMessages: []
         };
+
+        setInterval(() => {
+            if(this.state.ufdMessages.length > 0) {
+                this.setState({ufdMessages: this.state.ufdMessages.slice(1)});
+            }            
+        }, 10000);
     }
 
     handleLogIn = async (userDetails) => {
@@ -60,7 +68,25 @@ export default class MakeCall extends React.Component {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
 
                     e.added.forEach(call => {
-                        this.setState({ call: call })
+                        this.setState({ call: call });
+
+                        const diagnosticChangedListener = (diagnosticInfo) => {
+                            const rmsg = `UFD Diagnostic changed:
+                            Diagnostic: ${diagnosticInfo.diagnostic}
+                            Value: ${diagnosticInfo.value}
+                            Value type: ${diagnosticInfo.valueType}
+                            Media type: ${diagnosticInfo.mediaType}`;
+                            if(this.state.ufdMessages.length > 0) {
+                                this.setState({ufdMessages: [...this.state.ufdMessages, rmsg]});
+                            } else {
+                                this.setState({ufdMessages: [rmsg]});
+                            }
+                            
+                            
+                        };
+        
+                        call.api(Features.Diagnostics).media.on('diagnosticChanged', diagnosticChangedListener);
+                        call.api(Features.Diagnostics).network.on('diagnosticChanged', diagnosticChangedListener);
                     });
 
                     e.removed.forEach(call => {
@@ -570,6 +596,16 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                 onDismiss={() => { this.setState({ deviceManagerWarning: undefined }) }}
                                 dismissButtonAriaLabel="Close">
                                 <b>{this.state.deviceManagerWarning}</b>
+                            </MessageBar>
+                        }
+                        {
+                            this.state.ufdMessages.length > 0 &&
+                            <MessageBar
+                                messageBarType={MessageBarType.warning}
+                                isMultiline={true}
+                                onDismiss={() => { this.setState({ufdMessages: []}) }}
+                                dismissButtonAriaLabel="Close">
+                                {this.state.ufdMessages.map(msg => <li>{msg}</li>)}
                             </MessageBar>
                         }
                         {
