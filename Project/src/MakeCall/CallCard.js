@@ -140,6 +140,18 @@ export default class CallCard extends React.Component {
             callStateChanged();
             this.call.on('stateChanged', callStateChanged);
 
+            this.call.localVideoStreams.forEach(lvs => {
+                this.setState({ videoOn: true});
+            });
+            this.call.on('localVideoStreamsUpdated', e => {
+                e.added.forEach(lvs => {
+                    this.setState({ videoOn: true });
+                });
+                e.removed.forEach(lvs => {
+                    this.setState({ videoOn: false });
+                });
+            });
+
             this.call.on('idChanged', () => {
                 console.log('Call id Changed ', this.call.id);
                 this.setState({ callId: this.call.id });
@@ -517,24 +529,7 @@ export default class CallCard extends React.Component {
                         </div>
                     }
                     <div className={this.state.callState === 'Connected' ? `ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl9` : 'ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl12'}>
-                        {
-                            <div className="video-grid-row">
-                                {
-                                    (this.state.callState === 'Connected' ||
-                                    this.state.callState === 'LocalHold' ||
-                                    this.state.callState === 'RemoteHold') &&
-                                    this.state.allRemoteParticipantStreams.map(v =>
-                                        <StreamRenderer key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`}
-                                                        ref ={v.streamRendererComponentRef}
-                                                        stream={v.stream}
-                                                        remoteParticipant={v.participant}
-                                                        dominantSpeakerMode={this.state.dominantSpeakerMode}
-                                                        dominantRemoteParticipant={this.state.dominantRemoteParticipant}/>
-                                    )
-                                }
-                            </div>
-                        }
-                        <div className="my-4">
+                        <div className="mb-2">
                             {
                                 this.state.callState !== 'Connected' &&
                                 <div className="custom-row">
@@ -568,6 +563,19 @@ export default class CallCard extends React.Component {
                                         <Icon iconName="Microphone" />
                                     }
                                 </span>
+                                <span className="in-call-button"
+                                    title={`${this.state.screenShareOn ? 'Stop' : 'Start'} sharing your screen`}
+                                    variant="secondary"
+                                    onClick={() => this.handleScreenSharingOnOff()}>
+                                    {
+                                        !this.state.screenShareOn &&
+                                        <Icon iconName="TVMonitor" />
+                                    }
+                                    {
+                                        this.state.screenShareOn &&
+                                        <Icon iconName="CircleStop" />
+                                    }
+                                </span>
                                 {
                                     (this.state.callState === 'Connected' ||
                                     this.state.callState === 'LocalHold' ||
@@ -586,19 +594,6 @@ export default class CallCard extends React.Component {
                                         }
                                     </span>
                                 }
-                                <span className="in-call-button"
-                                    title={`${this.state.screenShareOn ? 'Stop' : 'Start'} sharing your screen`}
-                                    variant="secondary"
-                                    onClick={() => this.handleScreenSharingOnOff()}>
-                                    {
-                                        !this.state.screenShareOn &&
-                                        <Icon iconName="TVMonitor" />
-                                    }
-                                    {
-                                        this.state.screenShareOn &&
-                                        <Icon iconName="CircleStop" />
-                                    }
-                                </span>
                                 <span className="in-call-button"
                                     title="Settings"
                                     variant="secondary"
@@ -623,7 +618,7 @@ export default class CallCard extends React.Component {
                                             </span>
                                             <DefaultButton onClick={() => this.setState({ showLocalVideo: !this.state.showLocalVideo })}>
                                                 Show/Hide
-                                                </DefaultButton>
+                                            </DefaultButton>
                                             {
                                                 this.state.callState === 'Connected' &&
                                                 <Dropdown
@@ -667,6 +662,23 @@ export default class CallCard extends React.Component {
                                 </Panel>
                             </div>
                         </div>
+                        {
+                            <div className="video-grid-row">
+                                {
+                                    (this.state.callState === 'Connected' ||
+                                    this.state.callState === 'LocalHold' ||
+                                    this.state.callState === 'RemoteHold') &&
+                                    this.state.allRemoteParticipantStreams.map(v =>
+                                        <StreamRenderer key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`}
+                                                        ref ={v.streamRendererComponentRef}
+                                                        stream={v.stream}
+                                                        remoteParticipant={v.participant}
+                                                        dominantSpeakerMode={this.state.dominantSpeakerMode}
+                                                        dominantRemoteParticipant={this.state.dominantRemoteParticipant}/>
+                                    )
+                                }
+                            </div>
+                        }
                     </div>
                 </div>
             </div>

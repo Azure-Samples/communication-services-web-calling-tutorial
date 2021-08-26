@@ -126,9 +126,8 @@ export default class StreamRenderer extends React.Component {
 
     render() {
         return (
-            <div id={this.componentId} className={`py-3 ms-Grid-col ms-sm-12 ms-lg12 ms-xl12 ${this.stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : `ms-xxl4`}`}>
-                <div className={`${this.state.isSpeaking ? `speaking-border-for-video` : ``}`}
-                    id={this.videoContainerId}>
+            <div id={this.componentId} className={`py-3 ms-Grid-col ms-sm-12 ms-lg12 ms-xl12 ${this.stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : `ms-xxl6`}`}>
+                <div className={`${this.state.isSpeaking ? `speaking-border-for-video` : ``}`} id={this.videoContainerId}>
                     <h4 className="video-title">
                         {this.state.displayName ? this.state.displayName : utils.getIdentifierText(this.remoteParticipant.identifier)}
                     </h4>
