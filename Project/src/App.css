@@ -210,10 +210,6 @@ ul {
   border-radius: 0px;
 }
 
-.in-call-button:nth-last-child(2) {
-  border-left: 2px solid #edebe9;
-}
-
 .in-call-button > i, .incoming-call-button > i {
   vertical-align: middle;
 }
