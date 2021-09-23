@@ -54,6 +54,7 @@ export default class MakeCall extends React.Component {
     }
 
     handleLogIn = async (userDetails) => {
+        console.log(userDetails);
         if (userDetails) {
             try {
                 const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
