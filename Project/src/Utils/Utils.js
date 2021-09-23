@@ -16,8 +16,6 @@ export const utils = {
         const response = await fetch(tokenUrl)
         const parsedResponse = await response.json()
 
-        console.log("TOOOOOOKEN>>>>>", parsedResponse.value);
-
         if (parsedResponse) {
             return parsedResponse.value
         }
@@ -25,7 +23,6 @@ export const utils = {
         throw new Error('Invalid token response');
     },
     getIdentifierText: (identifier) => {
-        console.log("IDENTIFIIIIIIIER",identifier);
         if (isCommunicationUserIdentifier(identifier)) {
             return identifier.communicationUserId;
         } else if (isPhoneNumberIdentifier(identifier)) {
@@ -37,6 +34,7 @@ export const utils = {
         } else {
             return 'Unknown Identifier';
         }
+
     },
     getRemoteParticipantObjFromIdentifier(call, identifier) {
         switch(identifier.kind) {
