@@ -37,7 +37,6 @@ export const utils = {
 
     },
 
-    ///test
     getRemoteParticipantObjFromIdentifier(call, identifier) {
         switch(identifier.kind) {
             case 'communicationUser': {
