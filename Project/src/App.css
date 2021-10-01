@@ -238,11 +238,17 @@ ul {
   box-shadow: 0px 0px 0px 2px #292827;
 }
 
+
 .video-grid-row, .custom-row {
   display: flex;
   flex-direction: row;
   justify-content: center;
   flex-flow: wrap;
+}
+
+div.video-grid-row video {
+  min-height: 710px;
+  min-width: 1263px;
 }
 
 .video-title {
