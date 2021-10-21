@@ -47,9 +47,9 @@ export default class MakeCall extends React.Component {
         };
 
         setInterval(() => {
-            if(this.state.ufdMessages.length > 0) {
-                this.setState({ufdMessages: this.state.ufdMessages.slice(1)});
-            }            
+            if (this.state.ufdMessages.length > 0) {
+                this.setState({ ufdMessages: this.state.ufdMessages.slice(1) });
+            }
         }, 10000);
     }
 
@@ -74,19 +74,18 @@ export default class MakeCall extends React.Component {
                             const rmsg = `UFD Diagnostic changed:
                             Diagnostic: ${diagnosticInfo.diagnostic}
                             Value: ${diagnosticInfo.value}
-                            Value type: ${diagnosticInfo.valueType}
-                            Media type: ${diagnosticInfo.mediaType}`;
-                            if(this.state.ufdMessages.length > 0) {
-                                this.setState({ufdMessages: [...this.state.ufdMessages, rmsg]});
+                            Value type: ${diagnosticInfo.valueType}`;
+                            if (this.state.ufdMessages.length > 0) {
+                                this.setState({ ufdMessages: [...this.state.ufdMessages, rmsg] });
                             } else {
-                                this.setState({ufdMessages: [rmsg]});
+                                this.setState({ ufdMessages: [rmsg] });
                             }
-                            
-                            
+
+
                         };
-        
-                        call.api(Features.Diagnostics).media.on('diagnosticChanged', diagnosticChangedListener);
-                        call.api(Features.Diagnostics).network.on('diagnosticChanged', diagnosticChangedListener);
+
+                        call.api(Features.UserFacingDiagnostics).media.on('diagnosticChanged', diagnosticChangedListener);
+                        call.api(Features.UserFacingDiagnostics).network.on('diagnosticChanged', diagnosticChangedListener);
                     });
 
                     e.removed.forEach(call => {
@@ -102,7 +101,7 @@ export default class MakeCall extends React.Component {
                         return;
                     }
 
-                    this.setState({incomingCall: incomingCall});
+                    this.setState({ incomingCall: incomingCall });
 
                     incomingCall.on('callEnded', args => {
                         this.displayCallEndReason(args.callEndReason);
@@ -182,16 +181,16 @@ export default class MakeCall extends React.Component {
     joinTeamsMeeting = async (withVideo) => {
         try {
             const callOptions = await this.getCallOptions(withVideo);
-            if(this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
-                this.callAgent.join({ meetingLink: this.meetingLink.value}, callOptions);
+            if (this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
+                this.callAgent.join({ meetingLink: this.meetingLink.value }, callOptions);
 
-            } else if(!this.meetingLink.value && this.messageId.value && this.threadId.value && this.tenantId && this.organizerId) {
+            } else if (!this.meetingLink.value && this.messageId.value && this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({
-                                messageId: this.messageId.value,
-                                threadId: this.threadId.value,
-                                tenantId: this.tenantId.value,
-                                organizerId: this.organizerId.value
-                            }, callOptions);
+                    messageId: this.messageId.value,
+                    threadId: this.threadId.value,
+                    tenantId: this.tenantId.value,
+                    organizerId: this.organizerId.value
+                }, callOptions);
             } else {
                 throw new Error('Please enter Teams meeting link or Teams meeting coordinate');
             }
@@ -603,7 +602,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <MessageBar
                                 messageBarType={MessageBarType.warning}
                                 isMultiline={true}
-                                onDismiss={() => { this.setState({ufdMessages: []}) }}
+                                onDismiss={() => { this.setState({ ufdMessages: [] }) }}
                                 dismissButtonAriaLabel="Close">
                                 {this.state.ufdMessages.map(msg => <li>{msg}</li>)}
                             </MessageBar>
@@ -678,34 +677,34 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                     <h3 className="mb-1">Join a Teams meeting</h3>
                                     <div>Enter meeting link</div>
                                     <TextField className="mb-3"
-                                                disabled={this.state.call || !this.state.loggedIn}
-                                                label="Meeting link"
-                                                componentRef={(val) => this.meetingLink = val}/>
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        label="Meeting link"
+                                        componentRef={(val) => this.meetingLink = val} />
                                     <div> Or enter meeting coordinates (Thread Id, Message Id, Organizer Id, and Tenant Id)</div>
                                     <TextField disabled={this.state.call || !this.state.loggedIn}
-                                                label="Thread Id"
-                                                componentRef={(val) => this.threadId = val}/>
+                                        label="Thread Id"
+                                        componentRef={(val) => this.threadId = val} />
                                     <TextField disabled={this.state.call || !this.state.loggedIn}
-                                                label="Message Id"
-                                                componentRef={(val) => this.messageId = val}/>
+                                        label="Message Id"
+                                        componentRef={(val) => this.messageId = val} />
                                     <TextField disabled={this.state.call || !this.state.loggedIn}
-                                                label="Organizer Id"
-                                                componentRef={(val) => this.organizerId = val}/>
+                                        label="Organizer Id"
+                                        componentRef={(val) => this.organizerId = val} />
                                     <TextField className="mb-3"
-                                                disabled={this.state.call || !this.state.loggedIn}
-                                                label="Tenant Id"
-                                                componentRef={(val) => this.tenantId = val}/>
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        label="Tenant Id"
+                                        componentRef={(val) => this.tenantId = val} />
                                     <PrimaryButton className="primary-button"
-                                                    iconProps={{iconName: 'Group', style: {verticalAlign: 'middle', fontSize: 'large'}}}
-                                                    text="Join Teams meeting"
-                                                    disabled={this.state.call || !this.state.loggedIn}
-                                                    onClick={() => this.joinTeamsMeeting(false)}>
+                                        iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                        text="Join Teams meeting"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        onClick={() => this.joinTeamsMeeting(false)}>
                                     </PrimaryButton>
                                     <PrimaryButton className="primary-button"
-                                                    iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                                    text="Join Teams meeting with video"
-                                                    disabled={this.state.call || !this.state.loggedIn}
-                                                    onClick={() => this.joinTeamsMeeting(true)}>
+                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                        text="Join Teams meeting with video"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        onClick={() => this.joinTeamsMeeting(true)}>
                                     </PrimaryButton>
                                 </div>
                             </div>
