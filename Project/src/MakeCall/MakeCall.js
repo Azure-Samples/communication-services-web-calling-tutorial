@@ -1,5 +1,4 @@
 import React from "react";
-import ReactDOM from 'react-dom';
 import { CallClient, LocalVideoStream, Features } from '@azure/communication-calling';
 import { AzureCommunicationTokenCredential } from '@azure/communication-common';
 import {
@@ -12,7 +11,7 @@ import { Icon } from '@fluentui/react/lib/Icon';
 import IncomingCallCard from './IncomingCallCard';
 import CallCard from '../MakeCall/CallCard'
 import Login from './Login';
-import { setLogLevel } from '@azure/logger';
+import { setLogLevel, AzureLogger } from '@azure/logger';
 
 export default class MakeCall extends React.Component {
     constructor(props) {
@@ -29,6 +28,7 @@ export default class MakeCall extends React.Component {
         this.organizerId = null;
         this.tenantId = null;
         this.callError = null;
+        this.logBuffer = [];
 
         this.state = {
             id: undefined,
@@ -60,6 +60,22 @@ export default class MakeCall extends React.Component {
                 setLogLevel('verbose');
                 this.callClient = new CallClient();
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
+                // override logger to be able to dowload logs locally
+                AzureLogger.log = (...args) => {
+                    this.logBuffer.push(...args);
+                    window.acsLogBuffer = this.logBuffer;
+                    if (args[0].startsWith('azure:ACS:info')) {
+                        console.info(...args);
+                    } else if (args[0].startsWith('azure:ACS:verbose')) {
+                        console.debug(...args);
+                    } else if (args[0].startsWith('azure:ACS:warning')) {
+                        console.warn(...args);
+                    } else if (args[0].startsWith('azure:ACS:error')) {
+                        console.error(...args);
+                    } else {
+                        console.log(...args);
+                    }
+                };
                 window.callAgent = this.callAgent;
                 this.deviceManager = await this.callClient.getDeviceManager();
                 await this.deviceManager.askDevicePermission({ audio: true });
@@ -167,6 +183,21 @@ export default class MakeCall extends React.Component {
             this.setState({ callError: 'Failed to place a call: ' + e });
         }
     };
+
+    downloadLog = async () => {
+        const date = new Date();
+        const fileName = `logs-${date.toISOString().slice(0, 19)}.txt`;
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(this.logBuffer.join('\n')));
+        element.setAttribute('download', fileName);
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+        document.body.removeChild(element);
+        this.logBuffer = [];
+    }
 
     joinGroup = async (withVideo) => {
         try {
@@ -560,6 +591,12 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         <div className="ms-Grid-row">
                             <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Placing and receiving calls</h2>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
+                                <PrimaryButton
+                                    className="primary-button"
+                                    iconProps={{ iconName: 'Download', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                    text={`Get Logs`}
+                                    onClick={this.downloadLog}>
+                                </PrimaryButton>
                                 <PrimaryButton
                                     className="primary-button"
                                     iconProps={{ iconName: 'TransferCall', style: { verticalAlign: 'middle', fontSize: 'large' } }}
