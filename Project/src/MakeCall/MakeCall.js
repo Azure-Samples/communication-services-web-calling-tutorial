@@ -84,8 +84,8 @@ export default class MakeCall extends React.Component {
 
                         };
 
-                        call.api(Features.UserFacingDiagnostics).media.on('diagnosticChanged', diagnosticChangedListener);
-                        call.api(Features.UserFacingDiagnostics).network.on('diagnosticChanged', diagnosticChangedListener);
+                        call.feature(Features.UserFacingDiagnostics).media.on('diagnosticChanged', diagnosticChangedListener);
+                        call.feature(Features.UserFacingDiagnostics).network.on('diagnosticChanged', diagnosticChangedListener);
                     });
 
                     e.removed.forEach(call => {
