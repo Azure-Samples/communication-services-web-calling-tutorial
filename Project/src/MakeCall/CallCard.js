@@ -1,5 +1,5 @@
 import React from "react";
-import { MessageBar, MessageBarType, DefaultButton } from 'office-ui-fabric-react'
+import { MessageBar, MessageBarType, DefaultButton, TextField } from 'office-ui-fabric-react'
 import { Toggle } from '@fluentui/react/lib/Toggle';
 import { TooltipHost } from '@fluentui/react/lib/Tooltip';
 import StreamRenderer from "./StreamRenderer";
@@ -18,6 +18,7 @@ export default class CallCard extends React.Component {
         this.callFinishConnectingResolve = undefined;
         this.call = props.call;
         this.deviceManager = props.deviceManager;
+        this.destinationUserId = null;
         this.state = {
             callState: this.call.state,
             callId: this.call.id,
@@ -384,6 +385,25 @@ export default class CallCard extends React.Component {
         }
     }
 
+    async handleTransferToParticipant() {
+        if (!this.destinationUserId.value) {
+            return;
+        }
+
+        try {
+            var id = { microsoftTeamsUserId: this.destinationUserId.value.substring(8), isAnonymous: false, cloud: 'public' };
+            
+            await this.call.hold()
+               
+            const transfer = this.call.feature(Features.Transfer).transfer({ targetParticipant: id });
+            transfer.on('stateChanged', () => {
+                console.log(`EVENT, transferStateChanged=${transfer.state}`);
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
     async toggleDominantSpeakerMode() {
         try {
             if (this.state.dominantSpeakerMode) {
@@ -576,6 +596,24 @@ export default class CallCard extends React.Component {
                                         <Icon iconName="CircleStop" />
                                     }
                                 </span>
+                                <span className="in-call-button"
+                                    title={`${this.state.transferOn ? 'Hide' : 'Show'} transfer`}
+                                    variant="secondary"
+                                    onClick={() => this.setState(prevState =>{
+                                        return{
+                                             ...prevState,
+                                             transferOn : !prevState.transferOn
+                                        }
+                                     })}>
+                                    {
+                                        !this.state.transferOn &&
+                                        <Icon iconName="TransferCall" />
+                                    }
+                                    {
+                                        this.state.transferOn &&
+                                        <Icon iconName="Hide2" />
+                                    }
+                                </span>
                                 {
                                     (this.state.callState === 'Connected' ||
                                     this.state.callState === 'LocalHold' ||
@@ -604,6 +642,26 @@ export default class CallCard extends React.Component {
                                     onClick={() => this.call.hangUp()}>
                                     <Icon iconName="DeclineCall" />
                                 </span>
+                                {this.state.transferOn &&
+                                    <div className="ms-Grid-row separator-top">
+                                            <div className="ms-Grid-col ms-lg6 call-input-panel text-left">
+                                                <TextField
+                                                    label="Transfer Identity"
+                                                    componentRef={(val) => this.destinationUserId = val} 
+                                                />
+                                            </div>
+                                            <div className="ms-Grid-col ms-sm6 text-left pl-2 mt-3">
+                                                <span className="in-call-button"
+                                                    title={`transfer to identity`}
+                                                    variant="secondary"
+                                                    onClick={() => this.handleTransferToParticipant()}>
+                                                    {
+                                                        <Icon iconName="TransferCall" />
+                                                    }
+                                                </span>
+                                            </div>
+                                    </div>
+                                }
                                 <Panel type={PanelType.medium}
                                     isLightDismiss
                                     isOpen={this.state.showSettings}
