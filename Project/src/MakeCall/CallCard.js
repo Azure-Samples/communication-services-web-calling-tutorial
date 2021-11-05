@@ -16,18 +16,14 @@ export default class CallCard extends React.Component {
     constructor(props) {
         super(props);
         this.callFinishConnectingResolve = undefined;
-        this.call = props.call;
         this.deviceManager = props.deviceManager;
         this.destinationUserId = null;
         this.state = {
-            callState: this.call.state,
-            callId: this.call.id,
-            remoteParticipants: this.call.remoteParticipants,
             allRemoteParticipantStreams: [],
-            videoOn: !!this.call.localVideoStreams[0],
+            videoOn: !!props.call.localVideoStreams[0],
             micMuted: false,
-            onHold: this.call.state === 'LocalHold' || this.call.state === 'RemoteHold',
-            screenShareOn: this.call.isScreenShareOn,
+            onHold: props.call.state === 'LocalHold' || props.call.state === 'RemoteHold',
+            screenShareOn: props.callisScreenShareOn,
             cameraDeviceOptions: props.cameraDeviceOptions ? props.cameraDeviceOptions : [],
             speakerDeviceOptions: props.speakerDeviceOptions ? props.speakerDeviceOptions : [],
             microphoneDeviceOptions: props.microphoneDeviceOptions ? props.microphoneDeviceOptions : [],
@@ -38,12 +34,13 @@ export default class CallCard extends React.Component {
             showLocalVideo: false,
             callMessage: undefined,
             dominantSpeakerMode: false,
-            dominantRemoteParticipant: undefined
+            dominantRemoteParticipant: undefined,
+            transferArgs: undefined
         };
     }
 
     async componentWillMount() {
-        if (this.call) {
+        if (this.props.call) {
             this.deviceManager.on('videoDevicesUpdated', async e => {
                 let newCameraDeviceToUse = undefined;
                 e.added.forEach(addedCameraDevice => {
@@ -54,12 +51,12 @@ export default class CallCard extends React.Component {
                     }));
                 });
                 // When connectnig a new camera, ts device manager automatically switches to use this new camera and
-                // this.call.localVideoStream[0].source is never updated. Hence I have to do the following logic to update
-                // this.call.localVideoStream[0].source to the newly added camera. This is a bug. Under the covers, this.call.localVideoStreams[0].source
+                // this.props.call.localVideoStream[0].source is never updated. Hence I have to do the following logic to update
+                // this.props.call.localVideoStream[0].source to the newly added camera. This is a bug. Under the covers, this.props.call.localVideoStreams[0].source
                 // should have been updated automatically by the sdk.
                 if (newCameraDeviceToUse) {
                     try {
-                        await this.call.localVideoStreams[0]?.switchSource(newCameraDeviceToUse);
+                        await props.call.localVideoStreams[0]?.switchSource(newCameraDeviceToUse);
                         this.setState({ selectedCameraDeviceId: newCameraDeviceToUse.id });
                     } catch {
                         console.error('Failed to switch to newly added video device', error);
@@ -77,7 +74,7 @@ export default class CallCard extends React.Component {
                     const newSelectedCameraId = this.state.cameraDeviceOptions[0]?.key;
                     const cameras = await this.deviceManager.getCameras();
                     const videoDeviceInfo = cameras.find(c => { return c.id === newSelectedCameraId });
-                    await this.call.localVideoStreams[0]?.switchSource(videoDeviceInfo);
+                    await this.props.call.localVideoStreams[0]?.switchSource(videoDeviceInfo);
                     this.setState({ selectedCameraDeviceId: newSelectedCameraId });
                 }
             });
@@ -118,33 +115,33 @@ export default class CallCard extends React.Component {
             });
 
             const callStateChanged = () => {
-                console.log('Call state changed ', this.call.state);
-                this.setState({ callState: this.call.state });
+                console.log('Call state changed ', this.props.call.state);
+                this.setState({ callState: this.props.call.state });
 
-                if (this.call.state !== 'None' &&
-                    this.call.state !== 'Connecting' &&
-                    this.call.state !== 'Incoming') {
+                if (this.props.call.state !== 'None' &&
+                    this.props.call.state !== 'Connecting' &&
+                    this.props.call.state !== 'Incoming') {
                     if (this.callFinishConnectingResolve) {
                         this.callFinishConnectingResolve();
                     }
                 }
-                if (this.call.state === 'Incoming') {
+                if (this.props.call.state === 'Incoming') {
                     this.setState({ selectedCameraDeviceId: cameraDevices[0]?.id });
                     this.setState({ selectedSpeakerDeviceId: speakerDevices[0]?.id });
                     this.setState({ selectedMicrophoneDeviceId: microphoneDevices[0]?.id });
                 }
 
-                if (this.call.state === 'Disconnected') {
+                if (this.props.call.state === 'Disconnected') {
                     this.setState({ dominantRemoteParticipant: undefined });
                 }
             }
             callStateChanged();
-            this.call.on('stateChanged', callStateChanged);
+            this.props.call.on('stateChanged', callStateChanged);
 
-            this.call.localVideoStreams.forEach(lvs => {
+            this.props.call.localVideoStreams.forEach(lvs => {
                 this.setState({ videoOn: true});
             });
-            this.call.on('localVideoStreamsUpdated', e => {
+            this.props.call.on('localVideoStreamsUpdated', e => {
                 e.added.forEach(lvs => {
                     this.setState({ videoOn: true });
                 });
@@ -153,23 +150,23 @@ export default class CallCard extends React.Component {
                 });
             });
 
-            this.call.on('idChanged', () => {
-                console.log('Call id Changed ', this.call.id);
-                this.setState({ callId: this.call.id });
+            this.props.call.on('idChanged', () => {
+                console.log('Call id Changed ', this.props.call.id);
+                this.setState({ callId: this.props.call.id });
             });
 
-            this.call.on('isMutedChanged', () => {
-                console.log('Local microphone muted changed ', this.call.isMuted);
-                this.setState({ micMuted: this.call.isMuted });
+            this.props.call.on('isMutedChanged', () => {
+                console.log('Local microphone muted changed ', this.props.call.isMuted);
+                this.setState({ micMuted: this.props.call.isMuted });
             });
 
-            this.call.on('isScreenSharingOnChanged', () => {
-                this.setState({ screenShareOn: this.call.isScreenShareOn });
+            this.props.call.on('isScreenSharingOnChanged', () => {
+                this.setState({ screenShareOn: this.props.call.isScreenShareOn });
             });
 
-            this.call.remoteParticipants.forEach(rp => this.subscribeToRemoteParticipant(rp));
-            this.call.on('remoteParticipantsUpdated', e => {
-                console.log(`Call=${this.call.callId}, remoteParticipantsUpdated, added=${e.added}, removed=${e.removed}`);
+            this.props.call.remoteParticipants.forEach(rp => this.subscribeToRemoteParticipant(rp));
+            this.props.call.on('remoteParticipantsUpdated', e => {
+                console.log(`Call=${this.props.call.callId}, remoteParticipantsUpdated, added=${e.added}, removed=${e.removed}`);
                 e.added.forEach(p => {
                     console.log('participantAdded', p);
                     this.subscribeToRemoteParticipant(p);
@@ -182,7 +179,7 @@ export default class CallCard extends React.Component {
                                         Remote participant ${utils.getIdentifierText(p.identifier)} disconnected: code: ${p.callEndReason.code}, subCode: ${p.callEndReason.subCode}.`
                         }));
                     }
-                    this.setState({ remoteParticipants: this.state.remoteParticipants.filter(remoteParticipant => { return remoteParticipant !== p }) });
+                    this.setState({ remoteParticipants: this.props.call.remoteParticipants.filter(remoteParticipant => { return remoteParticipant !== p }) });
                     this.setState({ streams: this.state.allRemoteParticipantStreams.filter(s => { return s.participant !== p }) });
 
                 });
@@ -192,12 +189,12 @@ export default class CallCard extends React.Component {
                 try {
                     if(this.state.dominantSpeakerMode) {
 
-                        const newDominantSpeakerIdentifier = this.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
+                        const newDominantSpeakerIdentifier = this.props.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
                         if (newDominantSpeakerIdentifier) {
                             console.log(`DominantSpeaker changed, new dominant speaker: ${newDominantSpeakerIdentifier ? utils.getIdentifierText(newDominantSpeakerIdentifier) : `None`}`);
 
                             // Set the new dominant remote participant
-                            const newDominantRemoteParticipant = utils.getRemoteParticipantObjFromIdentifier(this.call, newDominantSpeakerIdentifier);
+                            const newDominantRemoteParticipant = utils.getRemoteParticipantObjFromIdentifier(this.props.call, newDominantSpeakerIdentifier);
 
                             // Get the new dominant remote participant's stream tuples
                             const streamsToRender = [];
@@ -236,16 +233,23 @@ export default class CallCard extends React.Component {
                 }
             };
 
-            const dominantSpeakerIdentifier = this.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
+            const dominantSpeakerIdentifier = this.props.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
             if(dominantSpeakerIdentifier) {
                 this.setState({ dominantRemoteParticipant: utils.getRemoteParticipantObjFromIdentifier(dominantSpeakerIdentifier) })
             }
-            this.call.feature(Features.DominantSpeakers).on('dominantSpeakersChanged', dominantSpeakersChangedHandler);
+            this.props.call.feature(Features.DominantSpeakers).on('dominantSpeakersChanged', dominantSpeakersChangedHandler);
+
+            const transferCallback = args => {
+                this.setState({ transferArgs: args });
+            };
+    
+            this.props.call.feature(Features.Transfer).off('transferRequested', transferCallback);
+            this.props.call.feature(Features.Transfer).on('transferRequested', transferCallback);
         }
     }
 
     subscribeToRemoteParticipant(participant) {
-        if (!this.state.remoteParticipants.find((p) => { return p === participant })) {
+        if (!this.props.call.remoteParticipants.find((p) => { return p === participant })) {
             this.setState(prevState => ({ remoteParticipants: [...prevState.remoteParticipants, participant] }));
         }
 
@@ -307,9 +311,9 @@ export default class CallCard extends React.Component {
                 localVideoStream = new LocalVideoStream(cameras[0]);
             }
 
-            if (this.call.state === 'None' ||
-                this.call.state === 'Connecting' ||
-                this.call.state === 'Incoming') {
+            if (this.props.call.state === 'None' ||
+                this.props.call.state === 'Connecting' ||
+                this.props.call.state === 'Incoming') {
                 if (this.state.videoOn) {
                     this.setState({ videoOn: false });
                 } else {
@@ -317,19 +321,19 @@ export default class CallCard extends React.Component {
                 }
                 await this.watchForCallFinishConnecting();
                 if (this.state.videoOn) {
-                    this.call.startVideo(localVideoStream).catch(error => { });
+                    this.props.call.startVideo(localVideoStream).catch(error => { });
                 } else {
-                    this.call.stopVideo(this.call.localVideoStreams[0]).catch(error => { });
+                    this.props.call.stopVideo(this.props.call.localVideoStreams[0]).catch(error => { });
                 }
             } else {
-                if (this.call.localVideoStreams[0]) {
-                    await this.call.stopVideo(this.call.localVideoStreams[0]);
+                if (this.props.call.localVideoStreams[0]) {
+                    await this.props.call.stopVideo(this.props.call.localVideoStreams[0]);
                 } else {
-                    await this.call.startVideo(localVideoStream);
+                    await this.props.call.startVideo(localVideoStream);
                 }
             }
 
-            this.setState({ videoOn: this.call.localVideoStreams[0] ? true : false });
+            this.setState({ videoOn: this.props.call.localVideoStreams[0] ? true : false });
         } catch (e) {
             console.error(e);
         }
@@ -337,7 +341,7 @@ export default class CallCard extends React.Component {
 
     async watchForCallFinishConnecting() {
         return new Promise((resolve) => {
-            if (this.state.callState !== 'None' && this.state.callState !== 'Connecting' && this.state.callState !== 'Incoming') {
+            if (this.props.call.state !== 'None' && this.props.call.state !== 'Connecting' && this.props.call.state !== 'Incoming') {
                 resolve();
             } else {
                 this.callFinishConnectingResolve = resolve;
@@ -349,12 +353,12 @@ export default class CallCard extends React.Component {
 
     async handleMicOnOff() {
         try {
-            if (!this.call.isMuted) {
-                await this.call.mute();
+            if (!this.props.call.isMuted) {
+                await this.props.call.mute();
             } else {
-                await this.call.unmute();
+                await this.props.call.unmute();
             }
-            this.setState({ micMuted: this.call.isMuted });
+            this.setState({ micMuted: this.props.call.isMuted });
         } catch (e) {
             console.error(e);
         }
@@ -362,10 +366,10 @@ export default class CallCard extends React.Component {
 
     async handleHoldUnhold() {
         try {
-            if (this.call.state === 'LocalHold') {
-                this.call.resume();
+            if (this.props.call.state === 'LocalHold') {
+                this.props.call.resume();
             } else {
-                this.call.hold();
+                this.props.call.hold();
             }
         } catch (e) {
             console.error(e);
@@ -374,12 +378,12 @@ export default class CallCard extends React.Component {
 
     async handleScreenSharingOnOff() {
         try {
-            if (this.call.isScreenSharingOn) {
-                await this.call.stopScreenSharing()
+            if (this.props.call.isScreenSharingOn) {
+                await this.props.call.stopScreenSharing()
             } else {
-                await this.call.startScreenSharing();
+                await this.props.call.startScreenSharing();
             }
-            this.setState({ screenShareOn: this.call.isScreenSharingOn });
+            this.setState({ screenShareOn: this.props.call.isScreenSharingOn });
         } catch (e) {
             console.error(e);
         }
@@ -391,13 +395,17 @@ export default class CallCard extends React.Component {
         }
 
         try {
-            var id = { microsoftTeamsUserId: this.destinationUserId.value.substring(8), isAnonymous: false, cloud: 'public' };
+            var id = { communicationUserId: this.destinationUserId.value };
             
-            await this.call.hold()
+            await this.props.call.hold()
                
-            const transfer = this.call.feature(Features.Transfer).transfer({ targetParticipant: id });
+            const transfer = this.props.call.feature(Features.Transfer).transfer({ targetParticipant: id });
             transfer.on('stateChanged', () => {
                 console.log(`EVENT, transferStateChanged=${transfer.state}`);
+
+                if (transfer.state === 'Transferred') {
+                    this.props.call.hangUp();
+                }
             });
         } catch (e) {
             console.error(e);
@@ -420,7 +428,7 @@ export default class CallCard extends React.Component {
                 // Turn on dominant speaker mode
                 this.setState({ dominantSpeakerMode: true });
                 // Dispose of all remote participants's stream renderers
-                const dominantSpeakerIdentifier = this.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
+                const dominantSpeakerIdentifier = this.props.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
                 if(!dominantSpeakerIdentifier) {
                     this.state.allRemoteParticipantStreams.forEach(v => {
                         v.streamRendererComponentRef.current.disposeRenderer();
@@ -431,7 +439,7 @@ export default class CallCard extends React.Component {
                 }
 
                 // Set the dominant remote participant obj
-                const dominantRemoteParticipant = utils.getRemoteParticipantObjFromIdentifier(this.call, dominantSpeakerIdentifier);
+                const dominantRemoteParticipant = utils.getRemoteParticipantObjFromIdentifier(this.props.call, dominantSpeakerIdentifier);
                 this.setState({ dominantRemoteParticipant: dominantRemoteParticipant });
                 // Dispose of all the remote participants's stream renderers except for the dominant speaker
                 this.state.allRemoteParticipantStreams.forEach(v => {
@@ -448,7 +456,7 @@ export default class CallCard extends React.Component {
     cameraDeviceSelectionChanged = async (event, item) => {
         const cameras = await this.deviceManager.getCameras();
         const cameraDeviceInfo = cameras.find(cameraDeviceInfo => { return cameraDeviceInfo.id === item.key });
-        const localVideoStream = this.call.localVideoStreams[0];
+        const localVideoStream = this.props.call.localVideoStreams[0];
         if (localVideoStream) {
             localVideoStream.switchSource(cameraDeviceInfo);
         }
@@ -486,18 +494,18 @@ export default class CallCard extends React.Component {
                 </div>
                 <div className="ms-Grid-row">
                     <div className="ms-Grid-col ms-lg6">
-                        <h2>{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
+                        <h2>{this.props.call.state !== 'Connected' ? `${this.props.call.state}...` : `Connected`}</h2>
                     </div>
                     <div className="ms-Grid-col ms-lg6 text-right">
                         {
-                            this.call &&
-                            <h2>Call Id: {this.state.callId}</h2>
+                            this.props.call &&
+                            <h2>Call Id: {this.props.call.id}</h2>
                         }
                     </div>
                 </div>
                 <div className="ms-Grid-row">
                     {
-                        this.state.callState === 'Connected' &&
+                        this.props.call.state === 'Connected' &&
                         <div className="ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl3">
                             <div className="participants-panel mt-1 mb-3">
                                 <Toggle label={
@@ -524,16 +532,16 @@ export default class CallCard extends React.Component {
                                     </div>
                                 }
                                 <div className="participants-panel-title custom-row text-center">
-                                    <AddParticipantPopover call={this.call} />
+                                    <AddParticipantPopover call={this.props.call} />
                                 </div>
                                 {
-                                    this.state.remoteParticipants.length === 0 &&
+                                    this.props.call.remoteParticipants.length === 0 &&
                                     <p className="text-center">No other participants currently in the call</p>
                                 }
                                 <ul className="participants-panel-list">
                                     {
-                                        this.state.remoteParticipants.map(remoteParticipant =>
-                                            <RemoteParticipantCard key={`${utils.getIdentifierText(remoteParticipant.identifier)}`} remoteParticipant={remoteParticipant} call={this.call} />
+                                        this.props.call.remoteParticipants.map(remoteParticipant =>
+                                            <RemoteParticipantCard key={`${utils.getIdentifierText(remoteParticipant.identifier)}`} remoteParticipant={remoteParticipant} call={this.props.call} />
                                         )
                                     }
                                 </ul>
@@ -548,10 +556,10 @@ export default class CallCard extends React.Component {
                             </div>
                         </div>
                     }
-                    <div className={this.state.callState === 'Connected' ? `ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl9` : 'ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl12'}>
+                    <div className={this.props.call.state === 'Connected' ? `ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl9` : 'ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl12'}>
                         <div className="mb-2">
                             {
-                                this.state.callState !== 'Connected' &&
+                                this.props.call.state !== 'Connected' &&
                                 <div className="custom-row">
                                     <div className="ringing-loader mb-4"></div>
                                 </div>
@@ -615,19 +623,19 @@ export default class CallCard extends React.Component {
                                     }
                                 </span>
                                 {
-                                    (this.state.callState === 'Connected' ||
-                                    this.state.callState === 'LocalHold' ||
-                                    this.state.callState === 'RemoteHold') &&
+                                    (this.props.call.state === 'Connected' ||
+                                    this.props.call.state === 'LocalHold' ||
+                                    this.props.call.state === 'RemoteHold') &&
                                     <span className="in-call-button"
-                                        title={`${this.state.callState === 'LocalHold' ? 'Unhold' : 'Hold'} call`}
+                                        title={`${this.props.call.state === 'LocalHold' ? 'Unhold' : 'Hold'} call`}
                                         variant="secondary"
                                         onClick={() => this.handleHoldUnhold()}>
                                         {
-                                            (this.state.callState === 'LocalHold') &&
+                                            (this.props.call.state === 'LocalHold') &&
                                             <Icon iconName="Pause" />
                                         }
                                         {
-                                            (this.state.callState === 'Connected' || this.state.callState === 'RemoteHold') &&
+                                            (this.props.call.state === 'Connected' || this.props.call.state === 'RemoteHold') &&
                                             <Icon iconName="Play" />
                                         }
                                     </span>
@@ -639,9 +647,27 @@ export default class CallCard extends React.Component {
                                     <Icon iconName="Settings" />
                                 </span>
                                 <span className="in-call-button"
-                                    onClick={() => this.call.hangUp()}>
+                                    onClick={() => this.props.call.hangUp()}>
                                     <Icon iconName="DeclineCall" />
                                 </span>
+                                {this.state.transferArgs && 
+                                <>
+                                    <span className="in-call-button"
+                                        title="Settings"
+                                        variant="secondary"
+                                        onClick={() => {
+                                            this.state.transferArgs.accept();
+                                            
+                                        }}>
+                                        <Icon iconName="Accept" />
+                                    </span>
+                                    <span className="in-call-button"
+                                        onClick={() => {
+                                            this.state.transferArgs.reject();
+                                        }}>
+                                        <Icon iconName="DeclineCall" />
+                                    </span>
+                                </>}
                                 {this.state.transferOn &&
                                     <div className="ms-Grid-row separator-top">
                                             <div className="ms-Grid-col ms-lg6 call-input-panel text-left">
@@ -678,7 +704,7 @@ export default class CallCard extends React.Component {
                                                 Show/Hide
                                             </DefaultButton>
                                             {
-                                                this.state.callState === 'Connected' &&
+                                                this.props.call.state === 'Connected' &&
                                                 <Dropdown
                                                     selectedKey={this.state.selectedCameraDeviceId}
                                                     onChange={this.cameraDeviceSelectionChanged}
@@ -694,7 +720,7 @@ export default class CallCard extends React.Component {
                                         <h3>Sound Settings</h3>
                                         <div className="pl-2">
                                             {
-                                                this.state.callState === 'Connected' &&
+                                                this.props.call.state === 'Connected' &&
                                                 <Dropdown
                                                     selectedKey={this.state.selectedSpeakerDeviceId}
                                                     onChange={this.speakerDeviceSelectionChanged}
@@ -705,7 +731,7 @@ export default class CallCard extends React.Component {
                                                 />
                                             }
                                             {
-                                                this.state.callState === 'Connected' &&
+                                                this.props.call.state === 'Connected' &&
                                                 <Dropdown
                                                     selectedKey={this.state.selectedMicrophoneDeviceId}
                                                     onChange={this.microphoneDeviceSelectionChanged}
@@ -723,9 +749,9 @@ export default class CallCard extends React.Component {
                         {
                             <div className="video-grid-row">
                                 {
-                                    (this.state.callState === 'Connected' ||
-                                    this.state.callState === 'LocalHold' ||
-                                    this.state.callState === 'RemoteHold') &&
+                                    (this.props.call.state === 'Connected' ||
+                                    this.props.call.state === 'LocalHold' ||
+                                    this.props.call.state === 'RemoteHold') &&
                                     this.state.allRemoteParticipantStreams.map(v =>
                                         <StreamRenderer key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`}
                                                         ref ={v.streamRendererComponentRef}
