@@ -1,5 +1,4 @@
 import React from "react";
-import ReactDOM from 'react-dom';
 import { CallClient, LocalVideoStream, Features } from '@azure/communication-calling';
 import { AzureCommunicationTokenCredential } from '@azure/communication-common';
 import {
@@ -12,7 +11,7 @@ import { Icon } from '@fluentui/react/lib/Icon';
 import IncomingCallCard from './IncomingCallCard';
 import CallCard from '../MakeCall/CallCard'
 import Login from './Login';
-import { setLogLevel } from '@azure/logger';
+import { setLogLevel, AzureLogger } from '@azure/logger';
 
 export default class MakeCall extends React.Component {
     constructor(props) {
@@ -24,11 +23,13 @@ export default class MakeCall extends React.Component {
         this.destinationPhoneIds = null;
         this.destinationGroup = null;
         this.meetingLink = null;
+        this.meetingId = null;
         this.threadId = null;
         this.messageId = null;
         this.organizerId = null;
         this.tenantId = null;
         this.callError = null;
+        this.logBuffer = [];
 
         this.state = {
             id: undefined,
@@ -58,8 +59,24 @@ export default class MakeCall extends React.Component {
             try {
                 const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 setLogLevel('verbose');
-                this.callClient = new CallClient();
+                this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk"] } });
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
+                // override logger to be able to dowload logs locally
+                AzureLogger.log = (...args) => {
+                    this.logBuffer.push(...args);
+                    window.acsLogBuffer = this.logBuffer;
+                    if (args[0].startsWith('azure:ACS:info')) {
+                        console.info(...args);
+                    } else if (args[0].startsWith('azure:ACS:verbose')) {
+                        console.debug(...args);
+                    } else if (args[0].startsWith('azure:ACS:warning')) {
+                        console.warn(...args);
+                    } else if (args[0].startsWith('azure:ACS:error')) {
+                        console.error(...args);
+                    } else {
+                        console.log(...args);
+                    }
+                };
                 window.callAgent = this.callAgent;
                 this.deviceManager = await this.callClient.getDeviceManager();
                 await this.deviceManager.askDevicePermission({ audio: true });
@@ -84,8 +101,8 @@ export default class MakeCall extends React.Component {
 
                         };
 
-                        call.api(Features.UserFacingDiagnostics).media.on('diagnosticChanged', diagnosticChangedListener);
-                        call.api(Features.UserFacingDiagnostics).network.on('diagnosticChanged', diagnosticChangedListener);
+                        call.feature(Features.UserFacingDiagnostics).media.on('diagnosticChanged', diagnosticChangedListener);
+                        call.feature(Features.UserFacingDiagnostics).network.on('diagnosticChanged', diagnosticChangedListener);
                     });
 
                     e.removed.forEach(call => {
@@ -168,6 +185,21 @@ export default class MakeCall extends React.Component {
         }
     };
 
+    downloadLog = async () => {
+        const date = new Date();
+        const fileName = `logs-${date.toISOString().slice(0, 19)}.txt`;
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(this.logBuffer.join('\n')));
+        element.setAttribute('download', fileName);
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+        document.body.removeChild(element);
+        this.logBuffer = [];
+    }
+
     joinGroup = async (withVideo) => {
         try {
             const callOptions = await this.getCallOptions(withVideo);
@@ -184,6 +216,8 @@ export default class MakeCall extends React.Component {
             if (this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({ meetingLink: this.meetingLink.value }, callOptions);
 
+            } else if (this.meetingId.value && !this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
+                this.callAgent.join({ meetingId: this.meetingId.value }, callOptions);
             } else if (!this.meetingLink.value && this.messageId.value && this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({
                     messageId: this.messageId.value,
@@ -332,6 +366,8 @@ this.currentCall = this.callAgent.join({groupId: <GUID>}, this.callOptions);
 // Join a Teams meeting using a meeting link. To get a Teams meeting link, go to the Teams meeting and
 // open the participants roster, then click on the 'Share Invite' button and then click on 'Copy link meeting' button.
 this.currentCall = this.callAgent.join({meetingLink: <meeting link>}, this.callOptions);
+// Join a Teams meeting using a meeting id.
+this.currentCall = this.callAgent.join({meetingId: <meeting id>}, this.callOptions);
 // Join a Teams meeting using meeting coordinates. Coordinates can be derived from the meeting link
 // Teams meeting link example
 const meetingLink = 'https://teams.microsoft.com/l/meetup-join/19:meeting_NjNiNzE3YzMtYzcxNi00ZGQ3LTk2YmYtMjNmOTE1MTVhM2Jl@thread.v2/0?context=%7B%22Tid%22:%2272f988bf-86f1-41af-91ab-2d7cd011db47%22,%22Oid%22:%227e353a91-0f71-4724-853b-b30ee4ca6a42%22%7D'
@@ -562,6 +598,12 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
                                     className="primary-button"
+                                    iconProps={{ iconName: 'Download', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                    text={`Get Logs`}
+                                    onClick={this.downloadLog}>
+                                </PrimaryButton>
+                                <PrimaryButton
+                                    className="primary-button"
                                     iconProps={{ iconName: 'TransferCall', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showCallSampleCode ? 'Hide' : 'Show'} code`}
                                     onClick={() => this.setState({ showCallSampleCode: !this.state.showCallSampleCode })}>
@@ -680,6 +722,11 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                         disabled={this.state.call || !this.state.loggedIn}
                                         label="Meeting link"
                                         componentRef={(val) => this.meetingLink = val} />
+                                    <div>Or enter meeting id</div>
+                                    <TextField className="mb-3"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        label="Meeting id"
+                                        componentRef={(val) => this.meetingId = val} />
                                     <div> Or enter meeting coordinates (Thread Id, Message Id, Organizer Id, and Tenant Id)</div>
                                     <TextField disabled={this.state.call || !this.state.loggedIn}
                                         label="Thread Id"

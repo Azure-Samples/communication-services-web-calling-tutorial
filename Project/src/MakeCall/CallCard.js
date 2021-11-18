@@ -21,6 +21,7 @@ export default class CallCard extends React.Component {
         this.state = {
             callState: this.call.state,
             callId: this.call.id,
+            localParticipantid: this.call.feature(Features.DebugInfo).localParticipantId,
             remoteParticipants: this.call.remoteParticipants,
             allRemoteParticipantStreams: [],
             videoOn: !!this.call.localVideoStreams[0],
@@ -191,7 +192,7 @@ export default class CallCard extends React.Component {
                 try {
                     if(this.state.dominantSpeakerMode) {
 
-                        const newDominantSpeakerIdentifier = this.call.api(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
+                        const newDominantSpeakerIdentifier = this.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
                         if (newDominantSpeakerIdentifier) {
                             console.log(`DominantSpeaker changed, new dominant speaker: ${newDominantSpeakerIdentifier ? utils.getIdentifierText(newDominantSpeakerIdentifier) : `None`}`);
 
@@ -235,11 +236,11 @@ export default class CallCard extends React.Component {
                 }
             };
 
-            const dominantSpeakerIdentifier = this.call.api(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
+            const dominantSpeakerIdentifier = this.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
             if(dominantSpeakerIdentifier) {
                 this.setState({ dominantRemoteParticipant: utils.getRemoteParticipantObjFromIdentifier(dominantSpeakerIdentifier) })
             }
-            this.call.api(Features.DominantSpeakers).on('dominantSpeakersChanged', dominantSpeakersChangedHandler);
+            this.call.feature(Features.DominantSpeakers).on('dominantSpeakersChanged', dominantSpeakersChangedHandler);
         }
     }
 
@@ -400,7 +401,7 @@ export default class CallCard extends React.Component {
                 // Turn on dominant speaker mode
                 this.setState({ dominantSpeakerMode: true });
                 // Dispose of all remote participants's stream renderers
-                const dominantSpeakerIdentifier = this.call.api(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
+                const dominantSpeakerIdentifier = this.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
                 if(!dominantSpeakerIdentifier) {
                     this.state.allRemoteParticipantStreams.forEach(v => {
                         v.streamRendererComponentRef.current.disposeRenderer();
@@ -472,6 +473,10 @@ export default class CallCard extends React.Component {
                         {
                             this.call &&
                             <h2>Call Id: {this.state.callId}</h2>
+                        }
+                        {
+                            this.call &&
+                            <h2>Local Participant Id: {this.state.localParticipantid}</h2>
                         }
                     </div>
                 </div>
