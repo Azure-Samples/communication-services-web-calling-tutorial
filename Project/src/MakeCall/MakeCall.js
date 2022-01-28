@@ -44,7 +44,11 @@ export default class MakeCall extends React.Component {
             selectedMicrophoneDeviceId: null,
             deviceManagerWarning: null,
             callError: null,
-            ufdMessages: []
+            ufdMessages: [],
+            permissions: {
+                audio: null,
+                video: null
+            }
         };
 
         setInterval(() => {
@@ -79,8 +83,9 @@ export default class MakeCall extends React.Component {
                 };
                 window.callAgent = this.callAgent;
                 this.deviceManager = await this.callClient.getDeviceManager();
-                await this.deviceManager.askDevicePermission({ audio: true });
-                await this.deviceManager.askDevicePermission({ video: true });
+                const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
+                this.setState({permissions: permissions});
+
                 this.callAgent.on('callsUpdated', e => {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
 
@@ -249,8 +254,8 @@ export default class MakeCall extends React.Component {
         let microphoneWarning = undefined;
 
         // On iOS, device permissions are lost after a little while, so re-ask for permissions
-        await this.deviceManager.askDevicePermission({ video: true });
-        await this.deviceManager.askDevicePermission({ audio: true });
+        const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
+        this.setState({permissions: permissions});
 
         const cameras = await this.deviceManager.getCameras();
         const cameraDevice = cameras[0];
@@ -594,7 +599,10 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                 <div className="card">
                     <div className="ms-Grid">
                         <div className="ms-Grid-row">
-                            <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Placing and receiving calls</h2>
+                            <div className="ms-Grid-col ms-lg6 ms-sm6 mb-4">
+                                <h2>Placing and receiving calls</h2>
+                                <div>{`Permissions audio: ${this.state.permissions.audio} video: ${this.state.permissions.audio}`}</div>
+                            </div>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
                                     className="primary-button"
