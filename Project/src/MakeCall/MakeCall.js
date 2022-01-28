@@ -601,7 +601,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         <div className="ms-Grid-row">
                             <div className="ms-Grid-col ms-lg6 ms-sm6 mb-4">
                                 <h2>Placing and receiving calls</h2>
-                                <div>{`Permissions audio: ${this.state.permissions.audio} video: ${this.state.permissions.audio}`}</div>
+                                <div>{`Permissions audio: ${this.state.permissions.audio} video: ${this.state.permissions.video}`}</div>
                             </div>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
