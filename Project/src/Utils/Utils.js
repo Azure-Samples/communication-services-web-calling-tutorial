@@ -38,6 +38,9 @@ export const utils = {
             return 'Unknown Identifier';
         }
     },
+    getSizeInBytes(str) {
+        return new Blob([str]).size;
+    },
     getRemoteParticipantObjFromIdentifier(call, identifier) {
         switch(identifier.kind) {
             case 'communicationUser': {
