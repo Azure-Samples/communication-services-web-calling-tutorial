@@ -21,7 +21,7 @@ export default class CallCard extends React.Component {
         this.state = {
             callState: this.call.state,
             callId: this.call.id,
-            localParticipantid: this.call.feature(Features.DebugInfo).localParticipantId,
+            // localParticipantid: this.call.feature(Features.DebugInfo).localParticipantId,
             remoteParticipants: this.call.remoteParticipants,
             allRemoteParticipantStreams: [],
             videoOn: !!this.call.localVideoStreams[0],
