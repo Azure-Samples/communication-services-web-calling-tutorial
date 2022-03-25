@@ -11,6 +11,9 @@ import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
 import { LocalVideoStream, Features } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
+import { Persona, PersonaSize } from 'office-ui-fabric-react';
+const axios = require('axios').default;
+import { SpeechConfig, AudioConfig, SpeechSynthesizer, SpeechSynthesisOutputFormat, SpeechTranslationConfig, TranslationRecognizer, ResultReason } from 'microsoft-cognitiveservices-speech-sdk';
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -18,6 +21,7 @@ export default class CallCard extends React.Component {
         this.callFinishConnectingResolve = undefined;
         this.call = props.call;
         this.deviceManager = props.deviceManager;
+        this.userId = props.userId;
         this.state = {
             callState: this.call.state,
             callId: this.call.id,
@@ -29,7 +33,25 @@ export default class CallCard extends React.Component {
             onHold: this.call.state === 'LocalHold' || this.call.state === 'RemoteHold',
             screenShareOn: this.call.isScreenShareOn,
             cameraDeviceOptions: props.cameraDeviceOptions ? props.cameraDeviceOptions : [],
-            speakerDeviceOptions: props.speakerDeviceOptions ? props.speakerDeviceOptions : [],
+            speakerDeviceOptions: props.speakerDeviceOptions ? props.speakerDeviceOptions : [],  
+            translationOptions: [{ key: 'None', text: 'Do not translate' }, 
+            { key: 'es-ES-ElviraNeural', text: "Spanish (es-es)", lang: 'es-es', voiceName: 'es-ES-ElviraNeural' }, 
+            { key: 'de-DE-KatjaNeural', lang: 'de-de', voiceName: 'de-DE-KatjaNeural', text: "German (de-de)" }, 
+            { key: 'zh-CN-XiaochenNeural', lang: 'zh-CN', voiceName: 'zh-CN-XiaochenNeural', text: "Chinese (zh-CN)" },
+            { key: 'fr-FR-ClaudeNeural', text: "French  (fr-FR)", lang: 'fr-FR', voiceName: 'fr-FR-ClaudeNeural' },
+            { key: 'ro-RO-EmilNeural', text: "Romanian  (ro-RO)", lang: 'ro-RO', voiceName: 'ro-RO-EmilNeural' },
+            { key: 'ta-IN-ValluvarNeural', text: "Tamil (ta-IN)", lang: 'ta-IN', voiceName: 'ta-IN-ValluvarNeural' }, 
+            { key: 'hi-IN-MadhurNeural', text: "Hindi (hi-IN)", lang: 'hi-IN', voiceName: 'hi-IN-MadhurNeural' }],   
+            spokenLanguageOptions: [
+            { key: 'en-us', text: "English (en-US)", lang: 'en-us' }, 
+            { key: 'es-es', text: "Spanish (es-ES)", lang: 'es-es' }, 
+            { key: 'de-de', text: "German (de-DE)", lang: 'de-de' }, 
+            { key: 'zh-cn', text: "Chinese (zh-CN)", lang: 'zh-cn' },
+            { key: 'fr-fr', text: "French (fr-FR)", lang: 'fr-fr' },
+            { key: 'ro-ro', text: "Romanian (ro-RO)", lang: 'ro-ro' }],              
+            spokenLanguage: 'en-us',
+            selectedMicrophoneTranslationOption: 'None',
+            selectedSpeakerTranslationOption: 'None',
             microphoneDeviceOptions: props.microphoneDeviceOptions ? props.microphoneDeviceOptions : [],
             selectedCameraDeviceId: props.selectedCameraDeviceId,
             selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id,
@@ -38,8 +60,219 @@ export default class CallCard extends React.Component {
             showLocalVideo: false,
             callMessage: undefined,
             dominantSpeakerMode: false,
-            dominantRemoteParticipant: undefined
         };
+        this.recognizerForInput = undefined;
+    }
+
+    speakerTranslation(translationConfig) {
+        const mediaStreamTrack = this.call.getOutputAudioStreamTrack();
+        if (mediaStreamTrack) {
+            const rawAudioSenderStream = new MediaStream([mediaStreamTrack]);
+            const audioConfig = AudioConfig.fromStreamInput(rawAudioSenderStream);
+            const audioCtx = new AudioContext();
+
+            this.recognizerForInput = new TranslationRecognizer(translationConfig, audioConfig);
+
+
+            this.recognizerForInput.recognized = (s, e) => {
+                console.warn('recongnized', e);
+            };
+
+            this.recognizerForInput.recognizing = (s, e) => {
+                console.warn('recongnized', e);
+            };
+
+            this.recognizerForInput.canceled = (s, e) => {
+                console.warn("Session canceled", s, e);
+            };
+
+            this.recognizerForInput.sessionStarted = (s, e) => {
+                console.warn("Session Started", s, e);
+            };
+
+            this.recognizerForInput.sessionStopped = (s, e) => {
+                console.warn("Session Stopped", s, e);
+            };
+
+            this.recognizerForInput.synthesizing = (s, e) => { 
+                if (e.result.audio && audioCtx) {
+                    var source = audioCtx.createBufferSource();
+                    audioCtx.decodeAudioData(e.result.audio, (newBuffer) => {
+                        source.buffer = newBuffer;
+                        source.connect(audioCtx.destination);
+                        source.start(0);
+                    });
+                }
+            };
+
+            this.call.tsCall.muteSpeaker();
+            this.recognizerForInput.startContinuousRecognitionAsync();
+        }
+
+    }
+
+    microphoneTranslation(speechConfigOutput) {
+        let audioConfigInput = AudioConfig.fromDefaultMicrophoneInput();
+        this.recognizerForInput = new TranslationRecognizer(speechConfigOutput, audioConfigInput);
+        if (!audioConfigInput) throw new Error("Failed to set up translation");
+        let soundContext = new AudioContext();
+        let destinationStream = soundContext.createMediaStreamDestination();
+        console.warn(destinationStream);
+        let audioTracks = destinationStream.stream.getAudioTracks();
+
+        if (audioTracks && audioTracks.length > 0) {
+            this.call.setInputAudioStreamTrack(audioTracks[0]);
+        }
+
+        this.recognizerForInput.sessionStarted = (s, e) => {
+            console.warn("Session Started", s, e);
+        };
+
+
+        this.recognizerForInput.recognized = (s, e) => {
+            console.warn('recongnized', e);
+        };
+
+        this.recognizerForInput.sessionStopped = (s, e) => {
+            console.warn("Session Stopped", s, e);
+        };
+
+        this.recognizerForInput.canceled = (s, e) => {
+            console.warn("Session canceled", s, e);
+        };
+
+        this.recognizerForInput.synthesizing = (s, e) => {
+            // If microphone is muted do not send audio
+            if (this.call.isMuted) {
+                return;
+            }
+            console.warn('synthesizing');
+            var audioSize = e.result.audio === undefined ? 0 : e.result.audio.byteLength;
+
+            console.warn(`(synthesizing) Reason: ${ResultReason[e.result.reason]}`
+                + ` ${audioSize} bytes\r\n`);
+
+            if (e.result.audio && soundContext) {
+                console.warn(soundContext);
+                var source = soundContext.createBufferSource();
+
+                console.warn(source);
+                soundContext.decodeAudioData(e.result.audio, function (newBuffer) {
+                    source.buffer = newBuffer;
+                    source.connect(destinationStream);
+                    source.start(0);
+                });
+            }
+        };
+
+        // Start the continuous recognition/translation operation.
+        this.recognizerForInput.startContinuousRecognitionAsync();
+    }
+
+    configureTranslation(configObj, isForSpearkerTranslation) {
+        if (this.recognizerForInput) {
+            let reconfigure = () => {
+                this.recognizerForInput = null;
+                if (configObj.key !== 'None') {
+                    this.configureTranslation(configObj, isForSpearkerTranslation);
+                } else if (configObj.key === 'None') {
+                    if (isForSpearkerTranslation) {
+                        this.call.tsCall.unmuteSpeaker();
+                    } else {
+                        this.deviceManager.getInputAudioStreamTrack().then(track => {
+                            this.call.setInputAudioStreamTrack(track);
+                        }).catch(error => {
+                            console.error(error);
+                        });
+                    }
+                }
+            }
+            this.recognizerForInput.stopContinuousRecognitionAsync(() => reconfigure(), (err) => console.error(err));
+            return;
+        }
+
+        
+        let speechConfigOutput = SpeechTranslationConfig.fromSubscription( window.TutorialSpeechConfig.key,  window.TutorialSpeechConfig.region);
+        if (!speechConfigOutput) throw new Error("Failed to set up translation");
+
+        speechConfigOutput.speechRecognitionLanguage = this.state.spokenLanguage;
+        speechConfigOutput.addTargetLanguage(configObj.lang);
+
+        speechConfigOutput.speechSynthesisLanguage = configObj.lang;
+        speechConfigOutput.voiceName = configObj.voiceName;
+        speechConfigOutput.speechSynthesisVoiceName = configObj.voiceName;
+        speechConfigOutput.speechSynthesisOutputFormat = SpeechSynthesisOutputFormat.Ogg48Khz16BitMonoOpus;
+
+        if(isForSpearkerTranslation) {
+            this.speakerTranslation(speechConfigOutput);
+        } else {
+            this.microphoneTranslation(speechConfigOutput);
+        }
+
+    }
+
+    async translateCaptions() {
+        //console.warn(this.call._tsCall.setInputAudioStreamTrack);
+
+        const captionsFeature = this.call.feature(Features.Captions);
+        captionsFeature.on('captionsReceived', (data) => {
+            if (data.resultType == 1 && data.speaker.identifier.communicationUserId !== this.userId) {
+                console.log(`Transcription Received:`);
+                console.log(`    Speaker: ${data.speaker.identifier.communicationUserId}`);
+                console.log(`    TimeStamp: ${data.timestamp}`);
+                console.log(`    Text: ${data.text}`);
+                console.log(`    ResultType: ${data.resultType}`);
+                console.log(`    Language: ${data.language}`);
+
+                const { v4: uuidv4 } = require('uuid');
+
+                var endpoint = "https://api.cognitive.microsofttranslator.com";
+
+                axios({
+                    baseURL: endpoint,
+                    url: '/translate',
+                    method: 'post',
+                    headers: {
+                        'Ocp-Apim-Subscription-Key':  window.TutorialSpeechConfig.key,
+                        'Ocp-Apim-Subscription-Region':  window.TutorialSpeechConfig.region,
+                        'Content-type': 'application/json',
+                        'X-ClientTraceId': uuidv4().toString()
+                    },
+                    params: {
+                        'api-version': '3.0',
+                        'from': 'en',
+                        'to': ['es']
+                    },
+                    data: [{
+                        'text': data.text
+                    }],
+                    responseType: 'json'
+                }).then(function (response) {
+                    console.log(`    Translate API response: ${JSON.stringify(response.data, null, 4)}`);
+
+                    const translatedText = response.data[0].translations[0].text
+
+                    const speechConfig = SpeechConfig.fromSubscription( window.TutorialSpeechConfig.key,  window.TutorialSpeechConfig.region);
+                    speechConfig.speechSynthesisLanguage = 'es-ES';
+                    const audioConfig = AudioConfig.fromDefaultSpeakerOutput();
+
+                    const synthesizer = new SpeechSynthesizer(speechConfig, audioConfig);
+                    synthesizer.speakTextAsync(
+                        translatedText,
+                        result => {
+                            if (result) {
+                                synthesizer.close();
+                                return result.audioData;
+                            }
+                        },
+                        error => {
+                            console.log(error);
+                            synthesizer.close();
+                        });
+                })
+            }
+        });
+        captionsFeature.startCaptions({ language: 'en-US' });
     }
 
     async componentWillMount() {
@@ -436,6 +669,23 @@ export default class CallCard extends React.Component {
         this.setState({ selectedCameraDeviceId: cameraDeviceInfo.id });
     };
 
+    spokenLanguageSettingsChanged = async(event) => {
+        let configObj = JSON.parse(event.target.value);
+        this.setState({spokenLanguage:  configObj.key})
+    }
+
+    microphoneTranslationSettingsChanged = async (event) => {
+        let configObj = JSON.parse(event.target.value);
+        this.configureTranslation(configObj);
+        this.setState({ selectedMicrophoneTranslationOption: configObj.key });
+    };
+
+    speakerTranslationSettingsChanged = async (event) => {
+        let configObj = JSON.parse(event.target.value);
+        this.configureTranslation(configObj, true);
+        this.setState({ selectedSpeakerTranslationOption: configObj.key });
+    };
+
     speakerDeviceSelectionChanged = async (event, item) => {
         const speakers = await this.deviceManager.getSpeakers();
         const speakerDeviceInfo = speakers.find(speakerDeviceInfo => { return speakerDeviceInfo.id === item.key });
@@ -475,24 +725,68 @@ export default class CallCard extends React.Component {
                             <h2>Call Id: {this.state.callId}</h2>
                         }
                         {
-                            this.call &&
-                            <h2>Local Participant Id: {this.state.localParticipantid}</h2>
+                            // this.call &&
+                            // <h2>Local Participant Id: {this.state.localParticipantid}</h2>
                         }
                     </div>
                 </div>
                 <div className="ms-Grid-row">
                     {
                         this.state.callState === 'Connected' &&
-                        <div className="ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl3">
-                            <div className="participants-panel mt-1 mb-3">
-                                <Toggle label={
-                                        <div>
-                                            Dominant Speaker mode{' '}
-                                            <TooltipHost content={`Render the most dominant speaker's video streams only or render all remote participant video streams`}>
-                                                <Icon iconName="Info" aria-label="Info tooltip" />
-                                            </TooltipHost>
+                        <div className="ms-Grid-col ms-sm12 ms-lg12">
+                            <div class="ms-Grid-row participants-panel mt-1 mb-3">                           
+                                <div class="ms-Grid-col ms-sm6 ms-md6 ms-lg6">
+                                    <Persona className={this.state.isSpeaking ? `speaking-border-for-initials` : ``}
+                                        size={PersonaSize.size40}
+                                        text={ this.state.displayName ? this.state.displayName : 'Local Participant' }
+                                        secondaryText={this.state.state}
+                                        styles={{ primaryText: {color: '#edebe9'}, secondaryText: {color: '#edebe9'} }}/>
+                                </div>
+                                <div class="ms-Grid-col ms-sm2 ms-md2 ms-lg2">
+                                    <div class="select-group">
+                                            <label>Speaking</label>
+                                            <select class="select" onChange={this.spokenLanguageSettingsChanged}>
+                                                {this.state.spokenLanguageOptions.map((eachLanguageOption,index) => (
+                                                    <option key={eachLanguageOption.key} name={eachLanguageOption.voiceName} value={JSON.stringify(eachLanguageOption)}>{eachLanguageOption.text}</option>)
+                                                )}
+                                            </select>
                                         </div>
-                                    }
+                                    </div>
+                                    <div class="ms-Grid-col ms-sm2 ms-md2 ms-lg2">
+                                        <div class="select-group">
+                                            <label>Listen In</label>           
+                                            <select class="select" onChange={this.speakerTranslationSettingsChanged}>
+                                                {this.state.translationOptions.map((eachLanguageOption,index) => (
+                                                    <option key={eachLanguageOption.key} name={eachLanguageOption.voiceName} value={JSON.stringify(eachLanguageOption)}>{eachLanguageOption.text}</option>)
+                                                )}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="ms-Grid-col ms-sm2 ms-md2 ms-lg2">                                  
+                                        <div class="select-group">
+                                            <label>BroadCast</label>                              
+                                            <select class="select" onChange={this.microphoneTranslationSettingsChanged}>
+                                                {this.state.translationOptions.map((eachLanguageOption,index) => (
+                                                    <option key={eachLanguageOption.key} name={eachLanguageOption.voiceName} value={JSON.stringify(eachLanguageOption)}>{eachLanguageOption.text}</option>)
+                                                )}
+                                            </select>                                            
+                                        </div>
+                                    </div>                             
+                            </div>
+                        </div>
+                    }  
+                    {
+                        this.state.callState === 'Connected' &&
+                        <div className="ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl3">
+                            <div className="ms-Grid-row participants-panel mt-1 mb-3">
+                                <Toggle label={
+                                    <div>
+                                        Dominant Speaker mode{' '}
+                                        <TooltipHost content={`Render the most dominant speaker's video streams only or render all remote participant video streams`}>
+                                            <Icon iconName="Info" aria-label="Info tooltip" />
+                                        </TooltipHost>
+                                    </div>
+                                }
                                     styles={{
                                         text : { color: '#edebe9' },
                                         label: { color: '#edebe9' },

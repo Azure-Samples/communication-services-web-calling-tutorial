@@ -729,14 +729,26 @@ ul {
   }
 }
 
-div.callDebugInfoJSONStringDiv {  
-  background-color: #292827;
-  /* height: 500px;
-  width: 1350px;   */
-  height:auto;
-  width:auto;
-  max-width: 1350px;
-  max-height: 500px;
-  overflow-y: auto;
-  overflow-x: auto;
+/*********************************
+*         Select                 *
+*********************************/
+.select-group{
+  padding:7px;
+  border:1px solid;
+  margin:7px;
+}
+.select-group>label{
+  position:absolute;
+  top:-1px;
+  left:15px;
+  background-color: #201f1e;
+  color: 1px solid #605e5c;
+}
+.select-group>select{
+  border:none;
+  background-color: #201f1e;
+  color: white;
+  outline: none;
+  padding: 5px;
+  width: -webkit-fill-available;
 }
