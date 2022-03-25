@@ -1,5 +1,7 @@
 {
-    "connectionString": "REPLACE_WITH_CONNECTION_STRING"
+    "connectionString": "REPLACE_WITH_CONNECTION_STRING",
+    "cognitiveServiceSpeechKey": "REPLACE_WITH_COGNITIVE_SPEECH_KEY",
+    "cognitiveServicesRegion": "REPLACE_WITH_COGNITIVE_SPEECH_REGION"
 }
 
 
