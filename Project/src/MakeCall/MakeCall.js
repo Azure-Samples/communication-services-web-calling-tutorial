@@ -42,6 +42,7 @@ export default class MakeCall extends React.Component {
             showCallSampleCode: false,
             showMuteUnmuteSampleCode: false,
             showHoldUnholdCallSampleCode: false,
+            showTranslationSampleCode: false,
             selectedCameraDeviceId: null,
             selectedSpeakerDeviceId: null,
             selectedMicrophoneDeviceId: null,
@@ -418,6 +419,86 @@ this.currentCall = this.callAgent.join({
                                 tenantId,
                                 organizerId
                             }, this.callOptions);
+        `;
+
+        const translationSampleCode = `
+// To start a translation, we need to set up the speech config
+let speechConfigOutput = SpeechTranslationConfig.fromSubscription( window.TutorialSpeechConfig.key,  window.TutorialSpeechConfig.region);
+
+//Set up the spoken language, target language, synthesis language, voice name and format in speechConfigOutput. 
+// Languages information can be found in https://docs.microsoft.com/en-us/azure/cognitive-services/speech-service/language-support
+speechConfigOutput.speechRecognitionLanguage = this.state.spokenLanguage;
+speechConfigOutput.addTargetLanguage(configObj.lang);
+speechConfigOutput.speechSynthesisLanguage = configObj.lang;
+speechConfigOutput.voiceName = configObj.voiceName;
+speechConfigOutput.speechSynthesisVoiceName = configObj.voiceName;
+speechConfigOutput.speechSynthesisOutputFormat = SpeechSynthesisOutputFormat.Ogg48Khz16BitMonoOpus;
+
+/************************************************/
+/*               Speaker Translation            */
+/************************************************/
+//Get media stream track from speaker
+const mediaStreamTrack = this.call.getRawOutputAudioStreamTrack();
+
+//Get rawAudioSenderStream from stream track. Also get config and context from raw
+const rawAudioSenderStream = new MediaStream([mediaStreamTrack]);
+const audioConfig = AudioConfig.fromStreamInput(rawAudioSenderStream);
+const audioCtx = new AudioContext();
+
+this.recognizerForInput = new TranslationRecognizer(translationConfig, audioConfig);
+
+//The recognizerForInput object exposes a Synthesizing event. 
+//The event fires several times and provides a mechanism to retrieve the synthesized audio from the translation recognition result.
+this.recognizerForInput.synthesizing = (s, e) => { 
+    if (e.result.audio && audioCtx) {
+        var source = audioCtx.createBufferSource();
+        audioCtx.decodeAudioData(e.result.audio, (newBuffer) => {
+            source.buffer = newBuffer;
+            source.connect(audioCtx.destination);
+            source.start(0);
+        });
+    }
+};
+
+this.call.tsCall.muteSpeaker();
+// Start the continuous recognition/translation operation.
+this.recognizerForInput.startContinuousRecognitionAsync();
+
+/************************************************/
+/*             Microphone Translation           */
+/************************************************/
+//Get media stream track from microphone
+let audioConfigInput = AudioConfig.fromDefaultMicrophoneInput();
+//Get recognizerForInput from stream track. Also get config and context from raw
+this.recognizerForInput = new TranslationRecognizer(speechConfigOutput, audioConfigInput);
+let soundContext = new AudioContext();
+let destinationStream = soundContext.createMediaStreamDestination();
+let audioTracks = destinationStream.stream.getAudioTracks();
+
+if (audioTracks && audioTracks.length > 0) {
+    this.call.setRawInputAudioStreamTrack(audioTracks[0]);
+}
+
+//The recognizerForInput object exposes a Synthesizing event. 
+//The event fires several times and provides a mechanism to retrieve the synthesized audio from the translation recognition result.
+this.recognizerForInput.synthesizing = (s, e) => {
+    var audioSize = e.result.audio === undefined ? 0 : e.result.audio.byteLength;
+
+    if (e.result.audio && soundContext) {
+        var source = soundContext.createBufferSource();
+
+        soundContext.decodeAudioData(e.result.audio, function (newBuffer) {
+            source.buffer = newBuffer;
+            source.connect(destinationStream);
+            source.start(0);
+        });
+    }
+};
+
+// Start the continuous recognition/translation operation.
+this.recognizerForInput.startContinuousRecognitionAsync();
+}
+
         `;
 
         const streamingSampleCode = `
@@ -824,6 +905,48 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         </div>
                     </div>
                 }
+                <div className="card">
+                    <div className="ms-Grid">
+                        <div className="ms-Grid-row">
+                            <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Speaker / Microphone translation</h2>
+                            <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
+                                <PrimaryButton
+                                    className="primary-button"
+                                    iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                    text={`${this.state.showTranslationSampleCode ? 'Hide' : 'Show'} code`}
+                                    onClick={() => this.setState({ showTranslationSampleCode: !this.state.showTranslationSampleCode })}>
+                                </PrimaryButton>
+                            </div>
+                        </div>
+                        {
+                            this.state.showTranslationSampleCode &&
+                            <pre>
+                                <code style={{ color: '#b3b0ad' }}>
+                                    {translationSampleCode}
+                                </code>
+                            </pre>
+                        }
+                        <div>
+                            Speaker translation and Microphone translation have similar output but using different translation way.
+                        </div>
+                        <br></br>
+                        <h3>
+                            Speaker translation - try it out.
+                        </h3>
+                        <div>
+                            After you start your call, choose the source language from Speak dropdown menu, and then choose the target language from BroadCast dropdown menu.
+                            You will hear the translated audio on your side.
+                        </div>
+                        <br></br>
+                        <h3>
+                            Microphone translation - try it out.
+                        </h3>
+                        <div>
+                            After you start your call, choose the source language from Speak dropdown menu, and then choose the target language from Listen dropdown menu.
+                            You will hear the translated audio on your side.
+                        </div>
+                    </div>
+                </div>
                 <div className="card">
                     <div className="ms-Grid">
                         <div className="ms-Grid-row">
