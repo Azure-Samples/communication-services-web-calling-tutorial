@@ -1,7 +1,6 @@
 import React from "react";
 import { CallClient, LocalVideoStream, Features } from '@azure/communication-calling';
 import { utils } from "../Utils/Utils";
-import { inflate } from 'pako'
 import { AzureCommunicationTokenCredential } from '@azure/communication-common';
 import {
     PrimaryButton,
@@ -11,7 +10,6 @@ import {
 } from 'office-ui-fabric-react'
 import { Icon } from '@fluentui/react/lib/Icon';
 import IncomingCallCard from './IncomingCallCard';
-import DebugInfoCard from "./DebugInfoCard";
 import CallCard from '../MakeCall/CallCard'
 import Login from './Login';
 import { setLogLevel, AzureLogger } from '@azure/logger';
@@ -61,37 +59,12 @@ export default class MakeCall extends React.Component {
         }, 10000);
     }
 
-    displayDebugInfo = () => {
-        try {
-            let debugInfoFeature = this.callClient.feature(Features.DebugInfo);
-            let debugInfo = debugInfoFeature.dumpDebugInfo();
-            let debugInfoZippedDump = debugInfo.dump;
-            let debugInfoDumpId = debugInfo.dumpId;
-            let newDebugInfo = {
-                callId: debugInfoFeature.callId,
-                localParticipantId: debugInfoFeature.localParticipantId,
-                debuginfoZippedDumpSizeInBytes: utils.getSizeInBytes(debugInfoZippedDump),
-                debugInfoDumpId:debugInfoDumpId,
-                debugInfoDumpUnzipped: JSON.parse(inflate(debugInfoZippedDump, { to: 'string' })),
-                debugInfo: debugInfo
-             }
-            return newDebugInfo;
-        } catch (e) {
-            console.error('ERROR, failed to dumpDebugInfo', e);
-        }
-    }
-
-
-
     handleLogIn = async (userDetails) => {
         if (userDetails) {
             try {
                 const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 setLogLevel('verbose');
                 this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk", `#clientTag:${userDetails.clientTag}`] } });
-                setInterval(() => {
-                    this.setState({ debugInfo: JSON.stringify(this.displayDebugInfo(), null , 2)});
-                }, 1000);
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
                 // override logger to be able to dowload logs locally
                 AzureLogger.log = (...args) => {
@@ -815,15 +788,6 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         }
                     </div>
                 </div>
-                {       
-                    this.callAgent && 
-                    <div className="card">
-                        <div className="ms-Grid-row mt-3">
-                            <DebugInfoCard
-                                debugInfo={this.state.debugInfo} />
-                        </div>
-                    </div>
-                }
                 <div className="card">
                     <div className="ms-Grid">
                         <div className="ms-Grid-row">
