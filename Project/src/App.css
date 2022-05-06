@@ -71,6 +71,12 @@ input:disabled {
   animation: spin 1.5s linear infinite;
 }
 
+/* Safari */
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
@@ -243,6 +249,27 @@ ul {
   flex-direction: row;
   justify-content: center;
   flex-flow: wrap;
+}
+
+.remote-video-container {
+  position: relative;
+}
+
+.remote-video-loading-spinner {
+  border: 12px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid #ca5010;
+  width: 100px;
+  height: 100px;
+  -webkit-animation: spin 2s linear infinite; /* Safari */
+  animation: spin 2s linear infinite;
+  position: absolute;
+  margin: auto;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transform: translate(-50%, -50%);
 }
 
 .video-title {
@@ -726,6 +753,23 @@ ul {
 
   .call-input-panel {
     padding: 0;
+  }
+
+  .remote-video-loading-spinner {
+    border: 8px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 8px solid #ca5010;
+    width: 60px;
+    height: 60px;
+    -webkit-animation: spin 2s linear infinite; /* Safari */
+    animation: spin 2s linear infinite;
+    position: absolute;
+    margin: auto;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: translate(-50%, -50%);
   }
 }
 

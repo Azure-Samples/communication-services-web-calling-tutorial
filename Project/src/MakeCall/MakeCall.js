@@ -13,6 +13,7 @@ import IncomingCallCard from './IncomingCallCard';
 import CallCard from '../MakeCall/CallCard'
 import Login from './Login';
 import { setLogLevel, AzureLogger } from '@azure/logger';
+import PreCallDiagnostics from './PreCallDiagnosticsCard';
 
 export default class MakeCall extends React.Component {
     constructor(props) {
@@ -31,6 +32,7 @@ export default class MakeCall extends React.Component {
         this.tenantId = null;
         this.callError = null;
         this.logBuffer = [];
+        this.tokenCredential = null;
 
         this.state = {
             id: undefined,
@@ -49,7 +51,8 @@ export default class MakeCall extends React.Component {
             permissions: {
                 audio: null,
                 video: null
-            }
+            },
+            preCallDiagnosticsResult: {}
         };
 
         setInterval(() => {
@@ -59,13 +62,32 @@ export default class MakeCall extends React.Component {
         }, 10000);
     }
 
+    async preCallDiagnosticsTest() {
+        try {
+            const _preCalldiagnosticsResult = await this.callClient.feature(Features.PreCallDiagnostics).startTest(this.tokenCredential);            
+            const deviceAccess =  await _preCalldiagnosticsResult.deviceAccess;
+            const deviceEnumeration = await _preCalldiagnosticsResult.deviceEnumeration;
+            const inCallDiagnostics =  await _preCalldiagnosticsResult.inCallDiagnostics;            
+            const browserSupport =  await _preCalldiagnosticsResult.browserSupport;
+
+            const result = {
+                deviceAccess, deviceEnumeration, inCallDiagnostics, browserSupport
+            }
+
+            this.setState({preCallDiagnosticsResult: result})
+        } catch (error) {
+            console.error(error);
+        }
+        
+    }
+
     handleLogIn = async (userDetails) => {
         if (userDetails) {
             try {
-                const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
+                this.tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 setLogLevel('verbose');
                 this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk", `#clientTag:${userDetails.clientTag}`] } });
-                this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
+                this.callAgent = await this.callClient.createCallAgent(this.tokenCredential, { displayName: userDetails.displayName });
                 // override logger to be able to dowload logs locally
                 AzureLogger.log = (...args) => {
                     this.logBuffer.push(...args);
@@ -761,6 +783,12 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                         text="Join Teams meeting with video"
                                         disabled={this.state.call || !this.state.loggedIn}
                                         onClick={() => this.joinTeamsMeeting(true)}>
+                                    </PrimaryButton>
+                                    <PrimaryButton className="primary-button"
+                                        iconProps={{ iconName: 'Call', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                        text="Pre Call Diagnostics Call"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        onClick={() => this.preCallDiagnosticsTest()}>
                                     </PrimaryButton>
                                 </div>
                             </div>

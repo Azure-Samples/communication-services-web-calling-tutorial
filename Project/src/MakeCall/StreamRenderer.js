@@ -1,7 +1,6 @@
 import React from "react";
 import { utils } from '../Utils/Utils';
 import { VideoStreamRenderer } from "@azure/communication-calling";
-import { TooltipHost } from "office-ui-fabric-react";
 export default class StreamRenderer extends React.Component {
     constructor(props) {
         super(props);
@@ -9,10 +8,13 @@ export default class StreamRenderer extends React.Component {
         this.remoteParticipant = props.remoteParticipant;
         this.componentId = `${utils.getIdentifierText(this.remoteParticipant.identifier)}-${this.stream.mediaStreamType}-${this.stream.id}`;
         this.videoContainerId = this.componentId + '-videoContainer';
+        this.videoContainer = undefined;
         this.renderer = undefined;
         this.view = undefined;
         this.dominantSpeakerMode = props.dominantSpeakerMode;
         this.dominantRemoteParticipant = props.dominantRemoteParticipant;
+        this.loadingSpinner = document.createElement('div');
+        this.loadingSpinner.className = 'remote-video-loading-spinner';
         this.state = {
             isSpeaking: false,
             displayName: this.remoteParticipant.displayName?.trim(),
@@ -34,6 +36,7 @@ export default class StreamRenderer extends React.Component {
      */
     async componentDidMount() {
         document.getElementById(this.componentId).hidden = true;
+        this.videoContainer = document.getElementById(this.videoContainerId);
 
         this.remoteParticipant.on('isSpeakingChanged', () => {
             this.setState({ isSpeaking: this.remoteParticipant.isSpeaking });
@@ -49,7 +52,31 @@ export default class StreamRenderer extends React.Component {
         })
 
         console.log(`[App][StreamMedia][id=${this.stream.id}] handle new stream`);
-        console.log(`[App][StreamMedia][id=${this.stream.id}] stream info - streamId=${this.stream.id}, streamType=${this.stream.mediaStreamType} isAvailable=${this.stream.isAvailable}`);
+        console.log(`[App][StreamMedia][id=${this.stream.id}] stream info - ` + 
+                    `streamId=${this.stream.id}, streamType=${this.stream.mediaStreamType}, ` + 
+                    `isAvailable=${this.stream.isAvailable}, isReceiving=${this.stream.isReceiving}`);
+
+        /**
+         * This feature is alpha
+         * @alpha
+         */
+        console.log(`[App][StreamMedia][id=${this.stream.id}] subscribing to isRenderingChanged`);
+        this.stream.on('isReceivingChanged', () => {
+            try {
+                if (this.stream.isAvailable) {
+                    const isReceiving = this.stream.isReceiving;
+                    const isLoadingSpinnerActive = this.videoContainer.contains(this.loadingSpinner);
+                    if (!isReceiving && !isLoadingSpinnerActive) {
+                        this.videoContainer.appendChild(this.loadingSpinner);
+                    } else if (isReceiving && isLoadingSpinnerActive) {
+                        this.videoContainer.removeChild(this.loadingSpinner);
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        });
+
         console.log(`[App][StreamMedia][id=${this.stream.id}] subscribing to isAvailableChanged`);
         this.stream.on('isAvailableChanged', async () => {
             try {
@@ -127,7 +154,7 @@ export default class StreamRenderer extends React.Component {
     render() {
         return (
             <div id={this.componentId} className={`py-3 ms-Grid-col ms-sm-12 ms-lg12 ms-xl12 ${this.stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : `ms-xxl6`}`}>
-                <div className={`${this.state.isSpeaking ? `speaking-border-for-video` : ``}`} id={this.videoContainerId}>
+                <div className={`remote-video-container ${this.state.isSpeaking ? `speaking-border-for-video` : ``}`} id={this.videoContainerId}>
                     <h4 className="video-title">
                         {this.state.displayName ? this.state.displayName : utils.getIdentifierText(this.remoteParticipant.identifier)}
                     </h4>
