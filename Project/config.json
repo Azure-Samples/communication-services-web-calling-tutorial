@@ -1,5 +1,5 @@
 {
-    "connectionString": "endpoint=https://acs-ui-dev.communication.azure.com/;accesskey=b41NEMmjS1VNOmqEky1PPUjCA58NYTx5oRduXUQd+RbqndR8uhhmEV1xAvy2429lSLzeSzvaEGEssyiGXV4dwQ=="
+    "connectionString": 'REPLACE_WITH_CONNECTION_STRING'
 }
 
 
