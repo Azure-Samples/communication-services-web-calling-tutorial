@@ -26,6 +26,7 @@ export default class CallCard extends React.Component {
             allRemoteParticipantStreams: [],
             videoOn: !!this.call.localVideoStreams[0],
             micMuted: false,
+            incomingAudioMuted: false,
             onHold: this.call.state === 'LocalHold' || this.call.state === 'RemoteHold',
             screenShareOn: this.call.isScreenShareOn,
             cameraDeviceOptions: props.cameraDeviceOptions ? props.cameraDeviceOptions : [],
@@ -161,6 +162,11 @@ export default class CallCard extends React.Component {
             this.call.on('isMutedChanged', () => {
                 console.log('Local microphone muted changed ', this.call.isMuted);
                 this.setState({ micMuted: this.call.isMuted });
+            });
+
+            this.call.on('isIncomingAudioMutedChanged', () => {
+                console.log('Incoming audio muted changed  ', this.call.isIncomingAudioMuted);
+                this.setState({ incomingAudioMuted: this.call.isIncomingAudioMuted });
             });
 
             this.call.on('isScreenSharingOnChanged', () => {
@@ -355,6 +361,21 @@ export default class CallCard extends React.Component {
                 await this.call.unmute();
             }
             this.setState({ micMuted: this.call.isMuted });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    
+
+    async handleIncomingAudioOnOff() {
+        try {
+            if (!this.call.isIncomingAudioMuted) {
+                await this.call.muteIncomingAudio();
+            } else {
+                await this.call.unmuteIncomingAudio();
+            }
+            this.setState({ incomingAudioMuted: this.call.isIncomingAudioMuted });
         } catch (e) {
             console.error(e);
         }
@@ -566,6 +587,19 @@ export default class CallCard extends React.Component {
                                     {
                                         !this.state.micMuted &&
                                         <Icon iconName="Microphone" />
+                                    }
+                                </span>
+                                <span className="in-call-button"
+                                    title={`${this.state.incomingAudioMuted ? 'Unmute' : 'Mute'} incoming audio`}
+                                    variant="secondary"
+                                    onClick={() => this.handleIncomingAudioOnOff()}>
+                                    {
+                                        this.state.incomingAudioMuted &&
+                                        <Icon iconName="VolumeDisabled" />
+                                    }
+                                    {
+                                        !this.state.incomingAudioMuted &&
+                                        <Icon iconName="Volume2" />
                                     }
                                 </span>
                                 <span className="in-call-button"
