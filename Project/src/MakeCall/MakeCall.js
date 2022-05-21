@@ -18,6 +18,7 @@ export default class MakeCall extends React.Component {
     constructor(props) {
         super(props);
         this.callClient = null;
+        this.environmentInfo = null;
         this.callAgent = null;
         this.deviceManager = null;
         this.destinationUserIds = null;
@@ -38,6 +39,7 @@ export default class MakeCall extends React.Component {
             call: undefined,
             incomingCall: undefined,
             showCallSampleCode: false,
+            showEnvironmentInfoCode: false,
             showMuteUnmuteSampleCode: false,
             showHoldUnholdCallSampleCode: false,
             selectedCameraDeviceId: null,
@@ -65,6 +67,7 @@ export default class MakeCall extends React.Component {
                 const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 setLogLevel('verbose');
                 this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk", `#clientTag:${userDetails.clientTag}`] } });
+                this.environmentInfo = await this.callClient.getEnvironmentInfo();
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
                 // override logger to be able to dowload logs locally
                 AzureLogger.log = (...args) => {
@@ -393,6 +396,43 @@ this.currentCall = this.callAgent.join({
                             }, this.callOptions);
         `;
 
+
+        const environmentInfo = `
+/**************************************************************************************/
+/*     Environment Information     */
+/**************************************************************************************/
+// Get current environment information with details if supported by ACS
+this.environmentInfo = await this.callClient.getEnvironmentInfo();
+
+// The returned value is an object of type EnvironmentInfo
+type EnvironmentInfo = {
+    environment: Environment;
+    isSupportedPlatform: boolean;
+    isSupportedBrowser: boolean;
+    isSupportedBrowserVersion: boolean;
+    isSupportedEnvironment: boolean;
+};
+
+// The Environment type in the EnvironmentInfo type is defined as:
+type Environment = {
+  platform: string;
+  browser: string;
+  browserVersion: string;
+};
+
+// The following code snippet shows how to get the current environment details
+const currentOperatingSystem = this.environmentInfo.environment.platform;
+const currentBrowser = this.environmentInfo.environment.browser;
+const currentBrowserVersion = this.environmentInfo.environment.browserVersion;
+
+// The following code snippet shows how to check if environment details are supported by ACS
+const isSupportedOperatingSystem = this.environmentInfo.isSupportedPlatform;
+const isSupportedBrowser = this.environmentInfo.isSupportedBrowser;
+const isSupportedBrowserVersion = this.environmentInfo.isSupportedBrowserVersion;
+const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
+
+        `;        
+
         const streamingSampleCode = `
 /************************************************/
 /*     Local Video and Local Screen-sharing     */
@@ -591,12 +631,45 @@ this.deviceManager.on('selectedMicrophoneChanged', () => { console.log(this.devi
 this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceManager.selectedSpeaker) });
         `;
 
-        // TODO: Create section component. Couldnt use the ExampleCard compoenent from uifabric becuase its buggy,
+        // TODO: Create section component. Couldnt use the ExampleCard compoenent from uifabric because it is buggy,
         //       when toggling their show/hide code functionality, videos dissapear from DOM.
 
         return (
             <div>
                 <Login onLoggedIn={this.handleLogIn} />
+                <div className="card">
+                    <div className="ms-Grid">
+                        <div className="ms-Grid-row">
+                            <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Environment information</h2>
+                            <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
+                                <PrimaryButton
+                                    className="primary-button"
+                                    iconProps={{ iconName: 'Info', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                    text={`${this.state.showEnvironmentInfoCode ? 'Hide' : 'Show'} code`}
+                                    onClick={() => this.setState({ showEnvironmentInfoCode: !this.state.showEnvironmentInfoCode })}>
+                                </PrimaryButton>
+                            </div>
+                        </div>
+                        {
+                            this.state.showEnvironmentInfoCode &&
+                            <pre>
+                                <code style={{ color: '#b3b0ad' }}>
+                                    {environmentInfo}
+                                </code>
+                            </pre>
+                        }
+                        <h3>Current environment details</h3>
+                        <div>{`Operating system:   ${this.environmentInfo?.environment?.platform}.`}</div>
+                        <div>{`Browser:  ${this.environmentInfo?.environment?.browser}.`}</div>
+                        <div>{`Browser's version:  ${this.environmentInfo?.environment?.browserVersion}.`}</div>
+                        <br></br>
+                        <h3>Environment support verification</h3>
+                        <div>{`Operating system supported:  ${this.environmentInfo?.isSupportedPlatform}.`}</div>
+                        <div>{`Browser supported:  ${this.environmentInfo?.isSupportedBrowser}.`}</div>
+                        <div>{`Browser's version supported:  ${this.environmentInfo?.isSupportedBrowserVersion}.`}</div>
+                        <div>{`Current environment supported:  ${this.environmentInfo?.isSupportedEnvironment}.`}</div>
+                    </div>
+                </div>
                 <div className="card">
                     <div className="ms-Grid">
                         <div className="ms-Grid-row">
