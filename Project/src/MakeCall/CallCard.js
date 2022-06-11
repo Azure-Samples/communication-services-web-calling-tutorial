@@ -9,7 +9,7 @@ import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
 import { Icon } from '@fluentui/react/lib/Icon';
 import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
-import { LocalVideoStream, Features } from '@azure/communication-calling';
+import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
 
 export default class CallCard extends React.Component {
@@ -28,6 +28,7 @@ export default class CallCard extends React.Component {
             micMuted: false,
             onHold: this.call.state === 'LocalHold' || this.call.state === 'RemoteHold',
             screenShareOn: this.call.isScreenShareOn,
+            outgoingAudioMediaAccessActive: false,
             cameraDeviceOptions: props.cameraDeviceOptions ? props.cameraDeviceOptions : [],
             speakerDeviceOptions: props.speakerDeviceOptions ? props.speakerDeviceOptions : [],
             microphoneDeviceOptions: props.microphoneDeviceOptions ? props.microphoneDeviceOptions : [],
@@ -53,7 +54,7 @@ export default class CallCard extends React.Component {
                         cameraDeviceOptions: [...prevState.cameraDeviceOptions, addedCameraDeviceOption]
                     }));
                 });
-                // When connectnig a new camera, ts device manager automatically switches to use this new camera and
+                // When connecting a new camera, ts device manager automatically switches to use this new camera and
                 // this.call.localVideoStream[0].source is never updated. Hence I have to do the following logic to update
                 // this.call.localVideoStream[0].source to the newly added camera. This is a bug. Under the covers, this.call.localVideoStreams[0].source
                 // should have been updated automatically by the sdk.
@@ -372,6 +373,40 @@ export default class CallCard extends React.Component {
         }
     }
 
+    async handleOutgoingAudioEffect() {
+        if (this.state.outgoingAudioMediaAccessActive) {
+            this.call.stopAudio();
+        } else {
+            this.startOutgoingAudioEffect();
+        }
+
+        this.setState(prevState => ({outgoingAudioMediaAccessActive: !prevState.outgoingAudioMediaAccessActive}));
+    }
+
+    async startOutgoingAudioEffect() {
+        const localAudioStream = new LocalAudioStream(this.deviceManager.selectedMicrophone);
+        const mediaStreamTrack = await localAudioStream.getMediaStreamTrack();
+        
+        if (mediaStreamTrack) {
+            const stream = new MediaStream([mediaStreamTrack]);
+            const audioCtx = new AudioContext();
+            const source = audioCtx.createMediaStreamSource(stream);
+            const destination = audioCtx.createMediaStreamDestination();
+
+            let biquadFilter = audioCtx.createBiquadFilter();
+            
+            biquadFilter.type = "highshelf";
+            biquadFilter.frequency.value = 2000;
+            biquadFilter.gain.value = 30;
+          
+            source.connect(biquadFilter);
+            biquadFilter.connect(destination);
+
+            localAudioStream.switchSource(destination.stream.getAudioTracks()[0]);
+            this.call.startAudio(localAudioStream);
+        }
+    }
+
     async handleScreenSharingOnOff() {
         try {
             if (this.call.isScreenSharingOn) {
@@ -608,6 +643,19 @@ export default class CallCard extends React.Component {
                                 <span className="in-call-button"
                                     onClick={() => this.call.hangUp()}>
                                     <Icon iconName="DeclineCall" />
+                                </span>
+                                <span className="in-call-button"
+                                    title={`${this.state.outgoingAudioMediaAccessActive ? 'Clear audio effect' : 'Apply outgoing audio effect'} to call`}
+                                    variant="secondary"
+                                    onClick={() => this.handleOutgoingAudioEffect()}>
+                                    {
+                                        this.state.outgoingAudioMediaAccessActive &&
+                                        <Icon iconName="PlugConnected" />
+                                    }
+                                    {
+                                        !this.state.outgoingAudioMediaAccessActive &&
+                                        <Icon iconName="PlugDisconnected" />
+                                    }
                                 </span>
                                 <Panel type={PanelType.medium}
                                     isLightDismiss
