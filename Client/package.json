@@ -10,9 +10,9 @@
     "react-dom": "^16.14.0"
   },
   "scripts": {
-    "build": "npm run clean && concurrently --kill-others-on-fail \"tsc\" \"webpack --mode=production --env production\"",
+    "build": "npm run clean && concurrently --kill-others-on-fail \"webpack --mode=production --env production\"",
     "clean": "rimraf dist",
-    "package": "copyfiles -E -u 3 \"../Server/dist/**/*\" dist && rm -r dist/dist-esm",
+    "package": "copyfiles -E -u 3 \"../Server/dist/**/*\" dist",
     "start": "concurrently \"cd ../Server && npm run start:dev\" \"npm run start:app\"",
     "start:app": "webpack-dev-server --port 5000 --mode development",
     "test": "",
