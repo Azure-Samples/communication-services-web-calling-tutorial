@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.8.9.13224",
-      "templateHash": "16147772865852253039"
+      "templateHash": "17394389612716008876"
     }
   },
   "parameters": {
@@ -30,7 +30,7 @@
   },
   "variables": {
     "appServicePlanPortalName": "[format('AppServicePlan-{0}', parameters('appName'))]",
-    "packageUrl": "https://testcallingstorage.blob.core.windows.net/newcontainer/pstn-calling.zip"
+    "packageUrl": "https://github.com/t-sanderv/communication-services-web-calling-tutorial/releases/download/v1.0.0/pstn-calling.zip"
   },
   "resources": [
     {
