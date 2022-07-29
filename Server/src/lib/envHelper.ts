@@ -7,13 +7,8 @@ export const getResourceConnectionString = (): string => {
   const resourceConnectionString = process.env['ResourceConnectionString'] || appSettings.ResourceConnectionString;
 
   if (!resourceConnectionString) {
-    throw new Error('No ACS connection string provided');
+    throw new Error('No ACS connection string provided. Set ResourceConnectionString in environment or in appSettings.');
   }
 
   return resourceConnectionString;
-};
-
-export const getEndpoint = (): string => {
-  const uri = new URL(process.env['EndpointUrl'] || appSettings.EndpointUrl);
-  return `${uri.protocol}//${uri.host}`;
 };

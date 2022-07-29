@@ -9,22 +9,26 @@ const router = express.Router();
 
 const communicationIdentityClient = new  CommunicationIdentityClient(getResourceConnectionString());
 
-/**
- * route: /getEndpointUrl/
- *
- * purpose: Get the endpoint url of Azure Communication Services resource.
- *
- * @returns The endpoint url as string
- *
- */
-
-router.post('/', async (req, res) => {
+const provisionUser = async (req: express.Request, res: express.Response) => {
   try {
       const tokenResponse = await communicationIdentityClient.createUserAndToken(["voip"]);
+      console.log(JSON.stringify(tokenResponse));
       res.json(tokenResponse);
   } catch (error) {
       console.error(error);
   }
-});
+}
+
+/**
+ * route: /provisionUser/
+ *
+ * purpose: Create a user and a token to do voip calling.
+ *
+ * @returns JSON with the token and the user that were created.
+ *
+ */
+
+router.get('/', provisionUser);
+router.post('/', provisionUser);
 
 export default router;

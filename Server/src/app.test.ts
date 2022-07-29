@@ -19,11 +19,11 @@ let createUserAndTokenSpy: jest.SpyInstance;
 
 describe('app route tests', () => {
   test('/')
-  test('/token should return a token with chat and voip scopes with GET and POST requests', async () => {
-    const getResponse = await request(app).get('/token');
+  test('/provisionUser should return a token with voip scope with GET and POST requests', async () => {
+    const getResponse = await request(app).post('/provisionUser');
     expect(getResponse.status).toEqual(200);
     expect(getResponse.text).toEqual(JSON.stringify(mockUserToken));
-    expect(createUserAndTokenSpy).toHaveBeenLastCalledWith(['chat', 'voip']);
+    expect(createUserAndTokenSpy).toHaveBeenLastCalledWith(['voip']);
     createUserAndTokenSpy.mockClear();
 
     const postResponse = await request(app).post('/token');
