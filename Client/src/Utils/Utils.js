@@ -12,7 +12,7 @@ export const utils = {
     provisionNewUser: async (userId) => {
         let response = await fetch('/tokens/provisionUser', {
             method: 'POST',
-            body: { userId },
+            body: JSON.stringify({ userId }),
             headers: {
                 'Accept': 'application/json, text/plain, */*',
                 'Content-Type': 'application/json'
