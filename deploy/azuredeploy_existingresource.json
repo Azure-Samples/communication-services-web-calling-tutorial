@@ -5,12 +5,16 @@
     "_generator": {
       "name": "bicep",
       "version": "0.8.9.13224",
-      "templateHash": "11856465103102840534"
+      "templateHash": "4611789964656412700"
     }
   },
   "parameters": {
     "appName": {
       "type": "string"
+    },
+    "communicationServicesResourceId": {
+      "type": "string",
+      "defaultValue": ""
     },
     "sku": {
       "type": "string",
@@ -26,8 +30,7 @@
   },
   "variables": {
     "appServicePlanPortalName": "[format('AppServicePlan-{0}', parameters('appName'))]",
-    "packageUrl": "https://github.com/t-sanderv/communication-services-web-calling-tutorial/releases/latest/download/pstn-calling.zip",
-    "commsName": "[format('CommunicationServices-{0}', parameters('appName'))]"
+    "packageUrl": "https://github.com/t-sanderv/communication-services-web-calling-tutorial/releases/latest/download/pstn-calling.zip"
   },
   "resources": [
     {
@@ -35,7 +38,7 @@
       "apiVersion": "2022-03-01",
       "name": "[format('{0}/{1}', parameters('appName'), 'appsettings')]",
       "properties": {
-        "ResourceConnectionString": "[listkeys(variables('commsName'), '2020-08-20-preview').primaryConnectionString]",
+        "ResourceConnectionString": "[listkeys(parameters('communicationServicesResourceId'), '2020-08-20').primaryConnectionString]",
         "WEBSITE_NODE_DEFAULT_VERSION": "~14"
       },
       "dependsOn": [
@@ -55,15 +58,6 @@
       ]
     },
     {
-      "type": "Microsoft.Communication/communicationServices",
-      "apiVersion": "2020-08-20",
-      "name": "[variables('commsName')]",
-      "location": "global",
-      "properties": {
-        "dataLocation": "United States"
-      }
-    },
-    {
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2022-03-01",
       "name": "[variables('appServicePlanPortalName')]",
@@ -81,7 +75,6 @@
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanPortalName'))]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Communication/communicationServices', variables('commsName'))]",
         "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanPortalName'))]"
       ]
     }
