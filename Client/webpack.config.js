@@ -1,5 +1,6 @@
 
 const HtmlWebPackPlugin = require("html-webpack-plugin");
+const path = require('path');
 
 const PORT = process.env.port || 8080;
 
@@ -19,6 +20,9 @@ module.exports = {
     output: {
         path: path.join(__dirname, isProd ? 'dist/build': 'dist'),
         filename: 'build.js'
+    },
+    resolve: {
+        extensions: ['.js', '.jsx']
     },
     module: {
         rules: [
