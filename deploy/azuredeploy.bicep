@@ -6,7 +6,7 @@ param sku string = 'F1'
 param location string = resourceGroup().location
 
 var appServicePlanPortalName = 'AppServicePlan-${appName}'
-var packageUrl = 'https://testcallingstorage.blob.core.windows.net/newcontainer/pstn-calling.zip'
+var packageUrl = 'https://github.com/t-sanderv/communication-services-web-calling-tutorial/releases/download/v1.0.0/pstn-calling.zip'
 
 resource serverFarm 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: appServicePlanPortalName
