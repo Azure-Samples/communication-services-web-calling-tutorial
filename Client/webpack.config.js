@@ -2,7 +2,7 @@
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const path = require('path');
 
-const PORT = process.env.port || 8080;
+const PORT = process.env.port || 9000;
 
 const env = process.env;
 env.development = false; // TODO find a way to really do this with env variables
