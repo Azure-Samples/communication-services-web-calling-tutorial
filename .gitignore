@@ -7,7 +7,7 @@ examples/
 Client/ClientApp/build/
 Client/build/
 Client/dist/
-Server/dist/server.js
+Server/dist/
 
 # User-specific files
 *.rsuser
