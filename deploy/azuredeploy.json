@@ -1,0 +1,82 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.8.9.13224",
+      "templateHash": "16147772865852253039"
+    }
+  },
+  "parameters": {
+    "appName": {
+      "type": "string"
+    },
+    "communicationServicesResourceId": {
+      "type": "string",
+      "defaultValue": ""
+    },
+    "sku": {
+      "type": "string",
+      "defaultValue": "F1",
+      "metadata": {
+        "description": "The SKU of App Service Plan."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    }
+  },
+  "variables": {
+    "appServicePlanPortalName": "[format('AppServicePlan-{0}', parameters('appName'))]",
+    "packageUrl": "https://testcallingstorage.blob.core.windows.net/newcontainer/pstn-calling.zip"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2022-03-01",
+      "name": "[format('{0}/{1}', parameters('appName'), 'appsettings')]",
+      "properties": {
+        "ResourceConnectionString": "[listkeys(parameters('communicationServicesResourceId'), '2020-08-20').primaryConnectionString]",
+        "WEBSITE_NODE_DEFAULT_VERSION": "~14"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('appName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/extensions",
+      "apiVersion": "2022-03-01",
+      "name": "[format('{0}/{1}', parameters('appName'), 'MSDeploy')]",
+      "properties": {
+        "packageUri": "[variables('packageUrl')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites/config', parameters('appName'), 'appsettings')]",
+        "[resourceId('Microsoft.Web/sites', parameters('appName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-03-01",
+      "name": "[variables('appServicePlanPortalName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('sku')]"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-03-01",
+      "name": "[parameters('appName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanPortalName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanPortalName'))]"
+      ]
+    }
+  ]
+}
