@@ -5,6 +5,7 @@
 /// <reference path="../node_modules/@types/jest/index.d.ts" />
 
 import request from 'supertest';
+import * as identity from '../src/lib/identityClient';
 import app from './app';
 import { CommunicationUserToken } from '@azure/communication-identity';
 
@@ -17,33 +18,22 @@ const mockUserToken: CommunicationUserToken = {
 
 let createUserAndTokenSpy: jest.SpyInstance;
 
+beforeAll(() => {
+  createUserAndTokenSpy = jest.spyOn(identity, 'createUserAndToken').mockImplementation(async () => mockUserToken);
+});
+
 describe('app route tests', () => {
-  test('/')
-  test('/provisionUser should return a token with voip scope with GET and POST requests', async () => {
-    const getResponse = await request(app).post('/provisionUser');
+  test('/tokens/provisionUser should return a token with voip scope with GET and POST requests', async () => {
+    const getResponse = await request(app).post('/tokens/provisionUser');
     expect(getResponse.status).toEqual(200);
     expect(getResponse.text).toEqual(JSON.stringify(mockUserToken));
     expect(createUserAndTokenSpy).toHaveBeenLastCalledWith(['voip']);
     createUserAndTokenSpy.mockClear();
 
-    const postResponse = await request(app).post('/token');
+    const postResponse = await request(app).post('/tokens/provisionUser');
     expect(postResponse.status).toEqual(200);
     expect(postResponse.text).toEqual(JSON.stringify(mockUserToken));
-    expect(createUserAndTokenSpy).toHaveBeenLastCalledWith(['chat', 'voip']);
-    createUserAndTokenSpy.mockClear();
-  });
-
-  test('/token?scope=chat,pstn should return a token with chat and pstn scopes with GET and POST requests', async () => {
-    const getResponse = await request(app).get('/token?scope=chat,pstn');
-    expect(getResponse.status).toEqual(200);
-    expect(getResponse.text).toEqual(JSON.stringify(mockUserToken));
-    expect(createUserAndTokenSpy).toHaveBeenLastCalledWith(['chat', 'pstn']);
-    createUserAndTokenSpy.mockClear();
-
-    const postResponse = await request(app).post('/token').send({ scope: 'chat,pstn' });
-    expect(postResponse.status).toEqual(200);
-    expect(postResponse.text).toEqual(JSON.stringify(mockUserToken));
-    expect(createUserAndTokenSpy).toHaveBeenLastCalledWith(['chat', 'pstn']);
+    expect(createUserAndTokenSpy).toHaveBeenLastCalledWith(['voip']);
     createUserAndTokenSpy.mockClear();
   });
 });

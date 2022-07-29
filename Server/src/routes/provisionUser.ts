@@ -2,16 +2,14 @@
 // Licensed under the MIT license.
 
 import * as express from 'express';
-import { getResourceConnectionString } from '../lib/envHelper';
-import { CommunicationIdentityClient } from '@azure/communication-identity';
+import { createUserAndToken } from '../lib/identityClient';
 
 const router = express.Router();
 
-const communicationIdentityClient = new  CommunicationIdentityClient(getResourceConnectionString());
 
 const provisionUser = async (req: express.Request, res: express.Response) => {
   try {
-      const tokenResponse = await communicationIdentityClient.createUserAndToken(["voip"]);
+      const tokenResponse = await createUserAndToken(["voip"]);
       console.log(JSON.stringify(tokenResponse));
       res.json(tokenResponse);
   } catch (error) {
@@ -20,7 +18,7 @@ const provisionUser = async (req: express.Request, res: express.Response) => {
 }
 
 /**
- * route: /provisionUser/
+ * route: /tokens/provisionUser/
  *
  * purpose: Create a user and a token to do voip calling.
  *
