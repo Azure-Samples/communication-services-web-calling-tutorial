@@ -8,7 +8,6 @@ import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import path from 'path';
 
-import getConnectionString from './routes/getConnectionString';
 import provisionUser from './routes/provisionUser';
 
 const app = express();
@@ -20,11 +19,9 @@ app.use(cookieParser());
 app.use(express.static(path.resolve(__dirname, 'build')));
 
 /**
- * route: /getConnectionString
- * purpose: Return the connection string for this server.
+ * route: /provisionUser
+ * purpose: Return a new token for a new user to enable calling for.
  */
-app.use('/getConnectionString', cors(), getConnectionString);
-
 app.use('/tokens/provisionUser', cors(), provisionUser);
 
 // catch 404 and forward to error handler
