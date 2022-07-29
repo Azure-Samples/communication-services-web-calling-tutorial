@@ -1,5 +1,5 @@
 {
-  "name": "communication-services-web-chat-hero",
+  "name": "communication-services-web-calling-tutorial",
   "version": "1.0.0",
   "description": "--- page_type: sample languages: - javascript - nodejs - products: - azure - azure-communication-services ---",
   "scripts": {
@@ -11,12 +11,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Azure-Samples/communication-services-web-chat-hero.git"
+    "url": "git+https://github.com/t-sanderv/communication-services-web-calling-tutorial.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Azure-Samples/communication-services-web-chat-hero/issues"
+    "url": "https://github.com/t-sanderv/communication-services-web-calling-tutorial/issues"
   },
-  "homepage": "https://github.com/Azure-Samples/communication-services-web-chat-hero#readme"
+  "homepage": "https://github.com/t-sanderv/communication-services-web-calling-tutorial#readme"
 }

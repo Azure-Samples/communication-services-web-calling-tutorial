@@ -10,7 +10,6 @@ const router = express.Router();
 const provisionUser = async (req: express.Request, res: express.Response) => {
   try {
       const tokenResponse = await createUserAndToken(["voip"]);
-      console.log(JSON.stringify(tokenResponse));
       res.json(tokenResponse);
   } catch (error) {
       console.error(error);
