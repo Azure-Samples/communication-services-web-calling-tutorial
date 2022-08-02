@@ -23,7 +23,7 @@ The client-side application is a React based user interface. Alongside this fron
 ## Code structure
 - [`./Client/src`](./Client/src): Where the client code lives
 - [`./Client/src/app/App.jsx`](./Client/src/app/App.jsx): Entry point into the Client sample 
-- [`./Server/src/`](./Server/src/): server code
+- [`./Server/src/`](./Server/src/): Where the server code lives.
 - [`./Server/src/app.ts`](./Server/src/app.ts): Entry point into the Server sample
 - [`./Server/appsettings.json`](./Server/appsettings.json): Where to put your azure communication services connection string
 
