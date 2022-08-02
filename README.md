@@ -11,7 +11,7 @@ products:
 # ACS Calling Tutorial
 
 This is a sample application to show how one can use the `azure@communication-calling` package to build a calling experience.
-The client-side application is a React based user interface. Alongside this front-end is a NodeJS web application powered by ExpressJS that performs functionality like minting new user tokens for each chat participant.
+The client-side application is a React based user interface. Alongside this front-end is a NodeJS web server application powered by ExpressJS that performs functionality like minting new user tokens for each Client participant. This separate server is necessary as you do not not want to make the **connection string** public, which gives everyone access to your Azure Communication Service resource.
 
 ## Prerequisites
 
@@ -22,13 +22,9 @@ The client-side application is a React based user interface. Alongside this fron
 
 ## Code structure
 - [`./Client/src`](./Client/src): Where the client code lives
-- [`./Client/src/app/App.tsx`](./Client/src/app/App.tsx): Entry point into the chat sample 
-- [`./Chat/src/app/HomeScreen.tsx`](./Chat/src/app/HomeScreen.tsx): The first screen in the chat sample
-- [`./Chat/src/app/ConfigurationScreen.tsx`](./Chat/src/app/ConfigurationScreen.tsx): Where to set your name and avatar for the chat
-- [`./Chat/src/app/ChatScreen.tsx`](./Chat/src/app/ChatScreen.tsx): The main chat thread screen
-- [`./Chat/src/app/EndScreen.tsx`](./Chat/src/app/EndScreen.tsx): The screen the user will see when they are no longer in the chat thread
-- [`./Chat/src/app/ErrorScreen.tsx`](./Chat/src/app/EndScreen.tsx): The screen when an error occurs in the chat thread
+- [`./Client/src/app/App.jsx`](./Client/src/app/App.jsx): Entry point into the Client sample 
 - [`./Server/src/`](./Server/src/): server code
+- [`./Server/src/app.ts`](./Server/src/app.ts): Entry point into the Server sample
 - [`./Server/appsettings.json`](./Server/appsettings.json): Where to put your azure communication services connection string
 
 ## Before running the sample for the first time
@@ -48,7 +44,7 @@ The client-side application is a React based user interface. Alongside this fron
 1. `npm run setup`
 2. `npm run build`
 3. `npm run package`
-4. Use the Azure extension and deploy the Chat/dist directory to your app service
+4. Use the Azure extension and deploy the Client/dist directory to your app service
 
 
 ## Resources
