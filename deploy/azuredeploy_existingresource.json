@@ -5,16 +5,12 @@
     "_generator": {
       "name": "bicep",
       "version": "0.8.9.13224",
-      "templateHash": "12610646542711473762"
+      "templateHash": "11206434615860290051"
     }
   },
   "parameters": {
     "appName": {
       "type": "string"
-    },
-    "communicationServicesResourceId": {
-      "type": "string",
-      "defaultValue": ""
     },
     "sku": {
       "type": "string",
@@ -30,7 +26,8 @@
   },
   "variables": {
     "appServicePlanPortalName": "[format('AppServicePlan-{0}', parameters('appName'))]",
-    "packageUrl": "https://github.com/Azure-Samples/communication-services-web-calling-tutorial/releases/latest/download/pstn-calling.zip"
+    "packageUrl": "https://github.com/Azure-Samples/communication-services-web-calling-tutorial/releases/latest/download/pstn-calling.zip",
+    "communicationServicesResourceId": "<Enter you Communication Service Resource ID here"
   },
   "resources": [
     {
@@ -38,7 +35,7 @@
       "apiVersion": "2022-03-01",
       "name": "[format('{0}/{1}', parameters('appName'), 'appsettings')]",
       "properties": {
-        "ResourceConnectionString": "[listkeys(parameters('communicationServicesResourceId'), '2020-08-20').primaryConnectionString]",
+        "ResourceConnectionString": "[listkeys(variables('communicationServicesResourceId'), '2020-08-20').primaryConnectionString]",
         "WEBSITE_NODE_DEFAULT_VERSION": "~14"
       },
       "dependsOn": [
