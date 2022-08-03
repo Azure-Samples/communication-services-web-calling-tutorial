@@ -7,7 +7,7 @@ import {
     TextField,
     MessageBar,
     MessageBarType
-} from 'office-ui-fabric-react'
+} from '@fluentui/react'
 import { Icon } from '@fluentui/react/lib/Icon';
 import IncomingCallCard from './IncomingCallCard';
 import CallCard from './CallCard'
