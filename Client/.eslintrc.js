@@ -9,13 +9,11 @@ module.exports = {
   },
   extends: [
     'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
     'plugin:prettier/recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended'
   ],
-  parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint', 'header'],
+  plugins: ['header'],
   parserOptions: {
     ecmaFeatures: {
       jsx: true
@@ -24,18 +22,9 @@ module.exports = {
     sourceType: 'module'
   },
   rules: {
-    '@typescript-eslint/explicit-function-return-type': [
-      'warn',
-      {
-        allowExpressions: true,
-        allowTypedFunctionExpressions: true
-      }
-    ],
     eqeqeq: 'warn',
     'header/header': ['error', 'line', ' Copyright (c) Microsoft Corporation.\n Licensed under the MIT license.'],
     'react/display-name': 'off',
-    '@typescript-eslint/no-explicit-any': 'error',
-    '@typescript-eslint/no-unused-vars': ['warn', { varsIgnorePattern: '^_' }],
     curly: 'error'
   },
   settings: {
@@ -45,7 +34,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx', '**/mocks/*'],
+      files: ['**/*.test.js', '**/*.test.jsx', '**/*.spec.js', '**/*.spec.jsx', '**/mocks/*'],
       env: {
         jest: true
       }
