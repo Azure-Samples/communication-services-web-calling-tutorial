@@ -10,6 +10,7 @@
     "@uifabric/icons": "^7.7.4",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
+    "source-map-explorer": "^2.5.2",
     "uuid": "^8.3.2"
   },
   "scripts": {
@@ -23,7 +24,8 @@
     "prettier:check": "prettier --no-error-on-unmatched-pattern --check --config ./.prettierrc --ignore-path=./.prettierignore \"**/*.js\" \"**/*.jsx\"",
     "lint": "eslint */**/*.{js,jsx}",
     "lint:fix": "eslint */**/*.{js,jsx} --fix",
-    "lint:quiet": "eslint */**/*.{js,jsx} --quiet"
+    "lint:quiet": "eslint */**/*.{js,jsx} --quiet",
+    "analyze": "source-map-explorer dist/build/build.js"
   },
   "devDependencies": {
     "@babel/core": "^7.18.10",
@@ -46,6 +48,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "html-loader": "^4.1.0",
     "html-webpack-plugin": "^5.5.0",
+    "rimraf": "^3.0.2",
     "style-loader": "^3.3.1",
     "webpack": "^5.74.0",
     "webpack-dev-server": "^4.9.3"

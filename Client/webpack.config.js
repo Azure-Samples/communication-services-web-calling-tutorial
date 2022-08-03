@@ -15,6 +15,7 @@ const isProd = env.development == null ||
 
 module.exports = {
     ...(isProd ? {} : { devtool: 'eval-source-map' }),
+    // devtool: 'source-map',
     mode: isProd ? 'production' : 'development',
     entry: "./src/index.jsx",
     output: {
