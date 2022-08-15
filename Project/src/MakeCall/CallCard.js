@@ -404,28 +404,23 @@ export default class CallCard extends React.Component {
         this.setState(prevState => ({outgoingAudioMediaAccessActive: !prevState.outgoingAudioMediaAccessActive}));
     }
 
+    getDummyAudioStreamTrack() {
+        const context = new AudioContext();
+        const dest = context.createMediaStreamDestination();
+        const os = context.createOscillator();
+        os.type = 'sine';
+        os.frequency.value = 500;
+        os.connect(dest);
+        os.start();
+        const { stream } = dest;
+        const track = stream.getAudioTracks()[0];
+        return track;
+    }
+
     async startOutgoingAudioEffect() {
-        const localAudioStream = new LocalAudioStream(this.deviceManager.selectedMicrophone);
-        const mediaStreamTrack = await localAudioStream.getMediaStreamTrack();
-        
-        if (mediaStreamTrack) {
-            const stream = new MediaStream([mediaStreamTrack]);
-            const audioCtx = new AudioContext();
-            const source = audioCtx.createMediaStreamSource(stream);
-            const destination = audioCtx.createMediaStreamDestination();
-
-            let biquadFilter = audioCtx.createBiquadFilter();
-            
-            biquadFilter.type = "highshelf";
-            biquadFilter.frequency.value = 2000;
-            biquadFilter.gain.value = 30;
-          
-            source.connect(biquadFilter);
-            biquadFilter.connect(destination);
-
-            localAudioStream.switchSource(destination.stream.getAudioTracks()[0]);
-            this.call.startAudio(localAudioStream);
-        }
+        const track = this.getDummyAudioStreamTrack();
+        const localAudioStream = new LocalAudioStream(track);        
+        this.call.startAudio(localAudioStream);
     }
 
     async handleScreenSharingOnOff() {
