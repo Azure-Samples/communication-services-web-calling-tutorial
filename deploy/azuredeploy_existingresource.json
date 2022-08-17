@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.8.9.13224",
-      "templateHash": "11206434615860290051"
+      "version": "0.9.1.41621",
+      "templateHash": "8021572683016267495"
     }
   },
   "parameters": {
@@ -26,7 +26,7 @@
   },
   "variables": {
     "appServicePlanPortalName": "[format('AppServicePlan-{0}', parameters('appName'))]",
-    "packageUrl": "https://github.com/Azure-Samples/communication-services-web-calling-tutorial/releases/latest/download/pstn-calling.zip",
+    "packageUrl": "https://github.com/Azure-Samples/communication-services-web-calling-tutorial/releases/latest/download/calling-tutorial-build.zip",
     "communicationServicesResourceId": "<Enter you Communication Service Resource ID here"
   },
   "resources": [

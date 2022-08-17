@@ -22,14 +22,14 @@ jobs:
       - name: Build
         shell: bash
         run: |
-          release_name=PSTN-Calling
+          release_name=Calling-TUtorial
           unset CI
           # Build everything
           npm run setup
           npm run build
           npm run package
 
-          7z a -tzip -r "pstn-calling.zip" ./Client/dist/*
+          7z a -tzip -r "calling-tutorial-build.zip" ./Client/dist/*
 
           # Delete output directory
           rm -r "./Client/dist"
@@ -37,6 +37,6 @@ jobs:
       - name: Publish
         uses: softprops/action-gh-release@v1
         with:
-          files: "pstn-calling.zip"
+          files: "calling-tutorial-build.zip"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
