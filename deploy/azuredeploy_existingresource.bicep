@@ -7,7 +7,7 @@ param sku string = 'F1'
 var appServicePlanPortalName = 'AppServicePlan-${appName}'
 var packageUrl = 'https://github.com/Azure-Samples/communication-services-web-calling-tutorial/releases/latest/download/calling-tutorial-build.zip'
 var communicationServicesResourceId = '<Enter you Communication Service Resource ID here'
-var location = '[resourceGroup(*).location]'
+var location = resourceGroup().location
 
 resource serverFarm 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: appServicePlanPortalName
