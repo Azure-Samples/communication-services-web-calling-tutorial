@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "8021572683016267495"
+      "templateHash": "2124112247950976582"
     }
   },
   "parameters": {
@@ -61,7 +61,8 @@
       "location": "[parameters('location')]",
       "sku": {
         "name": "[parameters('sku')]"
-      }
+      },
+      "properties": {}
     },
     {
       "type": "Microsoft.Web/sites",
