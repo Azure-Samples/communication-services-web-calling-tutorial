@@ -5,12 +5,15 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "2124112247950976582"
+      "templateHash": "4621248714583779036"
     }
   },
   "parameters": {
     "appName": {
-      "type": "string"
+      "type": "string",
+      "metadata": {
+        "description": "Name of the AppService to create."
+      }
     },
     "sku": {
       "type": "string",
@@ -18,16 +21,13 @@
       "metadata": {
         "description": "The SKU of App Service Plan."
       }
-    },
-    "location": {
-      "type": "string",
-      "defaultValue": "[resourceGroup().location]"
     }
   },
   "variables": {
     "appServicePlanPortalName": "[format('AppServicePlan-{0}', parameters('appName'))]",
     "packageUrl": "https://github.com/Azure-Samples/communication-services-web-calling-tutorial/releases/latest/download/calling-tutorial-build.zip",
-    "communicationServicesResourceId": "<Enter you Communication Service Resource ID here"
+    "communicationServicesResourceId": "<Enter you Communication Service Resource ID here",
+    "location": "[[resourceGroup(*).location]"
   },
   "resources": [
     {
@@ -58,7 +58,7 @@
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2022-03-01",
       "name": "[variables('appServicePlanPortalName')]",
-      "location": "[parameters('location')]",
+      "location": "[variables('location')]",
       "sku": {
         "name": "[parameters('sku')]"
       },
@@ -68,7 +68,7 @@
       "type": "Microsoft.Web/sites",
       "apiVersion": "2022-03-01",
       "name": "[parameters('appName')]",
-      "location": "[parameters('location')]",
+      "location": "[variables('location')]",
       "properties": {
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanPortalName'))]"
       },

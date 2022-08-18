@@ -1,12 +1,13 @@
+@description('Name of the AppService to create.')
 param appName string
 
 @description('The SKU of App Service Plan.')
 param sku string = 'F1'
-param location string = resourceGroup().location
 
 var appServicePlanPortalName = 'AppServicePlan-${appName}'
 var packageUrl = 'https://github.com/Azure-Samples/communication-services-web-calling-tutorial/releases/latest/download/calling-tutorial-build.zip'
 var commsName = 'CommunicationServices-${appName}'
+var location = '[resourceGroup(*).location]'
 
 resource ACS 'Microsoft.Communication/communicationServices@2020-08-20' = {
   name: commsName
