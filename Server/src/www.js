@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import app from '../src/app';
+import app from './app.js';
 import http from 'http';
+import debug from 'debug'
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const debug = require('debug')('calling-sample-server:server');
+const debugLogger = debug('calling-sample-server:server');
 
 /**
  * Get port from environment and store in Express.
@@ -32,7 +32,7 @@ console.debug(`Express server started (http://localhost:${port}).`);
 /**
  * Normalize a port into a number, string, or false.
  */
-function normalizePort(val: string): number | string | false {
+function normalizePort(val) {
   const port = parseInt(val, 10);
 
   if (isNaN(port)) {
@@ -51,7 +51,7 @@ function normalizePort(val: string): number | string | false {
 /**
  * Event listener for HTTP server "error" event.
  */
-function onError(error: { syscall: string; code: string }): void {
+function onError(error) {
   if (error.syscall !== 'listen') {
     throw error;
   }
@@ -76,8 +76,8 @@ function onError(error: { syscall: string; code: string }): void {
 /**
  * Event listener for HTTP server "listening" event.
  */
-function onListening(): void {
+function onListening() {
   const addr = server.address();
   const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
-  debug('Listening on ' + bind);
+  debugLogger('Listening on ' + bind);
 }
