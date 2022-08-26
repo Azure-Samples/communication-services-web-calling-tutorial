@@ -2,10 +2,10 @@
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const path = require('path');
 
-const PORT = process.env.port || 9000;
-
 const env = process.env;
-env.development = false; // TODO find a way to really do this with env variables
+env.development = false;
+
+const PORT = env.port || 9000;
 
 const isProd = env.development == null || 
     !env.development || 
@@ -15,7 +15,6 @@ const isProd = env.development == null ||
 
 module.exports = {
     ...(isProd ? {} : { devtool: 'eval-source-map' }),
-    // devtool: 'source-map',
     mode: isProd ? 'production' : 'development',
     entry: "./src/index.jsx",
     output: {

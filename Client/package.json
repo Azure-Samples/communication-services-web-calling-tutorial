@@ -10,7 +10,6 @@
     "@uifabric/icons": "^7.7.4",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
-    "source-map-explorer": "^2.5.2",
     "uuid": "^8.3.2"
   },
   "scripts": {
@@ -18,14 +17,7 @@
     "clean": "rimraf dist",
     "package": "copyfiles -E -u 3 \"../Server/dist/**/*\" dist",
     "start": "concurrently \"cd ../Server && npm run start:dev\" \"npm run start:app\"",
-    "start:app": "webpack-dev-server --port 5000 --mode development",
-    "test": "",
-    "prettier": "prettier --no-error-on-unmatched-pattern --write --config ./.prettierrc --ignore-path=../.prettierignore \"**/*.js\" \"**/*.jsx\"",
-    "prettier:check": "prettier --no-error-on-unmatched-pattern --check --config ./.prettierrc --ignore-path=./.prettierignore \"**/*.js\" \"**/*.jsx\"",
-    "lint": "eslint */**/*.{js,jsx}",
-    "lint:fix": "eslint */**/*.{js,jsx} --fix",
-    "lint:quiet": "eslint */**/*.{js,jsx} --quiet",
-    "analyze": "source-map-explorer dist/build/build.js"
+    "start:app": "webpack-dev-server --port 5000 --mode development"
   },
   "devDependencies": {
     "@babel/core": "^7.18.10",
@@ -40,12 +32,6 @@
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "css-loader": "^6.7.1",
-    "eslint": "^8.21.0",
-    "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-header": "^3.1.1",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-react": "^7.30.1",
-    "eslint-plugin-react-hooks": "^4.6.0",
     "html-loader": "^4.1.0",
     "html-webpack-plugin": "^5.5.0",
     "rimraf": "^3.0.2",
