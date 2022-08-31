@@ -1,13 +1,10 @@
-name: Create Client Sample Release
+name: Create Sample Release
 
-on:
-  release:
-    types: [created]
-    name: Release
+on: push
 
 jobs:
   release:
-    name: Release
+    name: Create Release
     runs-on: ubuntu-latest
     steps:
     
