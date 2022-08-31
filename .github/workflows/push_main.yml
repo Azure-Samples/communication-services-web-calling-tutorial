@@ -36,5 +36,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: "calling-tutorial-build.zip"
+          tag_name: Newest Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
