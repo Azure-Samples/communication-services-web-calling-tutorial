@@ -1,26 +1,54 @@
 
 const CommunicationIdentityClient = require("@azure/communication-administration").CommunicationIdentityClient;
 const HtmlWebPackPlugin = require("html-webpack-plugin");
-const config = require("./config.json");
+const path = require('path');
 
-if(!config || !config.connectionString || config.connectionString.indexOf('endpoint=') === -1)
-{
-    throw new Error("Update `config.json` with connection string");
+let communicationIdentityClient = null;
+const getCommunicationIdentityClient = () => {
+    if (communicationIdentityClient != null) {
+        return communicationIdentityClient;
+    }
+    try {
+        const config = require('./config.json');
+    } catch (error) {
+        return null;
+    }
+    const isValidConnectionString = config && config.connectionString && config.connectionString.indexOf('endpoint=') > -1; 
+    if (isValidConnectionString) {
+        communicationIdentityClient = new CommunicationIdentityClient(config.connectionString);
+        return communicationIdentityClient;
+    }
+    console.error("Cannot use custom Communication Service. Update `config.json` with connection string");
+    return null;
 }
 
-const communicationIdentityClient = new  CommunicationIdentityClient(config.connectionString);
+const env = process.env;
+env.development = false;
 
-const PORT = process.env.port || 8080;
+const PORT = env.port || 9000;
+
+const isProd = env.development == null || 
+    !env.development || 
+    env.development == 'false' || 
+    (env.production != null && 
+        (env.production == true || env.production == 'true'));
 
 module.exports = {
-    devtool: 'inline-source-map',
-    mode: 'development',
+    ...(isProd ? {} : { devtool: 'eval-source-map' }),
+    mode: isProd ? 'production' : 'development',
     entry: "./src/index.js",
+    output: {
+        path: path.join(__dirname, isProd ? 'dist/build': 'dist'),
+        filename: 'build.js'
+    },
+    resolve: {
+        extensions: ['.js', '.jsx']
+    },
     module: {
         rules: [
             {
                 test: /\.(js|jsx)$/,
-                exclude: /node_modules/,
+                exclude: [/dist/, /node_modules/],
                 use: {
                     loader: "babel-loader"
                 }
@@ -47,15 +75,34 @@ module.exports = {
     ],
     devServer: {
         open: true,
+        hot: true,
         port: PORT,
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
+        },
         before: function(app) {
             app.post('/tokens/provisionUser', async (req, res) => {
+                // Check if the communication identity client has been configured.
+                const identityClient = getCommunicationIdentityClient();
+                if (identityClient == null) {
+                    const message = 'Cannot use custom communication service. Defaulting to publicly available resource.';
+                    res.status(503);
+                    res.json({ message })
+                    console.error(message);
+                    return;
+                }
+
+                // Create user and return token
                 try {
-                    let communicationUserId = await communicationIdentityClient.createUser();
-                    const tokenResponse = await communicationIdentityClient.issueToken(communicationUserId, ["voip"]);
+                    let communicationUserId = await identityClient.createUser();
+                    const tokenResponse = await identityClient.issueToken(communicationUserId, ["voip"]);
                     res.json(tokenResponse);
                 } catch (error) {
                     console.error(error);
+                    res.status(503);
+                    res.json({ message });
                 }
             });
         }

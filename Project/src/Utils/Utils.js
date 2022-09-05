@@ -10,20 +10,34 @@ export const utils = {
         return window.location.origin;
     },
     provisionNewUser: async (userId) => {
-        let response = await fetch('/tokens/provisionUser', {
+        const request = {
             method: 'POST',
-            body: { userId },
+            body: JSON.stringify({ userId }),
             headers: {
                 'Accept': 'application/json, text/plain, */*',
                 'Content-Type': 'application/json'
             },
-        });
+        };
+        
+        // Try the local server
+        try {
+            const response = await fetch('/tokens/provisionUser', request);
+            if (response.ok) {
+                return response.json();
+            }
+        } catch (error) {}
 
-        if (response.ok) {
-            return response.json();
-        }
+        console.warn('Could not get token from custom Communications Service. Trying publicly available service.');
 
-        throw new Error('Invalid token response');
+        // If that does not work, try the public version
+        try {
+            const response = await fetch('https://calling-example-er.azurewebsites.net/tokens/provisionUser', request);
+            if (response.ok) {
+                return response.json();
+            }
+        } catch (error) {}
+
+        new Error('Invalid token response');
     },
     getIdentifierText: (identifier) => {
         if (isCommunicationUserIdentifier(identifier)) {
