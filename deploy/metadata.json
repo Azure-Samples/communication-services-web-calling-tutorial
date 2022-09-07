@@ -1,0 +1,9 @@
+{
+    "$schema": "https://aka.ms/azure-quickstart-templates-metadata-schema#",
+    "itemDisplayName": "Deploy the Communication Services Calling Tutorial",
+    "description": "Deploys a static website through which you can do voip, pstn, and group calls.",
+    "summary": "Deploys a static website through which you can do voip, pstn, and group calls.",
+    "type": "QuickStart",
+    "githubUsername": "t-sanderv",
+    "dateUpdated": "2022-09-07"
+}

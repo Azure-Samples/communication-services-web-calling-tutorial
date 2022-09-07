@@ -8,6 +8,11 @@ products:
 - azure-communication-services
 ---
 
+[![Deploy To Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ft-sanderv%2Fcommunication-services-web-calling-tutorial%2Fwithout-server%2Fdeploy%2Fazuredeploy.json)
+[![Deploy To Azure US Gov](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazuregov.svg?sanitize=true)](https://portal.azure.us/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ft-sanderv%2Fcommunication-services-web-calling-tutorial%2Fwithout-server%2Fdeploy%2Fazuredeploy.json)
+[![Visualize](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/visualizebutton.svg?sanitize=true)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Ft-sanderv%2Fcommunication-services-web-calling-tutorial%2Fwithout-server%2Fdeploy%2Fazuredeploy.json)
+
+
 # ACS Calling Tutorial
 This is a sample application to show how one can use the `azure@communication-calling` package to build a calling experience. The client-side application is a React based user interface.  
 
@@ -40,7 +45,15 @@ This is a sample application to show how one can use the `azure@communication-ca
 ## Deployment to Azure from VS Code
 1. Download the [Azure Plugin](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azureresourcegroups) and the [Azure Static Web App Plugin](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurestaticwebapps) for VS Code.
 2. In the Azure plugin pane, click `+`, and click `Create Static Web App`.
-3. 
+3. Enter your subscription
+4. Enter a unique static app name
+5. Enter a Region
+6. Select `React` as build preset
+7. Location of application code: `Project`
+8. Location of build output: `dist/build`
+9. A Github Action will be started. You can see the resulting web app site in the Github Action Log.
+
+## Deployment to Azure
 
 
 ## Resources
