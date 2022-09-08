@@ -40,24 +40,25 @@ The client-side application is a React based user interface. Alongside this fron
 
 ## Local Run
 1. Open a command prompt in the `Project` folder
-2. npm install
-3. npm run build
-4. npm run start
-7. Open localhost:5000 in a browser. (Supported browsers are Chrome, Edge Chromium, and Safari)
+2. `npm install`
+3. `npm run start`
+4. Open localhost:5000 in a browser. (Supported browsers are Chrome, Edge Chromium, and Safari)
 
 ## Deployment to Azure from VS Code
-1. Download the [Azure Plugin](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azureresourcegroups) and the [Azure Static Web App Plugin](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurestaticwebapps) for VS Code.
-2. In the Azure plugin pane, click `+`, and click `Create Static Web App`.
-3. Enter your subscription
-4. Enter a unique static app name
-5. Enter a Region
-6. Select `React` as build preset
-7. Location of application code: `Project`
-8. Location of build output: `dist/build`
-9. A Github Action will be started. You can see the resulting web app site in the Github Action Log.
+1. Open a command prompt in the `Project` folder
+2. `npm install`
+3. `npm run build`
+4. Download the [Azure Plugin](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azureresourcegroups) and the [Azure Static Web App Plugin](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurestaticwebapps) for VS Code.
+5. In the Azure plugin pane, click `+`, and click `Create App Service Web App`.
+6. Enter your subscription
+7. Enter a unique app name
+8. Select `Node 14` as the Runtime.
+
+Your App Service should be configured
 
 ## Deployment to Azure
 
+Use the blue buttons above.
 
 ## Resources
 
