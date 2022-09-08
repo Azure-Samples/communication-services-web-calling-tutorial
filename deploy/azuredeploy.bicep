@@ -1,5 +1,5 @@
 var location = resourceGroup().location
-var packageUrl = 'https://github.com/Azure-Samples/communication-services-web-calling-tutorial/releases/latest/download/calling-tutorial-build.zip'
+var packageUrl = 'https://github.com/t-sanderv/communication-services-web-calling-tutorial/releases/latest/download/calling-tutorial-build.zip'
 
 // This template deploys an Azure Storage account, and then configures it to support static website hosting.
 // Enabling static website hosting isn't possible directly in Bicep or an ARM template,
