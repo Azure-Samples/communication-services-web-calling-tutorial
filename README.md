@@ -45,12 +45,21 @@ The client-side application is a React based user interface. Alongside this fron
 4. Open `http://localhost:9000` in a browser. (Supported browsers are Chrome, Edge Chromium, and Safari)
 
 
-## Publish to Azure
-1. `npm run setup`
-2. `npm run build`
-3. `npm run package`
-4. Use the Azure extension and deploy the Client/dist directory to your app service
+## Deployment to Azure from VS Code
+1. Open a command prompt in the `Project` folder
+2. `npm install`
+3. `npm run build`
+4. Download the [Azure Plugin](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azureresourcegroups) and the [Azure Static Web App Plugin](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurestaticwebapps) for VS Code.
+5. In the Azure plugin pane, click `+`, and click `Create App Service Web App`.
+6. Enter your subscription
+7. Enter a unique app name
+8. Select `Node 14` as the Runtime.
 
+Your App Service should be configured
+
+## Deployment to Azure
+
+Use the blue buttons above.
 
 ## Resources
 
