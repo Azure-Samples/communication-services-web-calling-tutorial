@@ -5,114 +5,77 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "18262439437875261388"
+      "templateHash": "5295446896421913079"
     }
   },
   "parameters": {
-    "storageAccountName": {
+    "appName": {
       "type": "string",
-      "defaultValue": "[format('stor{0}', uniqueString(resourceGroup().id))]",
       "metadata": {
-        "description": "The name of the storage account to use for site hosting."
+        "description": "Name of the AppService to create."
       }
     },
     "sku": {
       "type": "string",
-      "defaultValue": "Standard_LRS",
-      "metadata": {
-        "description": "The storage account sku name."
-      },
+      "defaultValue": "F1",
       "allowedValues": [
-        "Standard_LRS",
-        "Standard_GRS",
-        "Standard_RAGRS",
-        "Standard_ZRS",
-        "Premium_LRS",
-        "Premium_ZRS",
-        "Standard_GZRS",
-        "Standard_RAGZRS"
-      ]
+        "F1",
+        "D1",
+        "B1",
+        "B2",
+        "B3",
+        "S1",
+        "S2",
+        "S3",
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "metadata": {
+        "description": "The pricing tier for the hosting plan."
+      }
     }
   },
   "variables": {
-    "$fxv#0": "# $env:PackageUrl = 'https://github.com/Azure-Samples/communication-services-web-calling-tutorial/releases/latest/download/calling-tutorial-build.zip'\n# $env:ResourceGroupName = 't-sanderv-basic-linux'\n# $env:StorageAccountName = 'callingexamplestaticapp'\n\n$storageAccount = Get-AzStorageAccount -ResourceGroupName $env:ResourceGroupName -AccountName $env:StorageAccountName\n\n# Enable the static website feature on the storage account.\n$ctx = $storageAccount.Context\nEnable-AzStorageStaticWebsite -Context $ctx -IndexDocument index.html -ErrorDocument404Path index.html\n\n# Download and extract the ZIP file\n$ZipFile = \"calling-example.zip\"\n$ExtractedDirectory = \"calling-example\"\n\nInvoke-Webrequest -Uri $env:packageUrl -OutFile $ZipFile\n\nAdd-Type -AssemblyName System.IO.Compression.FileSystem\n[System.IO.Compression.ZipFile]::ExtractToDirectory($ZipFile, $ExtractedDirectory)\n\n\n# Upload the zip contents to the storages account\nSet-AzStorageBlobContent -Context $ctx -Container '$web' -File $ExtractToDirectory+\"/index.html\" -Blob \"index.html\" -Properties @{'ContentType' = 'text/html'} -Force\nSet-AzStorageBlobContent -Context $ctx -Container '$web' -File $ExtractToDirectory+\"/bundle.js\" -Blob \"bundle.js\" -Properties @{'ContentType' = 'text/javascript'} -Force",
-    "location": "[resourceGroup().location]",
-    "packageUrl": "https://github.com/t-sanderv/communication-services-web-calling-tutorial/releases/latest/download/calling-tutorial-build.zip"
+    "appServicePlanPortalName": "[format('AppServicePlan-{0}', parameters('appName'))]",
+    "packageUrl": "https://github.com/Azure-Samples/communication-services-web-calling-tutorial/releases/latest/download/calling-tutorial-build.zip",
+    "commsName": "[format('CommunicationServices-{0}', parameters('appName'))]",
+    "location": "[resourceGroup().location]"
   },
   "resources": [
     {
-      "type": "Microsoft.Storage/storageAccounts",
-      "apiVersion": "2021-06-01",
-      "name": "[parameters('storageAccountName')]",
+      "type": "Microsoft.Web/sites/extensions",
+      "apiVersion": "2022-03-01",
+      "name": "[format('{0}/{1}', parameters('appName'), 'MSDeploy')]",
+      "properties": {
+        "packageUri": "[variables('packageUrl')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('appName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2022-03-01",
+      "name": "[variables('appServicePlanPortalName')]",
       "location": "[variables('location')]",
-      "kind": "StorageV2",
       "sku": {
         "name": "[parameters('sku')]"
-      }
-    },
-    {
-      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
-      "apiVersion": "2018-11-30",
-      "name": "DeploymentScript",
-      "location": "[variables('location')]"
-    },
-    {
-      "type": "Microsoft.Authorization/roleAssignments",
-      "apiVersion": "2020-04-01-preview",
-      "scope": "[format('Microsoft.Storage/storageAccounts/{0}', parameters('storageAccountName'))]",
-      "name": "[guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'DeploymentScript'), subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '17d1049b-9a84-46fb-8f53-869881c3d3ab'))]",
-      "properties": {
-        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '17d1049b-9a84-46fb-8f53-869881c3d3ab')]",
-        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'DeploymentScript')).principalId]",
-        "principalType": "ServicePrincipal"
       },
-      "dependsOn": [
-        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'DeploymentScript')]",
-        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
-      ]
+      "properties": {}
     },
     {
-      "type": "Microsoft.Resources/deploymentScripts",
-      "apiVersion": "2020-10-01",
-      "name": "deploymentScript",
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2022-03-01",
+      "name": "[parameters('appName')]",
       "location": "[variables('location')]",
-      "kind": "AzurePowerShell",
-      "identity": {
-        "type": "UserAssigned",
-        "userAssignedIdentities": {
-          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'DeploymentScript'))]": {}
-        }
-      },
       "properties": {
-        "azPowerShellVersion": "3.0",
-        "scriptContent": "[variables('$fxv#0')]",
-        "retentionInterval": "PT4H",
-        "environmentVariables": [
-          {
-            "name": "ResourceGroupName",
-            "value": "[resourceGroup().name]"
-          },
-          {
-            "name": "StorageAccountName",
-            "value": "[parameters('storageAccountName')]"
-          },
-          {
-            "name": "packageUrl",
-            "value": "[variables('packageUrl')]"
-          }
-        ]
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanPortalName'))]"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'DeploymentScript')]",
-        "[extensionResourceId(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), 'Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'DeploymentScript'), subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '17d1049b-9a84-46fb-8f53-869881c3d3ab')))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]"
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanPortalName'))]"
       ]
     }
-  ],
-  "outputs": {
-    "staticWebsiteUrl": {
-      "type": "string",
-      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))).primaryEndpoints.web]"
-    }
-  }
+  ]
 }

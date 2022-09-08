@@ -1,6 +1,7 @@
 
 const CommunicationIdentityClient = require("@azure/communication-administration").CommunicationIdentityClient;
 const HtmlWebPackPlugin = require("html-webpack-plugin");
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 const path = require('path');
 
 let communicationIdentityClient = null;
@@ -8,8 +9,9 @@ const getCommunicationIdentityClient = () => {
     if (communicationIdentityClient != null) {
         return communicationIdentityClient;
     }
+    let config;
     try {
-        const config = require('./config.json');
+        config = require('./config.json');
     } catch (error) {
         return null;
     }
@@ -38,7 +40,7 @@ module.exports = {
     mode: isProd ? 'production' : 'development',
     entry: "./src/index.js",
     output: {
-        path: path.join(__dirname, isProd ? 'dist/build': 'dist'),
+        path: path.join(__dirname, 'dist'),
         filename: 'build.js'
     },
     resolve: {
@@ -71,7 +73,11 @@ module.exports = {
         new HtmlWebPackPlugin({
             template: "./public/index.html",
             filename: "./index.html"
-        })
+        }),
+        new CopyWebpackPlugin({ patterns: [{ 
+            from: path.resolve(__dirname, 'web.config'), 
+            to: path.resolve(__dirname, 'dist') 
+        }]})
     ],
     devServer: {
         open: true,
@@ -82,8 +88,8 @@ module.exports = {
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
             "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
         },
-        before: function(app) {
-            app.post('/tokens/provisionUser', async (req, res) => {
+        onBeforeSetupMiddleware: function(devServer) {
+            devServer.app.post('/tokens/provisionUser', async (req, res) => {
                 // Check if the communication identity client has been configured.
                 const identityClient = getCommunicationIdentityClient();
                 if (identityClient == null) {

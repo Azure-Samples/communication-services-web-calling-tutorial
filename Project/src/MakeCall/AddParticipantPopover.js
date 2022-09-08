@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
-import { TextField } from 'office-ui-fabric-react';
-import { Button } from 'office-ui-fabric-react'
+import { TextField } from '@fluentui/react';
+import { Button } from '@fluentui/react'
 
 
 export default function AddParticipantPopover(props) {
