@@ -1,6 +1,5 @@
 import React, { useState, useRef } from "react";
-import { TextField } from 'office-ui-fabric-react';
-import { Button } from 'office-ui-fabric-react';
+import { Button, TextField } from 'office-ui-fabric-react';
 import { Features } from '@azure/communication-calling';
 
 
@@ -50,8 +49,8 @@ export default function AddParticipantPopover(props) {
         <>
         <span>
             <h3>Participants</h3>
-            <p>Role: {role}</p>
-            <p>Total Participants: {totalParticipants}, Streaming Clients: {streamingClients}</p>
+            <h4>Role: {role}</h4>
+            <h4>Total Participants: {totalParticipants}, Streaming Clients: {streamingClients}</h4>
         </span>
         <span><a href="#" onClick={toggleAddParticipantPanel}><i className="add-participant-button ms-Icon ms-Icon--AddFriend" aria-hidden="true"></i></a></span>
         <div className="ms-Grid">

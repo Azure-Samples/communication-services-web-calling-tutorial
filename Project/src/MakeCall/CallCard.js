@@ -249,7 +249,7 @@ export default class CallCard extends React.Component {
                 if (participantStreams) {
                     let participantStreamTuples = participantStreams.map(stream => { return { stream, remoteParticipantType, streamRendererComponentRef: React.createRef() }});
                     participantStreamTuples.forEach(participantStreamTuple => {
-                        if (!this.state.allBotParticipantStreams.find((v) => { return v === participantStreamTuple })) {
+                        if (!this.state.allBotParticipantStreams.find((v) => v === participantStreamTuple)) {
                             this.setState(prevState => ({
                                 allBotParticipantStreams: [...prevState.allBotParticipantStreams, participantStreamTuple]
                             }));
@@ -260,10 +260,10 @@ export default class CallCard extends React.Component {
     
             const removeFromListOfAllBotParticipantStreams = (participantStreams) => {
                 participantStreams.forEach(streamToRemove => {
-                    const tupleToRemove = this.state.allBotParticipantStreams.find((v) => { return v.stream === streamToRemove })
+                    const tupleToRemove = this.state.allBotParticipantStreams.find((v) => v.stream === streamToRemove);
                     if (tupleToRemove) {
                         this.setState({
-                            allBotParticipantStreams: this.state.allBotParticipantStreams.filter(streamTuple => { return streamTuple !== tupleToRemove })
+                            allBotParticipantStreams: this.state.allBotParticipantStreams.filter(streamTuple => streamTuple !== tupleToRemove)
                         });
                     }
                 });
