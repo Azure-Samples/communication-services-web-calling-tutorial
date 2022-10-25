@@ -18,6 +18,7 @@ export default class MakeCall extends React.Component {
     constructor(props) {
         super(props);
         this.callClient = null;
+        this.debugInfoFeature = null;
         this.environmentInfo = null;
         this.callAgent = null;
         this.deviceManager = null;
@@ -40,6 +41,7 @@ export default class MakeCall extends React.Component {
             incomingCall: undefined,
             showCallSampleCode: false,
             showEnvironmentInfoCode: false,
+            isCallClientActiveInAnotherTab: undefined,
             showMuteUnmuteSampleCode: false,
             showHoldUnholdCallSampleCode: false,
             selectedCameraDeviceId: null,
@@ -67,7 +69,8 @@ export default class MakeCall extends React.Component {
                 const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 setLogLevel('verbose');
                 this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk", `#clientTag:${userDetails.clientTag}`] } });
-                this.environmentInfo = await this.callClient.getEnvironmentInfo();
+                this.debugInfoFeature = this.callClient.feature(Features.DebugInfo);
+                this.environmentInfo = await this.debugInfoFeature.getEnvironmentInfo();
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
                 // override logger to be able to dowload logs locally
                 AzureLogger.log = (...args) => {
@@ -85,6 +88,10 @@ export default class MakeCall extends React.Component {
                         console.log(...args);
                     }
                 };
+                this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
+                this.debugInfoFeature.on('isCallClientActiveInAnotherTabChanged', () => {
+                    this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
+                });
                 window.callAgent = this.callAgent;
                 this.deviceManager = await this.callClient.getDeviceManager();
                 const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
@@ -662,6 +669,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         <div>{`Operating system:   ${this.environmentInfo?.environment?.platform}.`}</div>
                         <div>{`Browser:  ${this.environmentInfo?.environment?.browser}.`}</div>
                         <div>{`Browser's version:  ${this.environmentInfo?.environment?.browserVersion}.`}</div>
+                        <div>{`Is the application loaded in many tabs:  ${this.state.isCallClientActiveInAnotherTab}.`}</div>
                         <br></br>
                         <h3>Environment support verification</h3>
                         <div>{`Operating system supported:  ${this.environmentInfo?.isSupportedPlatform}.`}</div>
