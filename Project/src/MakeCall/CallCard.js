@@ -118,7 +118,7 @@ export default class CallCard extends React.Component {
             });
 
             let localVolumeStateSetter = undefined;
-            let handleSelectedMichrophoneVolumeSubscription = async () => {        
+            let handleSelectedMicrophoneVolumeSubscription = async () => {        
                 let localVolumeIndicator = await (new LocalAudioStream(this.deviceManager.selectedMicrophone).getVolume());
                 localVolumeStateSetter = ()=>{
                     this.setState({ localVolumeLevel: localVolumeIndicator.level });
@@ -127,7 +127,7 @@ export default class CallCard extends React.Component {
                 this.setState({ localVolumeLevelSubscription: localVolumeStateSetter });
                 this.setState({ localVolumeIndicator: localVolumeIndicator });                             
             }
-            handleSelectedMichrophoneVolumeSubscription();
+            handleSelectedMicrophoneVolumeSubscription();
 
             let remoteVolumeStateSetter = undefined;
             let handleRemoteVolumeSubscription = async () => {                
@@ -146,7 +146,7 @@ export default class CallCard extends React.Component {
 
             this.deviceManager.on('selectedMicrophoneChanged', () => {
                 this.setState({ selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id });
-                handleSelectedMichrophoneVolumeSubscription();
+                handleSelectedMicrophoneVolumeSubscription();
             });
 
             const callStateChanged = () => {
@@ -171,6 +171,7 @@ export default class CallCard extends React.Component {
 
                 if (this.call.state === 'Disconnected') {
                     this.setState({ dominantRemoteParticipant: undefined });
+                    this.componentWillUnmount()
                 }
             }
             callStateChanged();
