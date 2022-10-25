@@ -1,6 +1,5 @@
 import React from "react";
 import { CallClient, LocalVideoStream, Features } from '@azure/communication-calling';
-import { utils } from "../Utils/Utils";
 import { AzureCommunicationTokenCredential } from '@azure/communication-common';
 import {
     PrimaryButton,
@@ -27,6 +26,7 @@ export default class MakeCall extends React.Component {
         this.destinationGroup = null;
         this.meetingLink = null;
         this.meetingId = null;
+        this.roomsId = null;
         this.threadId = null;
         this.messageId = null;
         this.organizerId = null;
@@ -220,6 +220,21 @@ export default class MakeCall extends React.Component {
         try {
             const callOptions = await this.getCallOptions(withVideo);
             this.callAgent.join({ groupId: this.destinationGroup.value }, callOptions);
+        } catch (e) {
+            console.error('Failed to join a call', e);
+            this.setState({ callError: 'Failed to join a call: ' + e });
+        }
+    };
+
+    joinRooms = async (withVideo) => {
+        try {
+            if(this.roomsId.value) {
+                const callOptions = await this.getCallOptions(withVideo);
+                this.callAgent.join({ meetingId: this.roomsId.value }, callOptions);
+            } else {
+                throw new Error('Please enter Rooms ID to join a Rooms call');
+            }
+            
         } catch (e) {
             console.error('Failed to join a call', e);
             this.setState({ callError: 'Failed to join a call: ' + e });
@@ -803,6 +818,27 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                         text="Join group call with video"
                                         disabled={this.state.call || !this.state.loggedIn}
                                         onClick={() => this.joinGroup(true)}>
+                                    </PrimaryButton>
+                                </div>
+                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                    <h3 className="mb-1">Join a Rooms call</h3>
+                                    <div>Enter Rooms ID</div>
+                                    <TextField className="mb-3"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        label="Rooms id"
+                                        componentRef={(val) => this.roomsId = val} />
+                                    
+                                    <PrimaryButton className="primary-button"
+                                        iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                        text="Join Rooms call"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        onClick={() => this.joinRooms(false)}>
+                                    </PrimaryButton>
+                                    <PrimaryButton className="primary-button"
+                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                        text="Join Rooms call with video"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        onClick={() => this.joinRooms(true)}>
                                     </PrimaryButton>
                                 </div>
                                 <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">

@@ -8,6 +8,7 @@ export default class Login extends React.Component {
         super(props);
         this.userDetailsResponse = undefined;
         this.displayName = undefined;
+        this.userId;
         this.clientTag = uuid();
         this.state = {
             showUserProvisioningAndSdkInitializationCode: false,
@@ -20,7 +21,7 @@ export default class Login extends React.Component {
     provisionNewUser = async () => {
         try {
             this.setState({ showSpinner: true, disableInitializeButton: true });
-            this.userDetailsResponse = await utils.provisionNewUser();
+            this.userDetailsResponse = await utils.provisionNewUser({userId: this.userId});
             this.setState({ id: utils.getIdentifierText(this.userDetailsResponse.user) });
             await this.props.onLoggedIn({ id: this.state.id, token: this.userDetailsResponse.token, displayName: this.displayName, clientTag: this.clientTag });
             this.setState({ loggedIn: true });
@@ -213,6 +214,10 @@ export class MyCallingApp {
                                                 defaultValue={undefined}
                                                 label="Optional display name"
                                                 onChange={(e) => { this.displayName = e.target.value }} />
+                                    <TextField className="mt-3"
+                                                defaultValue={undefined}
+                                                label="Optional User ID"
+                                                onChange={(e) => { this.userId = e.target.value }} />
                                     <TextField className="mt-3"
                                                 defaultValue={this.clientTag}
                                                 label="Optional: Tag this usage session"

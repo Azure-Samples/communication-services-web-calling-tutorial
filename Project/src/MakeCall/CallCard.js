@@ -3,6 +3,7 @@ import { MessageBar, MessageBarType, DefaultButton } from 'office-ui-fabric-reac
 import { Toggle } from '@fluentui/react/lib/Toggle';
 import { TooltipHost } from '@fluentui/react/lib/Tooltip';
 import StreamRenderer from "./StreamRenderer";
+import BotStreamRenderer from "./BotStreamRenderer";
 import AddParticipantPopover from "./AddParticipantPopover";
 import RemoteParticipantCard from "./RemoteParticipantCard";
 import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
@@ -20,10 +21,17 @@ export default class CallCard extends React.Component {
         this.deviceManager = props.deviceManager;
         this.state = {
             callState: this.call.state,
+            localVolumeLevel: 0,
+            remoteVolumeLevel: 0,
+            localVolumeLevelSubscription: undefined,
+            remoteVolumeLevelSubscription: undefined,
+            localVolumeIndicator: undefined,
+            remoteVolumeIndicator: undefined,
             callId: this.call.id,
             // localParticipantid: this.call.feature(Features.DebugInfo).localParticipantId,
             remoteParticipants: this.call.remoteParticipants,
             allRemoteParticipantStreams: [],
+            allBotParticipantStreams: [],
             videoOn: !!this.call.localVideoStreams[0],
             micMuted: false,
             incomingAudioMuted: false,
@@ -111,12 +119,36 @@ export default class CallCard extends React.Component {
                 });
             });
 
+            let localVolumeStateSetter = undefined;
+            let handleSelectedMicrophoneVolumeSubscription = async () => {        
+                let localVolumeIndicator = await (new LocalAudioStream(this.deviceManager.selectedMicrophone).getVolume());
+                localVolumeStateSetter = ()=>{
+                    this.setState({ localVolumeLevel: localVolumeIndicator.level });
+                }
+                localVolumeIndicator.on('levelChanged', localVolumeStateSetter);
+                this.setState({ localVolumeLevelSubscription: localVolumeStateSetter });
+                this.setState({ localVolumeIndicator: localVolumeIndicator });                             
+            }
+            handleSelectedMicrophoneVolumeSubscription();
+
+            let remoteVolumeStateSetter = undefined;
+            let handleRemoteVolumeSubscription = async () => {                
+                let remoteVolumeIndicator = await this.call.remoteAudioStreams[0].getVolume();
+                remoteVolumeStateSetter = ()=>{
+                    this.setState({ remoteVolumeLevel: remoteVolumeIndicator.level });
+                }
+                remoteVolumeIndicator.on('levelChanged', remoteVolumeStateSetter);
+                this.setState({ remoteVolumeLevelSubscription: remoteVolumeStateSetter });
+                this.setState({ remoteVolumeIndicator: remoteVolumeIndicator });                              
+            }
+
             this.deviceManager.on('selectedSpeakerChanged', () => {
                 this.setState({ selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id });
             });
 
             this.deviceManager.on('selectedMicrophoneChanged', () => {
                 this.setState({ selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id });
+                handleSelectedMicrophoneVolumeSubscription();
             });
 
             const callStateChanged = () => {
@@ -130,6 +162,9 @@ export default class CallCard extends React.Component {
                         this.callFinishConnectingResolve();
                     }
                 }
+                if (this.call.state === 'Connected'){
+                    this.call.on('remoteAudioStreamsUpdated', handleRemoteVolumeSubscription)
+                }
                 if (this.call.state === 'Incoming') {
                     this.setState({ selectedCameraDeviceId: cameraDevices[0]?.id });
                     this.setState({ selectedSpeakerDeviceId: speakerDevices[0]?.id });
@@ -138,6 +173,7 @@ export default class CallCard extends React.Component {
 
                 if (this.call.state === 'Disconnected') {
                     this.setState({ dominantRemoteParticipant: undefined });
+                    this.componentWillUnmount()
                 }
             }
             callStateChanged();
@@ -243,12 +279,49 @@ export default class CallCard extends React.Component {
                 }
             };
 
+            const addToListOfAllBotParticipantStreams = (participantStreams, remoteParticipantType) => {
+                if (participantStreams) {
+                    let participantStreamTuples = participantStreams.map(stream => { return { stream, remoteParticipantType, streamRendererComponentRef: React.createRef() }});
+                    participantStreamTuples.forEach(participantStreamTuple => {
+                        if (!this.state.allBotParticipantStreams.find((v) => v === participantStreamTuple)) {
+                            this.setState(prevState => ({
+                                allBotParticipantStreams: [...prevState.allBotParticipantStreams, participantStreamTuple]
+                            }));
+                        }
+                    })
+                }
+            }
+    
+            const removeFromListOfAllBotParticipantStreams = (participantStreams) => {
+                participantStreams.forEach(streamToRemove => {
+                    const tupleToRemove = this.state.allBotParticipantStreams.find((v) => v.stream === streamToRemove);
+                    if (tupleToRemove) {
+                        this.setState({
+                            allBotParticipantStreams: this.state.allBotParticipantStreams.filter(streamTuple => streamTuple !== tupleToRemove)
+                        });
+                    }
+                });
+            }
+
+            const streamUpdatedHandler = (streams, remoteParticipantType) => {
+                addToListOfAllBotParticipantStreams(streams.added, remoteParticipantType);
+                removeFromListOfAllBotParticipantStreams(streams.removed);
+            }
+
             const dominantSpeakerIdentifier = this.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
             if(dominantSpeakerIdentifier) {
                 this.setState({ dominantRemoteParticipant: utils.getRemoteParticipantObjFromIdentifier(dominantSpeakerIdentifier) })
             }
             this.call.feature(Features.DominantSpeakers).on('dominantSpeakersChanged', dominantSpeakersChangedHandler);
+
+            this.call.feature(Features.LiveStream).on('liveStreamsUpdated', (streams) => streamUpdatedHandler(streams, 'Live'));
+            this.call.feature(Features.ComposedStream).on('composedStreamsUpdated', (streams) => streamUpdatedHandler(streams, 'Composed'));
         }
+    }
+
+    async componentWillUnmount() {
+        this.state.localVolumeIndicator.off('levelChanged', this.state.localVolumeLevelSubscription);
+        this.state.remoteVolumeIndicator.off('levelChanged', this.state.remoteVolumeLevelSubscription);
     }
 
     subscribeToRemoteParticipant(participant) {
@@ -585,6 +658,24 @@ export default class CallCard extends React.Component {
                         </div>
                     }
                     <div className={this.state.callState === 'Connected' ? `ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl9` : 'ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl12'}>
+                    {
+                        (this.state.callState === 'Connected') && <div className="volume-indicatordiv">
+                                        {
+                                            (this.state.callState === 'Connected' && !this.state.micMuted) &&
+                                            <div className='elements'>
+                                            <label>Remote Volume Visualizer</label>
+                                            <div className="volumeVisualizer" style={{'--volume':this.state.remoteVolumeLevel + '%'}}></div>
+                                        </div>
+                                        }
+                                        {
+                                            (this.state.callState === 'Connected' && !this.state.micMuted) &&
+                                            <div className='elements'>
+                                            <label>Selected Microphone Volume Visualizer</label>
+                                            <div className="volumeVisualizer" style={{'--volume':this.state.localVolumeLevel + '%'}}></div>
+                                        </div>
+                                        }
+                        </div>
+                    }
                         <div className="mb-2">
                             {
                                 this.state.callState !== 'Connected' &&
@@ -757,6 +848,17 @@ export default class CallCard extends React.Component {
                                                         remoteParticipant={v.participant}
                                                         dominantSpeakerMode={this.state.dominantSpeakerMode}
                                                         dominantRemoteParticipant={this.state.dominantRemoteParticipant}/>
+                                    )
+                                }
+                                {
+                                    (this.state.callState === 'Connected' ||
+                                    this.state.callState === 'LocalHold' ||
+                                    this.state.callState === 'RemoteHold') &&
+                                    this.state.allBotParticipantStreams.map(v =>
+                                        <BotStreamRenderer key={`${v.remoteParticipantType}-${v.stream.mediaStreamType}-${v.stream.id}`}
+                                                        ref ={v.streamRendererComponentRef}
+                                                        stream={v.stream}
+                                                        remoteParticipantType={v.remoteParticipantType}/>
                                     )
                                 }
                             </div>
