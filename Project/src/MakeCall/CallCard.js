@@ -3,6 +3,7 @@ import { MessageBar, MessageBarType, DefaultButton } from 'office-ui-fabric-reac
 import { Toggle } from '@fluentui/react/lib/Toggle';
 import { TooltipHost } from '@fluentui/react/lib/Tooltip';
 import StreamRenderer from "./StreamRenderer";
+import BotStreamRenderer from "./BotStreamRenderer";
 import AddParticipantPopover from "./AddParticipantPopover";
 import RemoteParticipantCard from "./RemoteParticipantCard";
 import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
@@ -24,6 +25,7 @@ export default class CallCard extends React.Component {
             // localParticipantid: this.call.feature(Features.DebugInfo).localParticipantId,
             remoteParticipants: this.call.remoteParticipants,
             allRemoteParticipantStreams: [],
+            allBotParticipantStreams: [],
             videoOn: !!this.call.localVideoStreams[0],
             micMuted: false,
             incomingAudioMuted: false,
@@ -243,11 +245,43 @@ export default class CallCard extends React.Component {
                 }
             };
 
+            const addToListOfAllBotParticipantStreams = (participantStreams, remoteParticipantType) => {
+                if (participantStreams) {
+                    let participantStreamTuples = participantStreams.map(stream => { return { stream, remoteParticipantType, streamRendererComponentRef: React.createRef() }});
+                    participantStreamTuples.forEach(participantStreamTuple => {
+                        if (!this.state.allBotParticipantStreams.find((v) => v === participantStreamTuple)) {
+                            this.setState(prevState => ({
+                                allBotParticipantStreams: [...prevState.allBotParticipantStreams, participantStreamTuple]
+                            }));
+                        }
+                    })
+                }
+            }
+    
+            const removeFromListOfAllBotParticipantStreams = (participantStreams) => {
+                participantStreams.forEach(streamToRemove => {
+                    const tupleToRemove = this.state.allBotParticipantStreams.find((v) => v.stream === streamToRemove);
+                    if (tupleToRemove) {
+                        this.setState({
+                            allBotParticipantStreams: this.state.allBotParticipantStreams.filter(streamTuple => streamTuple !== tupleToRemove)
+                        });
+                    }
+                });
+            }
+
+            const streamUpdatedHandler = (streams, remoteParticipantType) => {
+                addToListOfAllBotParticipantStreams(streams.added, remoteParticipantType);
+                removeFromListOfAllBotParticipantStreams(streams.removed);
+            }
+
             const dominantSpeakerIdentifier = this.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
             if(dominantSpeakerIdentifier) {
                 this.setState({ dominantRemoteParticipant: utils.getRemoteParticipantObjFromIdentifier(dominantSpeakerIdentifier) })
             }
             this.call.feature(Features.DominantSpeakers).on('dominantSpeakersChanged', dominantSpeakersChangedHandler);
+
+            this.call.feature(Features.LiveStream).on('liveStreamsUpdated', (streams) => streamUpdatedHandler(streams, 'Live'));
+            this.call.feature(Features.ComposedStream).on('composedStreamsUpdated', (streams) => streamUpdatedHandler(streams, 'Composed'));
         }
     }
 
@@ -757,6 +791,17 @@ export default class CallCard extends React.Component {
                                                         remoteParticipant={v.participant}
                                                         dominantSpeakerMode={this.state.dominantSpeakerMode}
                                                         dominantRemoteParticipant={this.state.dominantRemoteParticipant}/>
+                                    )
+                                }
+                                {
+                                    (this.state.callState === 'Connected' ||
+                                    this.state.callState === 'LocalHold' ||
+                                    this.state.callState === 'RemoteHold') &&
+                                    this.state.allBotParticipantStreams.map(v =>
+                                        <BotStreamRenderer key={`${v.remoteParticipantType}-${v.stream.mediaStreamType}-${v.stream.id}`}
+                                                        ref ={v.streamRendererComponentRef}
+                                                        stream={v.stream}
+                                                        remoteParticipantType={v.remoteParticipantType}/>
                                     )
                                 }
                             </div>

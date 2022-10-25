@@ -9,10 +9,11 @@ export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    provisionNewUser: async (userId) => {
-        let response = await fetch('/tokens/provisionUser', {
+    provisionNewUser: async (user) => {
+        const url = user && user.userId ? `/tokens/provisionUser?userId=${user.userId}` : '/tokens/provisionUser';
+        let response = await fetch(url, {
             method: 'POST',
-            body: { userId },
+            body: { userId: user },
             headers: {
                 'Accept': 'application/json, text/plain, */*',
                 'Content-Type': 'application/json'
