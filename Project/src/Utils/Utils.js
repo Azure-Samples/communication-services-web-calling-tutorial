@@ -10,7 +10,8 @@ export const utils = {
         return window.location.origin;
     },
     provisionNewUser: async (userId) => {
-        let response = await fetch('/tokens/provisionUser', {
+        const url = userId && userId.userId ? `/tokens/provisionUser?userId=${userId.userId}` : '/tokens/provisionUser';
+        let response = await fetch(url, {
             method: 'POST',
             body: { userId },
             headers: {

@@ -1,12 +1,28 @@
 import React, { useState, useRef } from "react";
 import { TextField } from 'office-ui-fabric-react';
-import { Button } from 'office-ui-fabric-react'
+import { Button } from 'office-ui-fabric-react';
+import { Features } from '@azure/communication-calling';
 
 
 export default function AddParticipantPopover(props) {
     const [userId, setUserId] = useState('');
     const [alternateCallerId, setAlternateCallerId] = useState('');
     const [showAddParticipantPanel, setShowAddParticipantPanel] = useState(false);
+    const [role, setRole] = useState(props.call.role);
+    const [totalParticipants, setTotalParticipants] = useState(props.call.totalParticipantCount);
+    const [streamingClients, setStreamingClients] = useState(props.call.feature(Features.LiveStream).participantCount);
+
+    props.call.on('roleChanged', () => {
+        setRole(props.call.role);
+    });
+
+    props.call.on('totalParticipantCountChanged', () => {
+        setTotalParticipants(props.call.totalParticipantCount);
+    });
+
+    props.call.feature(Features.LiveStream).on('participantCountChanged', () => {
+        setStreamingClients(props.call.feature(Features.LiveStream).participantCount);
+    });
 
     function handleAddCommunicationUser() {
         console.log('handleAddCommunicationUser', userId);
@@ -32,7 +48,11 @@ export default function AddParticipantPopover(props) {
 
     return (
         <>
-        <span><h3>Participants</h3></span>
+        <span>
+            <h3>Participants</h3>
+            <p>Role: {role}</p>
+            <p>Total Participants: {totalParticipants}, Streaming Clients: {streamingClients}</p>
+        </span>
         <span><a href="#" onClick={toggleAddParticipantPanel}><i className="add-participant-button ms-Icon ms-Icon--AddFriend" aria-hidden="true"></i></a></span>
         <div className="ms-Grid">
             <div className="ms-Grid-row">
