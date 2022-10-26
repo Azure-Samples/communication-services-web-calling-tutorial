@@ -15,6 +15,7 @@ import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
 import { Label } from '@fluentui/react/lib/Label';
 import { AzureLogger } from '@azure/logger';
+import VolumeVisualizer from "./VolumeVisualizer";
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -646,6 +647,10 @@ export default class CallCard extends React.Component {
                         </div>
                     }
                     <div className={this.state.callState === 'Connected' ? `ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl9` : 'ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl12'}>
+                        {
+                            (this.state.callState === 'Connected') && !this.state.micMuted &&
+                            <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} />
+                        }
                         <div className="mb-2">
                             {
                                 this.state.callState !== 'Connected' &&
