@@ -22,6 +22,8 @@ export default class CallCard extends React.Component {
         this.callFinishConnectingResolve = undefined;
         this.call = props.call;
         this.deviceManager = props.deviceManager;
+        this.remoteVolumeLevelSubscription = undefined;
+        this.handleRemoteVolumeSubscription = undefined;
         this.state = {
             callState: this.call.state,
             callId: this.call.id,
@@ -45,12 +47,28 @@ export default class CallCard extends React.Component {
             dominantSpeakerMode: false,
             dominantRemoteParticipant: undefined,
             logMediaStats: false,
-            sentResolution: ''
+            sentResolution: '',
+            remoteVolumeIndicator: undefined,
+            remoteVolumeLevel: undefined
         };
     }
 
     async componentWillMount() {
         if (this.call) {
+            let handleRemoteVolumeSubscription = async () => {
+                if(this.call.remoteAudioStreams.length>0)  {
+                    let remoteVolumeIndicator = await this.call.remoteAudioStreams[0].getVolume();
+                let remoteVolumeStateSetter = ()=>{
+                    this.setState({ remoteVolumeLevel: remoteVolumeIndicator.level });
+                }
+                remoteVolumeIndicator.on('levelChanged', remoteVolumeStateSetter);
+                this.remoteVolumeLevelSubscription = remoteVolumeStateSetter;
+                this.setState({ remoteVolumeIndicator: remoteVolumeIndicator });
+                }                                            
+            }
+            this.call.on('remoteAudioStreamsUpdated', handleRemoteVolumeSubscription);
+            this.handleRemoteVolumeSubscription = handleRemoteVolumeSubscription;
+
             this.deviceManager.on('videoDevicesUpdated', async e => {
                 let newCameraDeviceToUse = undefined;
                 e.added.forEach(addedCameraDevice => {
@@ -292,6 +310,10 @@ export default class CallCard extends React.Component {
             }
             this.call.feature(Features.DominantSpeakers).on('dominantSpeakersChanged', dominantSpeakersChangedHandler);
         }
+    }
+
+    async componentWillUnmount() {
+        this.call.off('remoteAudioStreamsUpdated', this.handleRemoteVolumeSubscription);
     }
 
     subscribeToRemoteParticipant(participant) {
@@ -791,6 +813,13 @@ export default class CallCard extends React.Component {
                                                     styles={{ dropdown: { width: 400 } }}
                                                 />
                                             }
+                                            <div>
+                                            <h3>Volume Visualizer</h3>
+                                            {   
+                                                (this.state.callState === 'Connected') && !this.state.micMuted &&
+                                                <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} remoteVolumeLevel={this.state.remoteVolumeLevel} />
+                                            }
+                                            </div>                                            
                                         </div>
                                     </div>
                                 </Panel>
