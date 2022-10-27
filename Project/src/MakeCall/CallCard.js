@@ -12,6 +12,7 @@ import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
 import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
+import VolumeVisualizer from "./VolumeVisualizer";
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -19,14 +20,10 @@ export default class CallCard extends React.Component {
         this.callFinishConnectingResolve = undefined;
         this.call = props.call;
         this.deviceManager = props.deviceManager;
+        this.remoteVolumeLevelSubscription = undefined;
+        this.handleRemoteVolumeSubscription = undefined;
         this.state = {
             callState: this.call.state,
-            localVolumeLevel: 0,
-            remoteVolumeLevel: 0,
-            localVolumeLevelSubscription: undefined,
-            remoteVolumeLevelSubscription: undefined,
-            localVolumeIndicator: undefined,
-            remoteVolumeIndicator: undefined,
             callId: this.call.id,
             // localParticipantid: this.call.feature(Features.DebugInfo).localParticipantId,
             remoteParticipants: this.call.remoteParticipants,
@@ -48,12 +45,28 @@ export default class CallCard extends React.Component {
             showLocalVideo: false,
             callMessage: undefined,
             dominantSpeakerMode: false,
-            dominantRemoteParticipant: undefined
+            dominantRemoteParticipant: undefined,
+            remoteVolumeIndicator: undefined,
+            remoteVolumeLevel: undefined
         };
     }
 
     async componentWillMount() {
         if (this.call) {
+            let handleRemoteVolumeSubscription = async () => {
+                if(this.call.remoteAudioStreams.length>0)  {
+                    let remoteVolumeIndicator = await this.call.remoteAudioStreams[0].getVolume();
+                let remoteVolumeStateSetter = ()=>{
+                    this.setState({ remoteVolumeLevel: remoteVolumeIndicator.level });
+                }
+                remoteVolumeIndicator.on('levelChanged', remoteVolumeStateSetter);
+                this.remoteVolumeLevelSubscription = remoteVolumeStateSetter;
+                this.setState({ remoteVolumeIndicator: remoteVolumeIndicator });
+                }                                            
+            }
+            this.call.on('remoteAudioStreamsUpdated', handleRemoteVolumeSubscription);
+            this.handleRemoteVolumeSubscription = handleRemoteVolumeSubscription;
+
             this.deviceManager.on('videoDevicesUpdated', async e => {
                 let newCameraDeviceToUse = undefined;
                 e.added.forEach(addedCameraDevice => {
@@ -119,36 +132,12 @@ export default class CallCard extends React.Component {
                 });
             });
 
-            let localVolumeStateSetter = undefined;
-            let handleSelectedMicrophoneVolumeSubscription = async () => {        
-                let localVolumeIndicator = await (new LocalAudioStream(this.deviceManager.selectedMicrophone).getVolume());
-                localVolumeStateSetter = ()=>{
-                    this.setState({ localVolumeLevel: localVolumeIndicator.level });
-                }
-                localVolumeIndicator.on('levelChanged', localVolumeStateSetter);
-                this.setState({ localVolumeLevelSubscription: localVolumeStateSetter });
-                this.setState({ localVolumeIndicator: localVolumeIndicator });                             
-            }
-            handleSelectedMicrophoneVolumeSubscription();
-
-            let remoteVolumeStateSetter = undefined;
-            let handleRemoteVolumeSubscription = async () => {                
-                let remoteVolumeIndicator = await this.call.remoteAudioStreams[0].getVolume();
-                remoteVolumeStateSetter = ()=>{
-                    this.setState({ remoteVolumeLevel: remoteVolumeIndicator.level });
-                }
-                remoteVolumeIndicator.on('levelChanged', remoteVolumeStateSetter);
-                this.setState({ remoteVolumeLevelSubscription: remoteVolumeStateSetter });
-                this.setState({ remoteVolumeIndicator: remoteVolumeIndicator });                              
-            }
-
             this.deviceManager.on('selectedSpeakerChanged', () => {
                 this.setState({ selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id });
             });
 
             this.deviceManager.on('selectedMicrophoneChanged', () => {
                 this.setState({ selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id });
-                handleSelectedMicrophoneVolumeSubscription();
             });
 
             const callStateChanged = () => {
@@ -162,9 +151,6 @@ export default class CallCard extends React.Component {
                         this.callFinishConnectingResolve();
                     }
                 }
-                if (this.call.state === 'Connected'){
-                    this.call.on('remoteAudioStreamsUpdated', handleRemoteVolumeSubscription)
-                }
                 if (this.call.state === 'Incoming') {
                     this.setState({ selectedCameraDeviceId: cameraDevices[0]?.id });
                     this.setState({ selectedSpeakerDeviceId: speakerDevices[0]?.id });
@@ -173,7 +159,6 @@ export default class CallCard extends React.Component {
 
                 if (this.call.state === 'Disconnected') {
                     this.setState({ dominantRemoteParticipant: undefined });
-                    this.componentWillUnmount()
                 }
             }
             callStateChanged();
@@ -320,8 +305,7 @@ export default class CallCard extends React.Component {
     }
 
     async componentWillUnmount() {
-        this.state.localVolumeIndicator.off('levelChanged', this.state.localVolumeLevelSubscription);
-        this.state.remoteVolumeIndicator.off('levelChanged', this.state.remoteVolumeLevelSubscription);
+        this.call.off('remoteAudioStreamsUpdated', this.handleRemoteVolumeSubscription);
     }
 
     subscribeToRemoteParticipant(participant) {
@@ -658,24 +642,6 @@ export default class CallCard extends React.Component {
                         </div>
                     }
                     <div className={this.state.callState === 'Connected' ? `ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl9` : 'ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl12'}>
-                    {
-                        (this.state.callState === 'Connected') && <div className="volume-indicatordiv">
-                                        {
-                                            (this.state.callState === 'Connected' && !this.state.micMuted) &&
-                                            <div className='elements'>
-                                            <label>Remote Volume Visualizer</label>
-                                            <div className="volumeVisualizer" style={{'--volume':this.state.remoteVolumeLevel + '%'}}></div>
-                                        </div>
-                                        }
-                                        {
-                                            (this.state.callState === 'Connected' && !this.state.micMuted) &&
-                                            <div className='elements'>
-                                            <label>Selected Microphone Volume Visualizer</label>
-                                            <div className="volumeVisualizer" style={{'--volume':this.state.localVolumeLevel + '%'}}></div>
-                                        </div>
-                                        }
-                        </div>
-                    }
                         <div className="mb-2">
                             {
                                 this.state.callState !== 'Connected' &&
@@ -830,6 +796,13 @@ export default class CallCard extends React.Component {
                                                     styles={{ dropdown: { width: 400 } }}
                                                 />
                                             }
+                                            <div>
+                                            <h3>Volume Visualizer</h3>
+                                            {   
+                                                (this.state.callState === 'Connected') && !this.state.micMuted &&
+                                                <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} remoteVolumeLevel={this.state.remoteVolumeLevel} />
+                                            }
+                                            </div>                                            
                                         </div>
                                     </div>
                                 </Panel>
