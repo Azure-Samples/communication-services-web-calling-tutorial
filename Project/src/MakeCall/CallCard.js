@@ -20,6 +20,8 @@ export default class CallCard extends React.Component {
         this.callFinishConnectingResolve = undefined;
         this.call = props.call;
         this.deviceManager = props.deviceManager;
+        this.remoteVolumeLevelSubscription = undefined;
+        this.handleRemoteVolumeSubscription = undefined;
         this.state = {
             callState: this.call.state,
             callId: this.call.id,
@@ -43,12 +45,28 @@ export default class CallCard extends React.Component {
             showLocalVideo: false,
             callMessage: undefined,
             dominantSpeakerMode: false,
-            dominantRemoteParticipant: undefined
+            dominantRemoteParticipant: undefined,
+            remoteVolumeIndicator: undefined,
+            remoteVolumeLevel: undefined
         };
     }
 
     async componentWillMount() {
         if (this.call) {
+            let handleRemoteVolumeSubscription = async () => {
+                if(this.call.remoteAudioStreams.length>0)  {
+                    let remoteVolumeIndicator = await this.call.remoteAudioStreams[0].getVolume();
+                let remoteVolumeStateSetter = ()=>{
+                    this.setState({ remoteVolumeLevel: remoteVolumeIndicator.level });
+                }
+                remoteVolumeIndicator.on('levelChanged', remoteVolumeStateSetter);
+                this.remoteVolumeLevelSubscription = remoteVolumeStateSetter;
+                this.setState({ remoteVolumeIndicator: remoteVolumeIndicator });
+                }                                            
+            }
+            this.call.on('remoteAudioStreamsUpdated', handleRemoteVolumeSubscription);
+            this.handleRemoteVolumeSubscription = handleRemoteVolumeSubscription;
+
             this.deviceManager.on('videoDevicesUpdated', async e => {
                 let newCameraDeviceToUse = undefined;
                 e.added.forEach(addedCameraDevice => {
@@ -284,6 +302,10 @@ export default class CallCard extends React.Component {
             this.call.feature(Features.LiveStream).on('liveStreamsUpdated', (streams) => streamUpdatedHandler(streams, 'Live'));
             this.call.feature(Features.ComposedStream).on('composedStreamsUpdated', (streams) => streamUpdatedHandler(streams, 'Composed'));
         }
+    }
+
+    async componentWillUnmount() {
+        this.call.off('remoteAudioStreamsUpdated', this.handleRemoteVolumeSubscription);
     }
 
     subscribeToRemoteParticipant(participant) {
@@ -620,10 +642,6 @@ export default class CallCard extends React.Component {
                         </div>
                     }
                     <div className={this.state.callState === 'Connected' ? `ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl9` : 'ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl12'}>
-                        {
-                            (this.state.callState === 'Connected') && !this.state.micMuted &&
-                            <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} />
-                        }
                         <div className="mb-2">
                             {
                                 this.state.callState !== 'Connected' &&
@@ -778,6 +796,13 @@ export default class CallCard extends React.Component {
                                                     styles={{ dropdown: { width: 400 } }}
                                                 />
                                             }
+                                            <div>
+                                            <h3>Volume Visualizer</h3>
+                                            {   
+                                                (this.state.callState === 'Connected') && !this.state.micMuted &&
+                                                <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} remoteVolumeLevel={this.state.remoteVolumeLevel} />
+                                            }
+                                            </div>                                            
                                         </div>
                                     </div>
                                 </Panel>
