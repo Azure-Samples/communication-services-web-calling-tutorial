@@ -424,7 +424,7 @@ this.currentCall = this.callAgent.join({
 /*     Environment Information     */
 /**************************************************************************************/
 // Get current environment information with details if supported by ACS
-this.environmentInfo = await this.callClient.getEnvironmentInfo();
+this.environmentInfo = await this.callClient.feature(Features.DebugInfo).getEnvironmentInfo();
 
 // The returned value is an object of type EnvironmentInfo
 type EnvironmentInfo = {
@@ -446,6 +446,7 @@ type Environment = {
 const currentOperatingSystem = this.environmentInfo.environment.platform;
 const currentBrowser = this.environmentInfo.environment.browser;
 const currentBrowserVersion = this.environmentInfo.environment.browserVersion;
+const isCallClientActiveInAnotherTab = this.callClient.feature(Features.DebugInfo).isCallClientActiveInAnotherTab;
 
 // The following code snippet shows how to check if environment details are supported by ACS
 const isSupportedOperatingSystem = this.environmentInfo.isSupportedPlatform;
