@@ -51,8 +51,7 @@ module.exports = {
         before: function(app) {
             app.post('/tokens/provisionUser', async (req, res) => {
                 try {
-                    const userId = req.query.userId;
-                    let communicationUserId = userId ? { communicationUserId: userId } : await communicationIdentityClient.createUser();
+                    let communicationUserId = await communicationIdentityClient.createUser();
                     const tokenResponse = await communicationIdentityClient.issueToken(communicationUserId, ["voip"]);
                     res.json(tokenResponse);
                 } catch (error) {

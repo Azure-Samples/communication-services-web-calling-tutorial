@@ -763,10 +763,6 @@ div::before {
    transition: width 100ms linear;
 }
 
-h3 {
-  margin: 20px;
-  font-family: sans-serif;
-}
 .volume-indicatordiv {
   width: 300px;
   border: 1px solid #605e5c;
