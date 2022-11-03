@@ -5,6 +5,7 @@ export default class VolumeVisualizer extends React.Component {
     constructor(props) {
         super(props);
         this.call = props.call;
+        this.localAudioStream = undefined;
         this.deviceManager = props.deviceManager;
         this.localVolumeLevelSubscription = undefined;
         this.remoteVolumeLevelSubscription = undefined;
@@ -19,8 +20,10 @@ export default class VolumeVisualizer extends React.Component {
     async componentWillMount() {
         if (this.call) {
             let localVolumeStateSetter = undefined;
-            let handleSelectedMicrophoneVolumeSubscription = async () => {        
-                let localVolumeIndicator = await (new LocalAudioStream(this.deviceManager.selectedMicrophone).getVolume());
+            let handleSelectedMicrophoneVolumeSubscription = async () => {
+                this.localAudioStream?.dispose();  
+                this.localAudioStream = new LocalAudioStream(this.deviceManager.selectedMicrophone);
+                let localVolumeIndicator = await (this.localAudioStream.getVolume());
                 localVolumeStateSetter = ()=>{
                     this.setState({ localVolumeLevel: localVolumeIndicator.level });
                 }
@@ -61,6 +64,7 @@ export default class VolumeVisualizer extends React.Component {
     async componentWillUnmount() {
         if ((!!this.state.localVolumeIndicator) && (!!this.localVolumeLevelSubscription)) {
             this.state.localVolumeIndicator.off('levelChanged', this.localVolumeLevelSubscription);
+            this.localAudioStream?.dispose();
         }
         if((!!this.state.remoteVolumeIndicator) && (!!this.remoteVolumeLevelSubscription)) {
 =======
