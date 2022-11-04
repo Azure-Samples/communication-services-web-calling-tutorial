@@ -475,7 +475,7 @@ export default class CallCard extends React.Component {
         this.setState(prevState => ({outgoingAudioMediaAccessActive: !prevState.outgoingAudioMediaAccessActive}));
     }
 
-    async handleMediaStatsLogOnOff() {
+    async handleMediaStatsLogState() {
         this.setState(prevState => ({logMediaStats: !prevState.logMediaStats}));
     }
 
@@ -764,7 +764,7 @@ export default class CallCard extends React.Component {
                                 <span className="in-call-button"
                                     title={`${this.state.logMediaStats? 'Stop' : 'Start'} logging MediaStats`}
                                     variant="secondary"
-                                    onClick={() => this.handleMediaStatsLogOnOff()}>
+                                    onClick={() => this.handleMediaStatsLogState()}>
                                     {
                                         this.state.logMediaStats &&
                                         <Icon iconName="NumberedList" />
