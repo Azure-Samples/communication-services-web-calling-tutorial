@@ -797,9 +797,12 @@ export default class CallCard extends React.Component {
                                                 />
                                             }
                                             <div>
-                                            <h3>Volume Visualizer</h3>
+                                            {
+                                                (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
+                                                <h3>Volume Visualizer</h3>
+                                            }
                                             {   
-                                                (this.state.callState === 'Connected') && !this.state.micMuted &&
+                                                (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
                                                 <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} remoteVolumeLevel={this.state.remoteVolumeLevel} />
                                             }
                                             </div>                                            
