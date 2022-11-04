@@ -12,6 +12,7 @@ import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
 import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
+import { AzureLogger } from '@azure/logger';
 import VolumeVisualizer from "./VolumeVisualizer";
 
 export default class CallCard extends React.Component {
@@ -47,7 +48,8 @@ export default class CallCard extends React.Component {
             dominantSpeakerMode: false,
             dominantRemoteParticipant: undefined,
             remoteVolumeIndicator: undefined,
-            remoteVolumeLevel: undefined
+            remoteVolumeLevel: undefined,
+            logMediaStats: false
         };
     }
 
@@ -214,6 +216,18 @@ export default class CallCard extends React.Component {
                     this.setState({ streams: this.state.allRemoteParticipantStreams.filter(s => { return s.participant !== p }) });
 
                 });
+            });
+
+            const mediaCollector = this.call.feature(Features.MediaStats).createCollector();
+            mediaCollector.on('sampleReported', (data) => {
+                if (this.state.logMediaStats) {
+                    AzureLogger.log(`${(new Date()).toISOString()} MediaStats sample: ${JSON.stringify(data)}`);
+                }
+            });
+            mediaCollector.on('summaryReported', (data) => {
+                if (this.state.logMediaStats) {
+                    AzureLogger.log(`${(new Date()).toISOString()} MediaStats summary: ${JSON.stringify(data)}`);
+                }
             });
 
             const dominantSpeakersChangedHandler = async () => {
@@ -459,6 +473,10 @@ export default class CallCard extends React.Component {
         }
 
         this.setState(prevState => ({outgoingAudioMediaAccessActive: !prevState.outgoingAudioMediaAccessActive}));
+    }
+
+    async handleMediaStatsLogOnOff() {
+        this.setState(prevState => ({logMediaStats: !prevState.logMediaStats}));
     }
 
     getDummyAudioStreamTrack() {
@@ -741,6 +759,19 @@ export default class CallCard extends React.Component {
                                     {
                                         !this.state.outgoingAudioMediaAccessActive &&
                                         <Icon iconName="PlugDisconnected" />
+                                    }
+                                </span>
+                                <span className="in-call-button"
+                                    title={`${this.state.logMediaStats? 'Stop' : 'Start'} logging MediaStats`}
+                                    variant="secondary"
+                                    onClick={() => this.handleMediaStatsLogOnOff()}>
+                                    {
+                                        this.state.logMediaStats &&
+                                        <Icon iconName="NumberedList" />
+                                    }
+                                    {
+                                        !this.state.logMediaStats &&
+                                        <Icon iconName="NumberedListText" />
                                     }
                                 </span>
                                 <Panel type={PanelType.medium}
