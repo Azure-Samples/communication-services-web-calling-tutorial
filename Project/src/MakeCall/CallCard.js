@@ -197,7 +197,6 @@ export default class CallCard extends React.Component {
                 });
             });
 
-            let mediaCollector;
             const mediaStatsFeature = this.call.feature(Features.MediaStats);
             if (mediaStatsFeature) {
                 if (mediaStatsFeature.createCollector) {
