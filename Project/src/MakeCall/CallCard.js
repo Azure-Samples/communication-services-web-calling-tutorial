@@ -11,6 +11,7 @@ import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
 import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
+import { AzureLogger } from '@azure/logger';
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -40,7 +41,8 @@ export default class CallCard extends React.Component {
             showLocalVideo: false,
             callMessage: undefined,
             dominantSpeakerMode: false,
-            dominantRemoteParticipant: undefined
+            dominantRemoteParticipant: undefined,
+            logMediaStats: false
         };
     }
 
@@ -194,6 +196,35 @@ export default class CallCard extends React.Component {
 
                 });
             });
+
+            let mediaCollector;
+            const mediaStatsFeature = this.call.feature(Features.MediaStats);
+            if (mediaStatsFeature) {
+                if (mediaStatsFeature.createCollector) {
+                    // SDK 1.8.0-beta+
+                    const mediaCollector = mediaStatsFeature.createCollector();
+                    mediaCollector.on('sampleReported', (data) => {
+                        if (this.state.logMediaStats) {
+                            AzureLogger.log(`${(new Date()).toISOString()} MediaStats sample: ${JSON.stringify(data)}`);
+                        }
+                    });
+                    mediaCollector.on('summaryReported', (data) => {
+                        if (this.state.logMediaStats) {
+                            AzureLogger.log(`${(new Date()).toISOString()} MediaStats summary: ${JSON.stringify(data)}`);
+                        }
+                    });
+                } else if (mediaStatsFeature.startCollector) {
+                    const mediaCollector = mediaStatsFeature.startCollector({
+                        aggregationInterval: 10,
+                        dataPointsPerAggregation: 1
+                    });
+                    mediaCollector.on('mediaStatsEmitted', (data) => {
+                        if (this.state.logMediaStats) {
+                            AzureLogger.log(`${(new Date()).toISOString()} MediaStats summary: ${JSON.stringify(data)}`);
+                        }
+                    });
+                }
+            }
 
             const dominantSpeakersChangedHandler = async () => {
                 try {
@@ -402,6 +433,10 @@ export default class CallCard extends React.Component {
         }
 
         this.setState(prevState => ({outgoingAudioMediaAccessActive: !prevState.outgoingAudioMediaAccessActive}));
+    }
+
+    async handleMediaStatsLogState() {
+        this.setState(prevState => ({logMediaStats: !prevState.logMediaStats}));
     }
 
     getDummyAudioStreamTrack() {
@@ -684,6 +719,19 @@ export default class CallCard extends React.Component {
                                     {
                                         !this.state.outgoingAudioMediaAccessActive &&
                                         <Icon iconName="PlugDisconnected" />
+                                    }
+                                </span>
+                                <span className="in-call-button"
+                                    title={`${this.state.logMediaStats? 'Stop' : 'Start'} logging MediaStats`}
+                                    variant="secondary"
+                                    onClick={() => this.handleMediaStatsLogState()}>
+                                    {
+                                        this.state.logMediaStats &&
+                                        <Icon iconName="NumberedList" />
+                                    }
+                                    {
+                                        !this.state.logMediaStats &&
+                                        <Icon iconName="NumberedListText" />
                                     }
                                 </span>
                                 <Panel type={PanelType.medium}
