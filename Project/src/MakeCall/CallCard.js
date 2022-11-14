@@ -3,7 +3,6 @@ import { MessageBar, MessageBarType, DefaultButton } from 'office-ui-fabric-reac
 import { Toggle } from '@fluentui/react/lib/Toggle';
 import { TooltipHost } from '@fluentui/react/lib/Tooltip';
 import StreamRenderer from "./StreamRenderer";
-import BotStreamRenderer from "./BotStreamRenderer";
 import AddParticipantPopover from "./AddParticipantPopover";
 import RemoteParticipantCard from "./RemoteParticipantCard";
 import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
@@ -12,8 +11,6 @@ import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
 import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
-import { AzureLogger } from '@azure/logger';
-import VolumeVisualizer from "./VolumeVisualizer";
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -21,15 +18,12 @@ export default class CallCard extends React.Component {
         this.callFinishConnectingResolve = undefined;
         this.call = props.call;
         this.deviceManager = props.deviceManager;
-        this.remoteVolumeLevelSubscription = undefined;
-        this.handleRemoteVolumeSubscription = undefined;
         this.state = {
             callState: this.call.state,
             callId: this.call.id,
             // localParticipantid: this.call.feature(Features.DebugInfo).localParticipantId,
             remoteParticipants: this.call.remoteParticipants,
             allRemoteParticipantStreams: [],
-            allBotParticipantStreams: [],
             videoOn: !!this.call.localVideoStreams[0],
             micMuted: false,
             incomingAudioMuted: false,
@@ -46,29 +40,12 @@ export default class CallCard extends React.Component {
             showLocalVideo: false,
             callMessage: undefined,
             dominantSpeakerMode: false,
-            dominantRemoteParticipant: undefined,
-            remoteVolumeIndicator: undefined,
-            remoteVolumeLevel: undefined,
-            logMediaStats: false
+            dominantRemoteParticipant: undefined
         };
     }
 
     async componentWillMount() {
         if (this.call) {
-            let handleRemoteVolumeSubscription = async () => {
-                if(this.call.remoteAudioStreams.length>0)  {
-                    let remoteVolumeIndicator = await this.call.remoteAudioStreams[0].getVolume();
-                let remoteVolumeStateSetter = ()=>{
-                    this.setState({ remoteVolumeLevel: remoteVolumeIndicator.level });
-                }
-                remoteVolumeIndicator.on('levelChanged', remoteVolumeStateSetter);
-                this.remoteVolumeLevelSubscription = remoteVolumeStateSetter;
-                this.setState({ remoteVolumeIndicator: remoteVolumeIndicator });
-                }                                            
-            }
-            this.call.on('remoteAudioStreamsUpdated', handleRemoteVolumeSubscription);
-            this.handleRemoteVolumeSubscription = handleRemoteVolumeSubscription;
-
             this.deviceManager.on('videoDevicesUpdated', async e => {
                 let newCameraDeviceToUse = undefined;
                 e.added.forEach(addedCameraDevice => {
@@ -218,18 +195,6 @@ export default class CallCard extends React.Component {
                 });
             });
 
-            const mediaCollector = this.call.feature(Features.MediaStats).createCollector();
-            mediaCollector.on('sampleReported', (data) => {
-                if (this.state.logMediaStats) {
-                    AzureLogger.log(`${(new Date()).toISOString()} MediaStats sample: ${JSON.stringify(data)}`);
-                }
-            });
-            mediaCollector.on('summaryReported', (data) => {
-                if (this.state.logMediaStats) {
-                    AzureLogger.log(`${(new Date()).toISOString()} MediaStats summary: ${JSON.stringify(data)}`);
-                }
-            });
-
             const dominantSpeakersChangedHandler = async () => {
                 try {
                     if(this.state.dominantSpeakerMode) {
@@ -278,48 +243,12 @@ export default class CallCard extends React.Component {
                 }
             };
 
-            const addToListOfAllBotParticipantStreams = (participantStreams, remoteParticipantType) => {
-                if (participantStreams) {
-                    let participantStreamTuples = participantStreams.map(stream => { return { stream, remoteParticipantType, streamRendererComponentRef: React.createRef() }});
-                    participantStreamTuples.forEach(participantStreamTuple => {
-                        if (!this.state.allBotParticipantStreams.find((v) => v === participantStreamTuple)) {
-                            this.setState(prevState => ({
-                                allBotParticipantStreams: [...prevState.allBotParticipantStreams, participantStreamTuple]
-                            }));
-                        }
-                    })
-                }
-            }
-    
-            const removeFromListOfAllBotParticipantStreams = (participantStreams) => {
-                participantStreams.forEach(streamToRemove => {
-                    const tupleToRemove = this.state.allBotParticipantStreams.find((v) => v.stream === streamToRemove);
-                    if (tupleToRemove) {
-                        this.setState({
-                            allBotParticipantStreams: this.state.allBotParticipantStreams.filter(streamTuple => streamTuple !== tupleToRemove)
-                        });
-                    }
-                });
-            }
-
-            const streamUpdatedHandler = (streams, remoteParticipantType) => {
-                addToListOfAllBotParticipantStreams(streams.added, remoteParticipantType);
-                removeFromListOfAllBotParticipantStreams(streams.removed);
-            }
-
             const dominantSpeakerIdentifier = this.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
             if(dominantSpeakerIdentifier) {
                 this.setState({ dominantRemoteParticipant: utils.getRemoteParticipantObjFromIdentifier(dominantSpeakerIdentifier) })
             }
             this.call.feature(Features.DominantSpeakers).on('dominantSpeakersChanged', dominantSpeakersChangedHandler);
-
-            this.call.feature(Features.LiveStream).on('liveStreamsUpdated', (streams) => streamUpdatedHandler(streams, 'Live'));
-            this.call.feature(Features.ComposedStream).on('composedStreamsUpdated', (streams) => streamUpdatedHandler(streams, 'Composed'));
         }
-    }
-
-    async componentWillUnmount() {
-        this.call.off('remoteAudioStreamsUpdated', this.handleRemoteVolumeSubscription);
     }
 
     subscribeToRemoteParticipant(participant) {
@@ -473,10 +402,6 @@ export default class CallCard extends React.Component {
         }
 
         this.setState(prevState => ({outgoingAudioMediaAccessActive: !prevState.outgoingAudioMediaAccessActive}));
-    }
-
-    async handleMediaStatsLogState() {
-        this.setState(prevState => ({logMediaStats: !prevState.logMediaStats}));
     }
 
     getDummyAudioStreamTrack() {
@@ -761,19 +686,6 @@ export default class CallCard extends React.Component {
                                         <Icon iconName="PlugDisconnected" />
                                     }
                                 </span>
-                                <span className="in-call-button"
-                                    title={`${this.state.logMediaStats? 'Stop' : 'Start'} logging MediaStats`}
-                                    variant="secondary"
-                                    onClick={() => this.handleMediaStatsLogState()}>
-                                    {
-                                        this.state.logMediaStats &&
-                                        <Icon iconName="NumberedList" />
-                                    }
-                                    {
-                                        !this.state.logMediaStats &&
-                                        <Icon iconName="NumberedListText" />
-                                    }
-                                </span>
                                 <Panel type={PanelType.medium}
                                     isLightDismiss
                                     isOpen={this.state.showSettings}
@@ -827,16 +739,6 @@ export default class CallCard extends React.Component {
                                                     styles={{ dropdown: { width: 400 } }}
                                                 />
                                             }
-                                            <div>
-                                            {
-                                                (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
-                                                <h3>Volume Visualizer</h3>
-                                            }
-                                            {   
-                                                (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
-                                                <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} remoteVolumeLevel={this.state.remoteVolumeLevel} />
-                                            }
-                                            </div>                                            
                                         </div>
                                     </div>
                                 </Panel>
@@ -855,17 +757,6 @@ export default class CallCard extends React.Component {
                                                         remoteParticipant={v.participant}
                                                         dominantSpeakerMode={this.state.dominantSpeakerMode}
                                                         dominantRemoteParticipant={this.state.dominantRemoteParticipant}/>
-                                    )
-                                }
-                                {
-                                    (this.state.callState === 'Connected' ||
-                                    this.state.callState === 'LocalHold' ||
-                                    this.state.callState === 'RemoteHold') &&
-                                    this.state.allBotParticipantStreams.map(v =>
-                                        <BotStreamRenderer key={`${v.remoteParticipantType}-${v.stream.mediaStreamType}-${v.stream.id}`}
-                                                        ref ={v.streamRendererComponentRef}
-                                                        stream={v.stream}
-                                                        remoteParticipantType={v.remoteParticipantType}/>
                                     )
                                 }
                             </div>
