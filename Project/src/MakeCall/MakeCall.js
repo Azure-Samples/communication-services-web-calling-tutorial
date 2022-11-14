@@ -1,5 +1,6 @@
 import React from "react";
 import { CallClient, LocalVideoStream, Features } from '@azure/communication-calling';
+import { utils } from "../Utils/Utils";
 import { AzureCommunicationTokenCredential } from '@azure/communication-common';
 import {
     PrimaryButton,
@@ -17,7 +18,6 @@ export default class MakeCall extends React.Component {
     constructor(props) {
         super(props);
         this.callClient = null;
-        this.debugInfoFeature = null;
         this.environmentInfo = null;
         this.callAgent = null;
         this.deviceManager = null;
@@ -26,7 +26,6 @@ export default class MakeCall extends React.Component {
         this.destinationGroup = null;
         this.meetingLink = null;
         this.meetingId = null;
-        this.roomsId = null;
         this.threadId = null;
         this.messageId = null;
         this.organizerId = null;
@@ -41,7 +40,6 @@ export default class MakeCall extends React.Component {
             incomingCall: undefined,
             showCallSampleCode: false,
             showEnvironmentInfoCode: false,
-            isCallClientActiveInAnotherTab: undefined,
             showMuteUnmuteSampleCode: false,
             showHoldUnholdCallSampleCode: false,
             selectedCameraDeviceId: null,
@@ -69,8 +67,7 @@ export default class MakeCall extends React.Component {
                 const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 setLogLevel('verbose');
                 this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk", `#clientTag:${userDetails.clientTag}`] } });
-                this.debugInfoFeature = this.callClient.feature(Features.DebugInfo);
-                this.environmentInfo = await this.debugInfoFeature.getEnvironmentInfo();
+                this.environmentInfo = await this.callClient.getEnvironmentInfo();
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
                 // override logger to be able to dowload logs locally
                 AzureLogger.log = (...args) => {
@@ -88,10 +85,6 @@ export default class MakeCall extends React.Component {
                         console.log(...args);
                     }
                 };
-                this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
-                this.debugInfoFeature.on('isCallClientActiveInAnotherTabChanged', () => {
-                    this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
-                });
                 window.callAgent = this.callAgent;
                 this.deviceManager = await this.callClient.getDeviceManager();
                 const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
@@ -220,21 +213,6 @@ export default class MakeCall extends React.Component {
         try {
             const callOptions = await this.getCallOptions(withVideo);
             this.callAgent.join({ groupId: this.destinationGroup.value }, callOptions);
-        } catch (e) {
-            console.error('Failed to join a call', e);
-            this.setState({ callError: 'Failed to join a call: ' + e });
-        }
-    };
-
-    joinRooms = async (withVideo) => {
-        try {
-            if(this.roomsId.value) {
-                const callOptions = await this.getCallOptions(withVideo);
-                this.callAgent.join({ meetingId: this.roomsId.value }, callOptions);
-            } else {
-                throw new Error('Please enter Rooms ID to join a Rooms call');
-            }
-            
         } catch (e) {
             console.error('Failed to join a call', e);
             this.setState({ callError: 'Failed to join a call: ' + e });
@@ -684,7 +662,6 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         <div>{`Operating system:   ${this.environmentInfo?.environment?.platform}.`}</div>
                         <div>{`Browser:  ${this.environmentInfo?.environment?.browser}.`}</div>
                         <div>{`Browser's version:  ${this.environmentInfo?.environment?.browserVersion}.`}</div>
-                        <div>{`Is the application loaded in many tabs:  ${this.state.isCallClientActiveInAnotherTab}.`}</div>
                         <br></br>
                         <h3>Environment support verification</h3>
                         <div>{`Operating system supported:  ${this.environmentInfo?.isSupportedPlatform}.`}</div>
@@ -818,27 +795,6 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                         text="Join group call with video"
                                         disabled={this.state.call || !this.state.loggedIn}
                                         onClick={() => this.joinGroup(true)}>
-                                    </PrimaryButton>
-                                </div>
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
-                                    <h3 className="mb-1">Join a Rooms call</h3>
-                                    <div>Enter Rooms ID</div>
-                                    <TextField className="mb-3"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        label="Rooms id"
-                                        componentRef={(val) => this.roomsId = val} />
-                                    
-                                    <PrimaryButton className="primary-button"
-                                        iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join Rooms call"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.joinRooms(false)}>
-                                    </PrimaryButton>
-                                    <PrimaryButton className="primary-button"
-                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join Rooms call with video"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.joinRooms(true)}>
                                     </PrimaryButton>
                                 </div>
                                 <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
