@@ -17,8 +17,6 @@ export default class MakeCall extends React.Component {
     constructor(props) {
         super(props);
         this.callClient = null;
-        this.debugInfoFeature = null;
-        this.environmentInfo = null;
         this.callAgent = null;
         this.deviceManager = null;
         this.destinationUserIds = null;
@@ -41,6 +39,8 @@ export default class MakeCall extends React.Component {
             incomingCall: undefined,
             showCallSampleCode: false,
             showEnvironmentInfoCode: false,
+            debugInfoFeature: null,
+            environmentInfo: null,
             isCallClientActiveInAnotherTab: undefined,
             showMuteUnmuteSampleCode: false,
             showHoldUnholdCallSampleCode: false,
@@ -88,9 +88,11 @@ export default class MakeCall extends React.Component {
                         console.log(...args);
                     }
                 };
+                this.setState({ debugInfoFeature: this.debugInfoFeature });
+                this.setState({ environmentInfo: this.environmentInfo });
                 this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
                 this.debugInfoFeature.on('isCallClientActiveInAnotherTabChanged', () => {
-                    this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
+                    this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab }); 
                 });
                 window.callAgent = this.callAgent;
                 this.deviceManager = await this.callClient.getDeviceManager();
@@ -658,41 +660,11 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
 
         return (
             <div>
-                <Login onLoggedIn={this.handleLogIn} />
-                <div className="card">
-                    <div className="ms-Grid">
-                        <div className="ms-Grid-row">
-                            <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Environment information</h2>
-                            <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
-                                <PrimaryButton
-                                    className="primary-button"
-                                    iconProps={{ iconName: 'Info', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                    text={`${this.state.showEnvironmentInfoCode ? 'Hide' : 'Show'} code`}
-                                    onClick={() => this.setState({ showEnvironmentInfoCode: !this.state.showEnvironmentInfoCode })}>
-                                </PrimaryButton>
-                            </div>
-                        </div>
-                        {
-                            this.state.showEnvironmentInfoCode &&
-                            <pre>
-                                <code style={{ color: '#b3b0ad' }}>
-                                    {environmentInfo}
-                                </code>
-                            </pre>
-                        }
-                        <h3>Current environment details</h3>
-                        <div>{`Operating system:   ${this.environmentInfo?.environment?.platform}.`}</div>
-                        <div>{`Browser:  ${this.environmentInfo?.environment?.browser}.`}</div>
-                        <div>{`Browser's version:  ${this.environmentInfo?.environment?.browserVersion}.`}</div>
-                        <div>{`Is the application loaded in many tabs:  ${this.state.isCallClientActiveInAnotherTab}.`}</div>
-                        <br></br>
-                        <h3>Environment support verification</h3>
-                        <div>{`Operating system supported:  ${this.environmentInfo?.isSupportedPlatform}.`}</div>
-                        <div>{`Browser supported:  ${this.environmentInfo?.isSupportedBrowser}.`}</div>
-                        <div>{`Browser's version supported:  ${this.environmentInfo?.isSupportedBrowserVersion}.`}</div>
-                        <div>{`Current environment supported:  ${this.environmentInfo?.isSupportedEnvironment}.`}</div>
-                    </div>
-                </div>
+                <Login onLoggedIn={this.handleLogIn}       
+                    debugInfoFeature={this.state.debugInfoFeature}
+                    environmentInfo={this.state.environmentInfo}
+                    isCallClientActiveInAnotherTab={this.state.isCallClientActiveInAnotherTab}
+                />
                 <div className="card">
                     <div className="ms-Grid">
                         <div className="ms-Grid-row">
