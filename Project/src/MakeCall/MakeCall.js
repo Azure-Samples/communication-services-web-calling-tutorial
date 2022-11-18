@@ -67,7 +67,7 @@ export default class MakeCall extends React.Component {
                 const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 setLogLevel('verbose');
                 this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk", `#clientTag:${userDetails.clientTag}`] } });
-                this.environmentInfo = await this.callClient.getEnvironmentInfo();
+                this.environmentInfo = await this.callClient.getEnvironmentInfoInternal();
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
                 // override logger to be able to dowload logs locally
                 AzureLogger.log = (...args) => {

@@ -1,6 +1,8 @@
 import React from "react";
 import { utils } from '../Utils/Utils';
 import { VideoStreamRenderer } from "@azure/communication-calling";
+import RawMediaStream from "./RawMediaStream";
+
 export default class StreamRenderer extends React.Component {
     constructor(props) {
         super(props);
@@ -19,6 +21,7 @@ export default class StreamRenderer extends React.Component {
             isSpeaking: false,
             displayName: this.remoteParticipant.displayName?.trim(),
         };
+        this.call = props.call;
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
@@ -159,6 +162,7 @@ export default class StreamRenderer extends React.Component {
                         {this.state.displayName ? this.state.displayName : utils.getIdentifierText(this.remoteParticipant.identifier)}
                     </h4>
                 </div>
+                <RawMediaStream call={this.call} videoContainerId={this.videoContainerId} remoteParticipantId={this.remoteParticipant.identifier}/>
             </div>
         );
     }
