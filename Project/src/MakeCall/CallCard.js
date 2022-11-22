@@ -11,7 +11,7 @@ import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
 import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
-import RawMediaStream from "./RawMediaStream";
+import CustomVideoEffects from "./CustomVideoEffects";
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -578,7 +578,7 @@ export default class CallCard extends React.Component {
                             <div className="text-center">
                                 {
                                     this.state.videoOn && 
-                                    <RawMediaStream call={this.call} deviceManager={this.deviceManager}/>
+                                    <CustomVideoEffects call={this.call} deviceManager={this.deviceManager}/>
                                 }
                             </div>
                             <div>

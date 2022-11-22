@@ -1,7 +1,7 @@
 import React from "react";
 import { utils } from '../Utils/Utils';
 import { VideoStreamRenderer } from "@azure/communication-calling";
-import RawMediaStream from "./RawMediaStream";
+import CustomVideoEffects from "./CustomVideoEffects";
 
 export default class StreamRenderer extends React.Component {
     constructor(props) {
@@ -162,7 +162,7 @@ export default class StreamRenderer extends React.Component {
                         {this.state.displayName ? this.state.displayName : utils.getIdentifierText(this.remoteParticipant.identifier)}
                     </h4>
                 </div>
-                <RawMediaStream call={this.call} videoContainerId={this.videoContainerId} remoteParticipantId={this.remoteParticipant.identifier}/>
+                <CustomVideoEffects call={this.call} videoContainerId={this.videoContainerId} remoteParticipantId={this.remoteParticipant.identifier}/>
             </div>
         );
     }

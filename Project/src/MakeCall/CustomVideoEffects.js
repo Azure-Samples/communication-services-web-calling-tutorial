@@ -3,7 +3,7 @@ import { PrimaryButton } from 'office-ui-fabric-react'
 import cv from 'opencv-ts';
 import {LocalVideoStream} from "@azure/communication-calling";
 
-export default class RawMediaStream extends React.Component {
+export default class CustomVideoEffects extends React.Component {
 
     constructor(props) {
         super(props);
