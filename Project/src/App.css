@@ -121,6 +121,30 @@ ul {
   border: 1px solid #605e5c;
 }
 
+.pre-call-grid-container {
+  display: flex;
+  flex-wrap: wrap;
+}
+.pre-call-grid {
+  display: flex;
+  flex-direction: column;
+  padding-right: 2em;
+}
+
+.pre-call-grid span {
+  margin: 20px 20px 10px 0;
+}
+
+.pre-call-grid-panel {
+  padding: 0.3em;
+  border: 1px solid #605e5c;
+  height: 100%;
+}
+
+.ms-u-sm2 {
+  width: 8em
+}
+
 /* Dominant Speaker switch*/
 .ms-Toggle-background[aria-checked="true"], .ms-Toggle-background[aria-checked="true"]:hover {
   background-color: #ca5010
