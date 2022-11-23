@@ -45,7 +45,7 @@ export default class MakeCall extends React.Component {
             showHoldUnholdCallSampleCode: false,
             showPreCallDiagnosticsSampleCode: false,
             showPreCallDiagnostcisResults: false,
-            isPreCallDiagnosticsCall: false,
+            isPreCallDiagnosticsCallInProgress: false,
             selectedCameraDeviceId: null,
             selectedSpeakerDeviceId: null,
             selectedMicrophoneDeviceId: null,
@@ -920,13 +920,13 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </div>
                         }
                         {
-                            this.state.call && this.state.isPreCallDiagnosticsCall && 
+                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress && 
                             <div>
-                                Pre Call Diagnostics in progress...
+                                Pre Call Diagnostics call in progress...
                             </div>
                         }
                         {
-                            this.state.call && !this.state.isPreCallDiagnosticsCall &&
+                            this.state.call && !this.state.isPreCallDiagnosticsCallInProgress &&
                             <CallCard
                                 call={this.state.call}
                                 deviceManager={this.deviceManager}
@@ -969,9 +969,12 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </div>
                         </div>
                         {
-                            this.state.call && this.state.isPreCallDiagnosticsCall && 
+                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress && 
                             <div>
-                                Pre Call Diagnostics in progress...
+                                Pre Call Diagnostics call in progress...
+                                <div className="custom-row">
+                                    <div className="ringing-loader mb-4"></div>
+                                </div>
                             </div>
                         }
                         {
