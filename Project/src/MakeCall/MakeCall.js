@@ -333,9 +333,11 @@ export default class MakeCall extends React.Component {
 
     async runPreCallDiagnostics() {
         try {
-            this.setState({showPreCallDiagnostcisResults: false});
-            this.setState({isPreCallDiagnosticsCall: true});
-            this.setState({preCallDiagnosticsResults: {}});
+            this.setState({
+                showPreCallDiagnostcisResults: false, 
+                isPreCallDiagnosticsCall: true, 
+                preCallDiagnosticsResults: {}
+            });
             const preCallDiagnosticsResult = await this.callClient.feature(Features.PreCallDiagnostics).startTest(this.tokenCredential);
 
             const deviceAccess =  await preCallDiagnosticsResult.deviceAccess;
@@ -350,8 +352,10 @@ export default class MakeCall extends React.Component {
             const browserSupport =  await preCallDiagnosticsResult.browserSupport;
             this.setState({preCallDiagnosticsResults: {...this.state.preCallDiagnosticsResults, browserSupport}});
 
-            this.setState({showPreCallDiagnostcisResults: true});
-            this.setState({isPreCallDiagnosticsCall: false});
+            this.setState({
+                showPreCallDiagnostcisResults: true,
+                isPreCallDiagnosticsCall: false
+            });
 
         } catch {
             throw new Error("Can't run Pre Call Diagnostics test. Please try again...");
