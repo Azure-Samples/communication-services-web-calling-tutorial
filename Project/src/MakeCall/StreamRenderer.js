@@ -1,7 +1,7 @@
 import React from "react";
 import { utils } from '../Utils/Utils';
 import { VideoStreamRenderer } from "@azure/communication-calling";
-import CustomVideoEffects from "./CustomVideoEffects";
+import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 
 export default class StreamRenderer extends React.Component {
     constructor(props) {

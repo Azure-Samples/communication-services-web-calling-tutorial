@@ -11,7 +11,9 @@ import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
 import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
-import CustomVideoEffects from "./CustomVideoEffects";
+import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
+import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
+import { Label } from '@fluentui/react/lib/Label';
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -22,7 +24,6 @@ export default class CallCard extends React.Component {
         this.state = {
             callState: this.call.state,
             callId: this.call.id,
-            // localParticipantid: this.call.feature(Features.DebugInfo).localParticipantId,
             remoteParticipants: this.call.remoteParticipants,
             allRemoteParticipantStreams: [],
             videoOn: !!this.call.localVideoStreams[0],
@@ -526,10 +527,6 @@ export default class CallCard extends React.Component {
                             this.call &&
                             <h2>Call Id: {this.state.callId}</h2>
                         }
-                        {
-                            this.call &&
-                            <h2>Local Participant Id: {this.state.localParticipantid}</h2>
-                        }
                     </div>
                 </div>
                 <div className="ms-Grid-row">
@@ -574,20 +571,6 @@ export default class CallCard extends React.Component {
                                         )
                                     }
                                 </ul>
-                            </div>
-                            <div className="text-center">
-                                {
-                                    this.state.videoOn && 
-                                    <CustomVideoEffects call={this.call} deviceManager={this.deviceManager}/>
-                                }
-                            </div>
-                            <div>
-                                {
-                                    this.state.showLocalVideo &&
-                                    <div className="mb-3">
-                                        <LocalVideoPreviewCard selectedCameraDeviceId={this.state.selectedCameraDeviceId} deviceManager={this.deviceManager} />
-                                    </div>
-                                }
                             </div>
                         </div>
                     }
@@ -750,6 +733,29 @@ export default class CallCard extends React.Component {
                                     </div>
                                 </Panel>
                             </div>
+                        </div>
+                        <div className="ms-Grid-row text-center">
+                            {
+                                this.state.videoOn &&
+                                <div className='ms-Grid-row video-features-container'>
+                                    <div className='ms-Grid-col ms-sm12 ms-lg6 video-feature-sample'>
+                                        <Label className='title'>Raw Video access</Label>
+                                        <CustomVideoEffects call={this.call} deviceManager={this.deviceManager} />
+                                    </div>
+                                    <div className='ms-Grid-col ms-sm12 ms-lg6 video-feature-sample'>
+                                        <Label className='title'>Video effects</Label>
+                                        <VideoEffectsContainer call={ this.call } />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div>
+                            {
+                                this.state.showLocalVideo &&
+                                <div className="mb-3">
+                                    <LocalVideoPreviewCard selectedCameraDeviceId={this.state.selectedCameraDeviceId} deviceManager={this.deviceManager} />
+                                </div>
+                            }
                         </div>
                         {
                             <div className="video-grid-row">
