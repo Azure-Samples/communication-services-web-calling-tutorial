@@ -804,3 +804,90 @@ div.callDebugInfoJSONStringDiv {
     transform: translate(-50%, -50%);
   }
 }
+
+.video-effects-selector {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.video-effects-selector .ms-Dropdown-container > label {
+  color: white;
+}
+.video-effects-selector .ms-Dropdown {
+  max-width: 300px;
+  margin-bottom: 10px;
+}
+.video-effects-selector .ms-Dropdown > span {
+  color: black;
+}
+
+.effect-buttons-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+}
+.effect-buttons-container > button {
+  margin: 0.5em;
+}
+
+.video-effects-loading-spinner {
+  border: 8px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 8px solid #ca5010;
+  width: 50px;
+  height: 50px;
+  -webkit-animation: spin 2s linear infinite; /* Safari */
+  animation: spin 2s linear infinite;
+  position: absolute;
+  margin: auto;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transform: translate(-50%, -50%);
+}
+
+.video-effects-image-picker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.video-effects-image-picker.disabled {
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+.video-effects-image-picker.disabled .image-container img {
+  filter: brightness(20%);
+}
+.video-effects-image-picker .image-container {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  width: 250px;
+  height: 200px;
+  margin: 1em;
+}
+.video-effects-image-picker .image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 1px;
+  border: 1px solid #808080;
+  cursor: pointer;
+}
+.video-effects-image-picker .image-container .selected {
+  border: 1px solid #f3f3f3;
+}
+.video-effects-image-picker .image-container i {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}
+.video-effects-image-picker .image-container .image-overlay-icon.show {
+  display: block;
+}
+.video-effects-image-picker .image-container .image-overlay-icon.hide {
+  display: none;
+}

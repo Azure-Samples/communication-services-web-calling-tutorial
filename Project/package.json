@@ -5,13 +5,14 @@
   "dependencies": {
     "@azure/communication-administration": "1.0.0-beta.4",
     "@azure/communication-calling": "1.9.1-beta.1",
+    "@azure/communication-calling-effects": "1.0.0-alpha.1",
     "@fluentui/react": "^7.158.1",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
     "opencv-ts": "^1.3.6"
   },
   "scripts": {
-    "start": "webpack-dev-server --port 5000 --mode development",
+    "start": "webpack-dev-server --port 3000 --mode development",
     "build": "webpack --mode development"
   },
   "devDependencies": {

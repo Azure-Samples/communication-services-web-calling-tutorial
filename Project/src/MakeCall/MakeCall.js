@@ -1116,7 +1116,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         </h3>
                         <div>
                             From your current call, toggle your video on and off by clicking on the <Icon className="icon-text-xlarge" iconName="Video" /> icon.
-                            When you start you start your video, remote participants can see your video by receiving a stream and rendering it in an HTML element.
+                            When you start your video, remote participants can see your video by receiving a stream and rendering it in an HTML element.
                         </div>
                         <br></br>
                         <h3>
