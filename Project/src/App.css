@@ -805,6 +805,21 @@ div.callDebugInfoJSONStringDiv {
   }
 }
 
+.video-features-container {
+  margin-top: 2em;
+}
+.video-feature-container .video-feature-sample {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.video-feature-sample .title {
+  margin-bottom: 1em;
+  color: white;
+  font-size: 1.2em;
+}
+
 .video-effects-selector {
   display: flex;
   flex-direction: column;

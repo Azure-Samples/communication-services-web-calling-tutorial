@@ -13,6 +13,7 @@ import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communicati
 import { utils } from '../Utils/Utils';
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
+import { Label } from '@fluentui/react/lib/Label';
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -736,11 +737,13 @@ export default class CallCard extends React.Component {
                         <div className="ms-Grid-row text-center">
                             {
                                 this.state.videoOn &&
-                                <div className='ms-Grid-row'>
-                                    <div className='ms-Grid-col ms-sm12 ms-lg6'>
+                                <div className='ms-Grid-row video-features-container'>
+                                    <div className='ms-Grid-col ms-sm12 ms-lg6 video-feature-sample'>
+                                        <Label className='title'>Raw Video access</Label>
                                         <CustomVideoEffects call={this.call} deviceManager={this.deviceManager} />
                                     </div>
-                                    <div className='ms-Grid-col ms-sm12 ms-lg6'>
+                                    <div className='ms-Grid-col ms-sm12 ms-lg6 video-feature-sample'>
+                                        <Label className='title'>Video effects</Label>
                                         <VideoEffectsContainer call={ this.call } />
                                     </div>
                                 </div>
