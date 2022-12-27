@@ -44,7 +44,8 @@ export default class CallCard extends React.Component {
             callMessage: undefined,
             dominantSpeakerMode: false,
             dominantRemoteParticipant: undefined,
-            logMediaStats: false
+            logMediaStats: false,
+            sentResolution: ''
         };
     }
 
@@ -204,6 +205,29 @@ export default class CallCard extends React.Component {
                 if (this.state.logMediaStats) {
                     AzureLogger.log(`${(new Date()).toISOString()} MediaStats sample: ${JSON.stringify(data)}`);
                 }
+                let sentResolution = '';
+                if (data?.video?.send?.length) {
+                    if (data.video.send[0].frameWidthSent && data.video.send[0].frameHeightSent) {
+                        sentResolution = `${data.video.send[0].frameWidthSent}x${data.video.send[0].frameHeightSent}`
+                    }
+                }
+                if (this.state.sentResolution != sentResolution) {
+                    this.setState({ sentResolution });
+                }
+                let stats = {};
+                if (data?.video?.receive?.length) {
+                    data.video.receive.forEach(v => {
+                        stats[v.streamId] = v;
+                    });
+                } else {
+                    stats = {};
+                }
+                this.state.allRemoteParticipantStreams.forEach(v => {
+                    let renderer = v.streamRendererComponentRef.current;
+                    if (stats[v.stream.id]) {
+                        renderer.updateReceiveStats(stats[v.stream.id]);
+                    }
+                });
             });
             mediaCollector.on('summaryReported', (data) => {
                 if (this.state.logMediaStats) {
@@ -545,6 +569,10 @@ export default class CallCard extends React.Component {
                             this.call &&
                             <h2>Call Id: {this.state.callId}</h2>
                         }
+                        {
+                            this.call &&
+                            <h2>Sent Resolution: {this.state.sentResolution}</h2>
+                        }
                     </div>
                 </div>
                 <div className="ms-Grid-row">
@@ -704,7 +732,7 @@ export default class CallCard extends React.Component {
                                     }
                                     {
                                         !this.state.logMediaStats &&
-                                            <Icon iconName="NumberedListText" />
+                                        <Icon iconName="NumberedListText" />
                                     }
                                 </span>
                                 <Panel type={PanelType.medium}
