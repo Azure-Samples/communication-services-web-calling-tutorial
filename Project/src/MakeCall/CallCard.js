@@ -214,20 +214,24 @@ export default class CallCard extends React.Component {
                 if (this.state.sentResolution != sentResolution) {
                     this.setState({ sentResolution });
                 }
-                let stats = {};
-                if (data?.video?.receive?.length) {
-                    data.video.receive.forEach(v => {
-                        stats[v.streamId] = v;
+                if (this.state.logMediaStats) {
+                    let stats = {};
+                    if (data?.video?.receive?.length) {
+                        data.video.receive.forEach(v => {
+                            stats[v.streamId] = v;
+                        });
+                    } else {
+                        stats = {};
+                    }
+                    this.state.allRemoteParticipantStreams.forEach(v => {
+                        let renderer = v.streamRendererComponentRef.current;
+                        if (stats[v.stream.id]) {
+                            renderer.updateReceiveStats(stats[v.stream.id]);
+                        }
                     });
                 } else {
-                    stats = {};
+
                 }
-                this.state.allRemoteParticipantStreams.forEach(v => {
-                    let renderer = v.streamRendererComponentRef.current;
-                    if (stats[v.stream.id]) {
-                        renderer.updateReceiveStats(stats[v.stream.id]);
-                    }
-                });
             });
             mediaCollector.on('summaryReported', (data) => {
                 if (this.state.logMediaStats) {
