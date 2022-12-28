@@ -21,7 +21,7 @@ export default class StreamRenderer extends React.Component {
         this.state = {
             isSpeaking: false,
             displayName: this.remoteParticipant.displayName?.trim(),
-            videoStats: null
+            videoStats: undefined
         };
         this.call = props.call;
     }
@@ -123,7 +123,9 @@ export default class StreamRenderer extends React.Component {
     }
 
     updateReceiveStats(videoStats) {
-        this.setState({ videoStats });
+        if (this.state.videoStats !== videoStats) {
+            this.setState({ videoStats });
+        }
     }
 
     async createRenderer() {
