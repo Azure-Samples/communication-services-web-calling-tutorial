@@ -49,7 +49,8 @@ export default class CallCard extends React.Component {
             dominantRemoteParticipant: undefined,
             remoteVolumeIndicator: undefined,
             remoteVolumeLevel: undefined,
-            logMediaStats: false
+            logMediaStats: false,
+            sentResolution: ''
         };
     }
 
@@ -223,6 +224,27 @@ export default class CallCard extends React.Component {
                 if (this.state.logMediaStats) {
                     AzureLogger.log(`${(new Date()).toISOString()} MediaStats sample: ${JSON.stringify(data)}`);
                 }
+                let sentResolution = '';
+                if (data?.video?.send?.length) {
+                    if (data.video.send[0].frameWidthSent && data.video.send[0].frameHeightSent) {
+                        sentResolution = `${data.video.send[0].frameWidthSent}x${data.video.send[0].frameHeightSent}`
+                    }
+                }
+                if (this.state.sentResolution != sentResolution) {
+                    this.setState({ sentResolution });
+                }
+                let stats = {};
+                if (this.state.logMediaStats) {
+                    if (data?.video?.receive?.length) {
+                        data.video.receive.forEach(v => {
+                            stats[v.streamId] = v;
+                        });
+                    }
+                }
+                this.state.allRemoteParticipantStreams.forEach(v => {
+                    let renderer = v.streamRendererComponentRef.current;
+                    renderer.updateReceiveStats(stats[v.stream.id]);
+                });
             });
             mediaCollector.on('summaryReported', (data) => {
                 if (this.state.logMediaStats) {
@@ -603,6 +625,10 @@ export default class CallCard extends React.Component {
                         {
                             this.call &&
                             <h2>Local Participant Id: {this.state.localParticipantid}</h2>
+                        }
+                        {
+                            this.call &&
+                            <h2>Sent Resolution: {this.state.sentResolution}</h2>
                         }
                     </div>
                 </div>
