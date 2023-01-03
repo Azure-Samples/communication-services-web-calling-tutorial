@@ -221,6 +221,11 @@ export default class CallCard extends React.Component {
                             stats[v.streamId] = v;
                         });
                     }
+                    if (data?.screenShare?.receive?.length) {
+                        data.screenShare.receive.forEach(v => {
+                            stats[v.streamId] = v;
+                        });
+                    }
                 }
                 this.state.allRemoteParticipantStreams.forEach(v => {
                     let renderer = v.streamRendererComponentRef.current;
