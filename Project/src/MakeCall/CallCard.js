@@ -211,7 +211,7 @@ export default class CallCard extends React.Component {
                         sentResolution = `${data.video.send[0].frameWidthSent}x${data.video.send[0].frameHeightSent}`
                     }
                 }
-                if (this.state.sentResolution != sentResolution) {
+                if (this.state.sentResolution !== sentResolution) {
                     this.setState({ sentResolution });
                 }
                 let stats = {};
