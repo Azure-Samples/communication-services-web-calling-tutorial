@@ -14,6 +14,7 @@ import { utils } from '../Utils/Utils';
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
 import { Label } from '@fluentui/react/lib/Label';
+import { AzureLogger } from '@azure/logger';
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -42,7 +43,9 @@ export default class CallCard extends React.Component {
             showLocalVideo: false,
             callMessage: undefined,
             dominantSpeakerMode: false,
-            dominantRemoteParticipant: undefined
+            dominantRemoteParticipant: undefined,
+            logMediaStats: false,
+            sentResolution: ''
         };
     }
 
@@ -195,6 +198,44 @@ export default class CallCard extends React.Component {
                     this.setState({ streams: this.state.allRemoteParticipantStreams.filter(s => { return s.participant !== p }) });
 
                 });
+            });
+
+            const mediaCollector = this.call.feature(Features.MediaStats).createCollector();
+            mediaCollector.on('sampleReported', (data) => {
+                if (this.state.logMediaStats) {
+                    AzureLogger.log(`${(new Date()).toISOString()} MediaStats sample: ${JSON.stringify(data)}`);
+                }
+                let sentResolution = '';
+                if (data?.video?.send?.length) {
+                    if (data.video.send[0].frameWidthSent && data.video.send[0].frameHeightSent) {
+                        sentResolution = `${data.video.send[0].frameWidthSent}x${data.video.send[0].frameHeightSent}`
+                    }
+                }
+                if (this.state.sentResolution !== sentResolution) {
+                    this.setState({ sentResolution });
+                }
+                let stats = {};
+                if (this.state.logMediaStats) {
+                    if (data?.video?.receive?.length) {
+                        data.video.receive.forEach(v => {
+                            stats[v.streamId] = v;
+                        });
+                    }
+                    if (data?.screenShare?.receive?.length) {
+                        data.screenShare.receive.forEach(v => {
+                            stats[v.streamId] = v;
+                        });
+                    }
+                }
+                this.state.allRemoteParticipantStreams.forEach(v => {
+                    let renderer = v.streamRendererComponentRef.current;
+                    renderer.updateReceiveStats(stats[v.stream.id]);
+                });
+            });
+            mediaCollector.on('summaryReported', (data) => {
+                if (this.state.logMediaStats) {
+                    AzureLogger.log(`${(new Date()).toISOString()} MediaStats summary: ${JSON.stringify(data)}`);
+                }
             });
 
             const dominantSpeakersChangedHandler = async () => {
@@ -406,6 +447,10 @@ export default class CallCard extends React.Component {
         this.setState(prevState => ({outgoingAudioMediaAccessActive: !prevState.outgoingAudioMediaAccessActive}));
     }
 
+    async handleMediaStatsLogState() {
+        this.setState(prevState => ({logMediaStats: !prevState.logMediaStats}));
+    }
+
     getDummyAudioStreamTrack() {
         const context = new AudioContext();
         const dest = context.createMediaStreamDestination();
@@ -526,6 +571,10 @@ export default class CallCard extends React.Component {
                         {
                             this.call &&
                             <h2>Call Id: {this.state.callId}</h2>
+                        }
+                        {
+                            this.call &&
+                            <h2>Sent Resolution: {this.state.sentResolution}</h2>
                         }
                     </div>
                 </div>
@@ -674,6 +723,19 @@ export default class CallCard extends React.Component {
                                     {
                                         !this.state.outgoingAudioMediaAccessActive &&
                                         <Icon iconName="PlugDisconnected" />
+                                    }
+                                </span>
+                                <span className="in-call-button"
+                                    title={`${this.state.logMediaStats? 'Stop' : 'Start'} logging MediaStats`}
+                                    variant="secondary"
+                                    onClick={() => this.handleMediaStatsLogState()}>
+                                    {
+                                        this.state.logMediaStats &&
+                                        <Icon iconName="NumberedList" />
+                                    }
+                                    {
+                                        !this.state.logMediaStats &&
+                                        <Icon iconName="NumberedListText" />
                                     }
                                 </span>
                                 <Panel type={PanelType.medium}
