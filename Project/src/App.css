@@ -266,6 +266,20 @@ ul {
   padding-bottom: 0.5em;
 }
 
+.video-stats {
+  position: absolute;
+  top: 10%;
+  left: 4%;
+  margin-bottom: 0px;
+  background-color: #0000006e;
+  margin: 0.4em;
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+  padding: 1em;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+
 .speaking-border-for-initials > .ms-Persona-coin > .ms-Persona-imageArea > .ms-Persona-initials {
   box-shadow: 0px 0px 0px 3px #ca5010,  0px 0px 20px 5px #ca5010;
 }
