@@ -920,3 +920,33 @@ div.callDebugInfoJSONStringDiv {
 .video-effects-image-picker .image-container .image-overlay-icon.hide {
   display: none;
 }
+
+div.volumeVisualizer {
+  --volume: 0%;
+  position: relative;
+  width: 200px;
+  height: 20px;
+  margin: 50px;
+  background-color: #DDD;
+}
+
+div::before {
+   content: '';
+   position: absolute;
+   top: 0;
+   bottom: 0;
+   left: 0;
+   width: var(--volume);
+   background-color: #ca5010;
+   transition: width 100ms linear;
+}
+
+h3 {
+  margin: 20px;
+  font-family: sans-serif;
+}
+.volume-indicatordiv {
+  width: 300px;
+  border: 1px solid #605e5c;
+  padding: 8px;
+}
