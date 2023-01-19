@@ -17,7 +17,7 @@ export default class VolumeVisualizer extends React.Component {
         };
     }
 
-    async componentWillMount() {
+    async componentDidMount() {
         if (this.call) {
             let localVolumeStateSetter = undefined;
             let handleSelectedMicrophoneVolumeSubscription = async () => {
@@ -33,8 +33,6 @@ export default class VolumeVisualizer extends React.Component {
             }
             handleSelectedMicrophoneVolumeSubscription();
 
-<<<<<<< HEAD
-=======
             let remoteVolumeStateSetter = undefined;
             let handleRemoteVolumeSubscription = async () => {
                 if(this.call.remoteAudioStreams.length>0)  {
@@ -48,7 +46,6 @@ export default class VolumeVisualizer extends React.Component {
                 }                                            
             }
 
->>>>>>> 6a1ec39 (wip)
             this.deviceManager.on('selectedSpeakerChanged', () => {
                 this.setState({ selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id });
             });
@@ -57,17 +54,6 @@ export default class VolumeVisualizer extends React.Component {
                 this.setState({ selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id });
                 handleSelectedMicrophoneVolumeSubscription();
             });
-<<<<<<< HEAD
-        }
-    }
-
-    async componentWillUnmount() {
-        if ((!!this.state.localVolumeIndicator) && (!!this.localVolumeLevelSubscription)) {
-            this.state.localVolumeIndicator.off('levelChanged', this.localVolumeLevelSubscription);
-            this.localAudioStream?.dispose();
-        }
-        if((!!this.state.remoteVolumeIndicator) && (!!this.remoteVolumeLevelSubscription)) {
-=======
 
             const callStateChanged = () => {
                 if (this.call.state === 'Connected') {
@@ -90,30 +76,22 @@ export default class VolumeVisualizer extends React.Component {
             this.state.localVolumeIndicator.off('levelChanged', this.localVolumeLevelSubscription);
         }
         if(!!this.remoteVolumeIndicator){
->>>>>>> 6a1ec39 (wip)
             this.state.remoteVolumeIndicator.off('levelChanged', this.remoteVolumeLevelSubscription);
         }
     }
 
-<<<<<<< HEAD
-=======
 
     async componentWillUnmount() {
-        // this.unsubscribe();
+        this.unsubscribe();
     }
 
 
->>>>>>> 6a1ec39 (wip)
     render() {
         return (
             <div className="volume-indicatordiv">
                 <div className="elements">
                     <label>Remote Volume Visualizer</label>
-<<<<<<< HEAD
-                    <div className="volumeVisualizer" style={{"--volume":2*this.props.remoteVolumeLevel + "%"}}></div>
-=======
                     <div className="volumeVisualizer" style={{"--volume":2*this.state.remoteVolumeLevel + "%"}}></div>
->>>>>>> 6a1ec39 (wip)
                 </div>
                 <div className="elements">
                     <label>Selected Microphone Volume Visualizer</label>

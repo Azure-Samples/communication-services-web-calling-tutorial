@@ -474,7 +474,7 @@ export default class CallCard extends React.Component {
         this.setState(prevState => ({logMediaStats: !prevState.logMediaStats}));
     }
 
-    getDummyAudioStreamTrack() {
+    getDummyAudioStream() {
         const context = new AudioContext();
         const dest = context.createMediaStreamDestination();
         const os = context.createOscillator();
@@ -483,14 +483,14 @@ export default class CallCard extends React.Component {
         os.connect(dest);
         os.start();
         const { stream } = dest;
-        const track = stream.getAudioTracks()[0];
-        return track;
+        return stream;
     }
 
     async startOutgoingAudioEffect() {
-        const track = this.getDummyAudioStreamTrack();
-        const localAudioStream = new LocalAudioStream(track);        
-        this.call.startAudio(localAudioStream);
+        const track = this.getDummyAudioStream();
+        const customLocalAudioStream = new LocalAudioStream(this.deviceManager.selectedMicrophone);        
+        customLocalAudioStream.setMediaStream(track);
+        this.call.startAudio(customLocalAudioStream);
     }
 
     async handleScreenSharingOnOff() {
@@ -647,10 +647,6 @@ export default class CallCard extends React.Component {
                         </div>
                     }
                     <div className={this.state.callState === 'Connected' ? `ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl9` : 'ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl12'}>
-                        {
-                            (this.state.callState === 'Connected') && !this.state.micMuted &&
-                            <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} />
-                        }
                         <div className="mb-2">
                             {
                                 this.state.callState !== 'Connected' &&
