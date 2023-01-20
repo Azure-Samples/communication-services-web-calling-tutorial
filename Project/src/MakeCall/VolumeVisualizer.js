@@ -36,16 +36,16 @@ export default class VolumeVisualizer extends React.Component {
             let remoteVolumeStateSetter = undefined;
             let handleRemoteVolumeSubscription = async () => {
                 if(this.call.remoteAudioStreams.length>0)  {
-                    let remoteVolumeIndicator = await this.call.remoteAudioStreams[0].getVolume();
-                remoteVolumeStateSetter = ()=>{
-                    this.setState({ remoteVolumeLevel: remoteVolumeIndicator.level });
-                }
-                remoteVolumeIndicator.on('levelChanged', remoteVolumeStateSetter);
-                this.remoteVolumeLevelSubscription = remoteVolumeStateSetter;
-                this.setState({ remoteVolumeIndicator: remoteVolumeIndicator });
+                    const remoteVolumeIndicator = await this.call.remoteAudioStreams[0].getVolume();
+                    remoteVolumeStateSetter = ()=>{
+                        this.setState({ remoteVolumeLevel: remoteVolumeIndicator.level });
+                    }
+                    remoteVolumeIndicator.on('levelChanged', remoteVolumeStateSetter);
+                    this.remoteVolumeLevelSubscription = remoteVolumeStateSetter;
+                    this.setState({ remoteVolumeIndicator: remoteVolumeIndicator });
                 }                                            
             }
-
+            handleRemoteVolumeSubscription();
             this.deviceManager.on('selectedSpeakerChanged', () => {
                 this.setState({ selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id });
             });
@@ -75,7 +75,7 @@ export default class VolumeVisualizer extends React.Component {
         if (this.localVolumeLevelSubscription){
             this.state.localVolumeIndicator.off('levelChanged', this.localVolumeLevelSubscription);
         }
-        if(!!this.remoteVolumeIndicator){
+        if(this.remoteVolumeIndicator){
             this.state.remoteVolumeIndicator.off('levelChanged', this.remoteVolumeLevelSubscription);
         }
     }
