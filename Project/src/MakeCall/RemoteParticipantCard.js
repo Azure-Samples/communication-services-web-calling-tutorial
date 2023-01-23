@@ -18,7 +18,7 @@ export default class RemoteParticipantCard extends React.Component {
         };
     }
 
-    async componentWillMount() {
+    componentWillMount() {
         this.remoteParticipant.on('isMutedChanged', () => {
             this.setState({ isMuted: this.remoteParticipant.isMuted });
             if (this.remoteParticipant.isMuted) {
