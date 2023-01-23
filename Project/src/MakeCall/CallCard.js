@@ -313,10 +313,6 @@ export default class CallCard extends React.Component {
         }
     }
 
-    async componentWillUnmount() {
-        this.call.off('remoteAudioStreamsUpdated', this.handleRemoteVolumeSubscription);
-    }
-
     subscribeToRemoteParticipant(participant) {
         if (!this.state.remoteParticipants.find((p) => { return p === participant })) {
             this.setState(prevState => ({ remoteParticipants: [...prevState.remoteParticipants, participant] }));
