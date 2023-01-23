@@ -1,103 +1,60 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { LocalAudioStream } from '@azure/communication-calling';
 
-export default class VolumeVisualizer extends React.Component {
-    constructor(props) {
-        super(props);
-        this.call = props.call;
-        this.localAudioStream = undefined;
-        this.deviceManager = props.deviceManager;
-        this.localVolumeLevelSubscription = undefined;
-        this.remoteVolumeLevelSubscription = undefined;
-        this.state = {
-            localVolumeLevel: 0,
-            remoteVolumeLevel: 0,
-            localVolumeIndicator: undefined,
-            remoteVolumeIndicator: undefined,
+const VolumeVisualizer = ({ deviceManager, call }) => {
+    const [localStream, setLocalStream] = useState(new LocalAudioStream(deviceManager.selectedMicrophone));
+    const [remoteStream, setRemoteStream] = useState(call?.remoteAudioStreams[0]);
+
+    useEffect(() => {
+        deviceManager.on('selectedSpeakerChanged', () => {
+            setRemoteStream(call?.remoteAudioStreams[0])
+        });
+
+        deviceManager.on('selectedMicrophoneChanged', () => {
+            setLocalStream(new LocalAudioStream(deviceManager.selectedMicrophone));
+        });
+
+        return () => {
+            deviceManager.off('selectedSpeakerChanged', () => {});
+            deviceManager.off('selectedMicrophoneChanged', () => {});
+        }
+    }, []);
+
+    return (
+        <div className="volume-indicatordiv">
+            <VolumeIndicator title="Remote Volume Visualizer" audioStream={remoteStream} />
+            <VolumeIndicator title="Selected Microphone Volume Visualizer" audioStream={localStream} />
+        </div>
+    );
+};
+
+const VolumeIndicator = ({ title, audioStream }) => {
+    const [volumeLevel, setVolumeLevel] = useState(0);
+    const [volumeIndicator, setVolumeIndicator] = useState();
+
+    useEffect(() => {
+        const setVolume = async() => {
+            const volume = await audioStream?.getVolume();
+            setVolumeIndicator(volume);
+            volume?.on('levelChanged', () => {
+                setVolumeLevel(volume.level);
+            });
         };
-    }
+        setVolume();
+    }, [audioStream]);
+    
+    useEffect(() => {
+        return () => {
+            volumeIndicator?.off('levelChanged', () => {});
+        };
+    }, [volumeIndicator])
 
-    async componentDidMount() {
-        if (this.call) {
-            let localVolumeStateSetter = undefined;
-            let handleSelectedMicrophoneVolumeSubscription = async () => {
-                this.localAudioStream?.dispose();  
-                this.localAudioStream = new LocalAudioStream(this.deviceManager.selectedMicrophone);
-                let localVolumeIndicator = await (this.localAudioStream.getVolume());
-                localVolumeStateSetter = ()=>{
-                    this.setState({ localVolumeLevel: localVolumeIndicator.level });
-                }
-                localVolumeIndicator.on('levelChanged', localVolumeStateSetter);
-                this.localVolumeLevelSubscription = localVolumeStateSetter;
-                this.setState({ localVolumeIndicator: localVolumeIndicator });                             
-            }
-            handleSelectedMicrophoneVolumeSubscription();
+    return (
+        <div className="elements">
+            <label>{title}</label>
+            <div className="volumeVisualizer" style={{ "--volume": 2 * volumeLevel + "%" }}></div>
+        </div>
+    );
+};
 
-            let remoteVolumeStateSetter = undefined;
-            let handleRemoteVolumeSubscription = async () => {
-                if(this.call.remoteAudioStreams.length>0)  {
-                    const remoteVolumeIndicator = await this.call.remoteAudioStreams[0].getVolume();
-                    remoteVolumeStateSetter = ()=>{
-                        this.setState({ remoteVolumeLevel: remoteVolumeIndicator.level });
-                    }
-                    remoteVolumeIndicator.on('levelChanged', remoteVolumeStateSetter);
-                    this.remoteVolumeLevelSubscription = remoteVolumeStateSetter;
-                    this.setState({ remoteVolumeIndicator: remoteVolumeIndicator });
-                }                                            
-            }
-            handleRemoteVolumeSubscription();
-            this.deviceManager.on('selectedSpeakerChanged', () => {
-                this.setState({ selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id });
-            });
-
-            this.deviceManager.on('selectedMicrophoneChanged', () => {
-                this.setState({ selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id });
-                handleSelectedMicrophoneVolumeSubscription();
-            });
-
-            const callStateChanged = () => {
-                if (this.call.state === 'Connected') {
-                    this.call.on('remoteAudioStreamsUpdated', handleRemoteVolumeSubscription)
-                } else if (this.call.state === 'Disconnected') {
-                    this.unsubscribe();
-                }
-            }
-            callStateChanged();
-            this.call.on('stateChanged', callStateChanged);
-            this.deviceManager.on('selectedMicrophoneChanged', () => {
-                handleSelectedMicrophoneVolumeSubscription();
-            });
-
-        }
-    }
-
-    unsubscribe() {
-        if (this.localVolumeLevelSubscription){
-            this.state.localVolumeIndicator.off('levelChanged', this.localVolumeLevelSubscription);
-        }
-        if(this.remoteVolumeIndicator){
-            this.state.remoteVolumeIndicator.off('levelChanged', this.remoteVolumeLevelSubscription);
-        }
-    }
-
-
-    async componentWillUnmount() {
-        this.unsubscribe();
-    }
-
-
-    render() {
-        return (
-            <div className="volume-indicatordiv">
-                <div className="elements">
-                    <label>Remote Volume Visualizer</label>
-                    <div className="volumeVisualizer" style={{"--volume":2*this.state.remoteVolumeLevel + "%"}}></div>
-                </div>
-                <div className="elements">
-                    <label>Selected Microphone Volume Visualizer</label>
-                    <div className="volumeVisualizer" style={{"--volume":2*this.state.localVolumeLevel + "%"}}></div>
-                </div>
-            </div>
-        );
-    }
-}
+export default VolumeVisualizer;
