@@ -18,6 +18,7 @@ export default class MakeCall extends React.Component {
     constructor(props) {
         super(props);
         this.callClient = null;
+        this.debugInfoFeature = null;
         this.environmentInfo = null;
         this.callAgent = null;
         this.deviceManager = null;
@@ -32,16 +33,21 @@ export default class MakeCall extends React.Component {
         this.tenantId = null;
         this.callError = null;
         this.logBuffer = [];
+        this.tokenCredential = null;
 
         this.state = {
             id: undefined,
             loggedIn: false,
+            isCallClientActiveInAnotherTab: false,
             call: undefined,
             incomingCall: undefined,
             showCallSampleCode: false,
             showEnvironmentInfoCode: false,
             showMuteUnmuteSampleCode: false,
             showHoldUnholdCallSampleCode: false,
+            showPreCallDiagnosticsSampleCode: false,
+            showPreCallDiagnostcisResults: false,
+            isPreCallDiagnosticsCallInProgress: false,
             selectedCameraDeviceId: null,
             selectedSpeakerDeviceId: null,
             selectedMicrophoneDeviceId: null,
@@ -51,7 +57,8 @@ export default class MakeCall extends React.Component {
             permissions: {
                 audio: null,
                 video: null
-            }
+            },
+            preCallDiagnosticsResults: {}
         };
 
         setInterval(() => {
@@ -65,9 +72,11 @@ export default class MakeCall extends React.Component {
         if (userDetails) {
             try {
                 const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
+                this.tokenCredential = tokenCredential;
                 setLogLevel('verbose');
                 this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk", `#clientTag:${userDetails.clientTag}`] } });
                 this.environmentInfo = await this.callClient.getEnvironmentInfoInternal();
+                this.debugInfoFeature = await this.callClient.feature(Features.DebugInfo);
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
                 // override logger to be able to dowload logs locally
                 AzureLogger.log = (...args) => {
@@ -133,6 +142,10 @@ export default class MakeCall extends React.Component {
                         this.displayCallEndReason(args.callEndReason);
                     });
 
+                });
+                this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
+                this.debugInfoFeature.on('isCallClientActiveInAnotherTabChanged', () => {
+                    this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab }); 
                 });
 
                 this.setState({ loggedIn: true });
@@ -324,6 +337,38 @@ export default class MakeCall extends React.Component {
 
         return callOptions;
     }
+
+    async runPreCallDiagnostics() {
+        try {
+            this.setState({
+                showPreCallDiagnostcisResults: false, 
+                isPreCallDiagnosticsCall: true, 
+                preCallDiagnosticsResults: {}
+            });
+            const preCallDiagnosticsResult = await this.callClient.feature(Features.PreCallDiagnostics).startTest(this.tokenCredential);
+
+            const deviceAccess =  await preCallDiagnosticsResult.deviceAccess;
+            this.setState({preCallDiagnosticsResults: {...this.state.preCallDiagnosticsResults, deviceAccess}});
+
+            const deviceEnumeration = await preCallDiagnosticsResult.deviceEnumeration;
+            this.setState({preCallDiagnosticsResults: {...this.state.preCallDiagnosticsResults, deviceEnumeration}});
+
+            const inCallDiagnostics =  await preCallDiagnosticsResult.inCallDiagnostics;
+            this.setState({preCallDiagnosticsResults: {...this.state.preCallDiagnosticsResults, inCallDiagnostics}});
+
+            const browserSupport =  await preCallDiagnosticsResult.browserSupport;
+            this.setState({preCallDiagnosticsResults: {...this.state.preCallDiagnosticsResults, browserSupport}});
+
+            this.setState({
+                showPreCallDiagnostcisResults: true,
+                isPreCallDiagnosticsCall: false
+            });
+
+        } catch {
+            throw new Error("Can't run Pre Call Diagnostics test. Please try again...");
+        }
+    }
+
     render() {
         const callSampleCode = `
 /******************************/
@@ -431,7 +476,54 @@ const isSupportedBrowser = this.environmentInfo.isSupportedBrowser;
 const isSupportedBrowserVersion = this.environmentInfo.isSupportedBrowserVersion;
 const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
 
-        `;        
+        `;   
+        
+        const preCallDiagnosticsSampleCode = `
+//Get new token or use existing token.
+const response = (await fetch('/tokens/provisionUser')).json();
+const token = response.token;
+const tokenCredential = new AzureCommunicationTokenCredential(token);
+
+// Start Pre Call diagnostics test
+const preCallDiagnosticsResult = await this.callClient.feature(Features.PreCallDiagnostics).startTest(tokenCredential);
+
+// Pre Call Diagnostics results
+const deviceAccess =  await preCallDiagnosticsResult.deviceAccess;
+const audioDeviceAccess = deviceAccess.audio // boolean
+const videoDeviceAccess = deviceAccess.video // boolean
+
+const deviceEnumeration = await preCallDiagnosticsResult.deviceEnumeration;
+const microphone = deviceEnumeration.microphone // 'Available' | 'NotAvailable' | 'Unknown';
+const camera = deviceEnumeration.camera // 'Available' | 'NotAvailable' | 'Unknown';
+const speaker = deviceEnumeration.speaker // 'Available' | 'NotAvailable' | 'Unknown';
+
+const inCallDiagnostics =  await preCallDiagnosticsResult.inCallDiagnostics;
+
+const callConnected = inCallDiagnostics.connected; // boolean
+
+const audioJitter = inCallDiagnostics.diagnostics.audio.jitter; // 'Bad' | 'Average' | 'Good' | 'Unknown';
+const audioPacketLoss = inCallDiagnostics.diagnostics.audio.packetLoss; // 'Bad' | 'Average' | 'Good' | 'Unknown';
+const audioRtt = inCallDiagnostics.diagnostics.audio.rtt; // 'Bad' | 'Average' | 'Good' | 'Unknown';
+
+const videoJitter = inCallDiagnostics.diagnostics.video.jitter; // 'Bad' | 'Average' | 'Good' | 'Unknown';
+const videoPacketLoss = inCallDiagnostics.diagnostics.video.packetLoss; // 'Bad' | 'Average' | 'Good' | 'Unknown';
+const videoRtt = inCallDiagnostics.diagnostics.video.rtt; // 'Bad' | 'Average' | 'Good' | 'Unknown';
+
+const brandWidth = inCallDiagnostics.bandWidth; // 'Bad' | 'Average' | 'Good' | 'Unknown';
+
+const browserSupport =  await preCallDiagnosticsResult.browserSupport;
+const browser = browserSupport.browser; // 'Supported' | 'NotSupported' | 'Unknown';
+const os = browserSupport.os; // 'Supported' | 'NotSupported' | 'Unknown';
+
+const collector = (await preCallDiagnosticsResult.callMediaStatistics).createCollector({
+    aggregationInterval: 200,
+    dataPointsPerAggregation: 1,
+});
+collector.on("summaryReported", (mediaStats) => {
+    console.log(mediaStats); // Get mediaStats summary for the test call.
+});
+
+                `;
 
         const streamingSampleCode = `
 /************************************************/
@@ -662,6 +754,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         <div>{`Operating system:   ${this.environmentInfo?.environment?.platform}.`}</div>
                         <div>{`Browser:  ${this.environmentInfo?.environment?.browser}.`}</div>
                         <div>{`Browser's version:  ${this.environmentInfo?.environment?.browserVersion}.`}</div>
+                        <div>{`Is the application loaded in many tabs:  ${this.state.isCallClientActiveInAnotherTab}.`}</div>
                         <br></br>
                         <h3>Environment support verification</h3>
                         <div>{`Operating system supported:  ${this.environmentInfo?.isSupportedPlatform}.`}</div>
@@ -839,7 +932,13 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </div>
                         }
                         {
-                            this.state.call &&
+                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress && 
+                            <div>
+                                Pre Call Diagnostics call in progress...
+                            </div>
+                        }
+                        {
+                            this.state.call && !this.state.isPreCallDiagnosticsCallInProgress &&
                             <CallCard
                                 call={this.state.call}
                                 deviceManager={this.deviceManager}
@@ -858,6 +957,144 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                 acceptCallOptions={async () => await this.getCallOptions()}
                                 acceptCallWithVideoOptions={async () => await this.getCallOptions(true)}
                                 onReject={() => { this.setState({ incomingCall: undefined }) }} />
+                        }
+                    </div>
+                </div>
+                <div className="card">
+                    <div className="ms-Grid">
+                        <div className="ms-Grid-row">
+                            <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Pre Call Diagnostics</h2>
+                            <div className="ms-Grid-col ms-lg6 text-right">
+                                <PrimaryButton
+                                    className="primary-button"
+                                    iconProps={{ iconName: 'TestPlan', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                    text={`Run Pre Call Diagnostics`}
+                                    disabled={this.state.call || !this.state.loggedIn}
+                                    onClick={() => this.runPreCallDiagnostics()}>
+                                </PrimaryButton>
+                                <PrimaryButton
+                                    className="primary-button"
+                                    iconProps={{ iconName: 'TestPlan', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                    text={`${this.state.showPreCallDiagnosticsSampleCode ? 'Hide' : 'Show'} code`}
+                                    onClick={() => this.setState({ showPreCallDiagnosticsSampleCode: !this.state.showPreCallDiagnosticsSampleCode })}>
+                                </PrimaryButton>
+                            </div>
+                        </div>
+                        {
+                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress && 
+                            <div>
+                                Pre Call Diagnostics call in progress...
+                                <div className="custom-row">
+                                    <div className="ringing-loader mb-4"></div>
+                                </div>
+                            </div>
+                        }
+                        {
+                            this.state.showPreCallDiagnostcisResults &&
+                            <div>
+                                {
+                                    <div className="pre-call-grid-container">
+                                        {
+                                            this.state.preCallDiagnosticsResults.deviceAccess && 
+                                            <div className="pre-call-grid">
+                                                <span>Device Permission: </span>
+                                                <div  >
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">Audio: </div>
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.deviceAccess.audio.toString()}</div>
+                                                </div>
+                                                <div >
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">Video: </div>
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.deviceAccess.video.toString()}</div>
+                                                </div>
+                                            </div>
+                                        }
+                                        {
+                                            this.state.preCallDiagnosticsResults.deviceEnumeration && 
+                                            <div className="pre-call-grid">
+                                                <span>Device Access: </span>
+                                                <div >
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">Microphone: </div>
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.deviceEnumeration.microphone}</div>
+                                                </div>
+                                                <div >
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">Camera: </div>
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.deviceEnumeration.camera}</div>
+                                                </div>
+                                                <div >
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">Speaker: </div>
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.deviceEnumeration.speaker}</div>
+                                                </div>
+                                            </div>
+                                        }
+                                        {
+                                            this.state.preCallDiagnosticsResults.browserSupport && 
+                                            <div className="pre-call-grid">
+                                                <span>Browser Support: </span>
+                                                <div >
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">OS: </div>
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.browserSupport.os}</div>
+                                                </div>
+                                                <div >
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">Browser: </div>
+                                                    <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.browserSupport.browser}</div>
+                                                </div>
+                                            </div>
+                                        }
+                                        {
+                                            this.state.preCallDiagnosticsResults.inCallDiagnostics && 
+                                            <div className="pre-call-grid">
+                                                <span>Call Diagnostics: </span>
+                                                <div className="pre-call-grid">
+                                                    <div >
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">Call Connected: </div>
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.inCallDiagnostics.connected.toString()}</div>
+                                                    </div>
+                                                    <div >
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">BandWidth: </div>
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.inCallDiagnostics.bandWidth}</div>
+                                                    </div>
+
+                                                    <div >
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">Audio Jitter: </div>
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.inCallDiagnostics.diagnostics.audio.jitter}</div>
+                                                    </div>
+                                                    <div >
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">Audio PacketLoss: </div>
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.inCallDiagnostics.diagnostics.audio.packetLoss}</div>
+                                                    </div>
+                                                    <div >
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">Audio Rtt: </div>
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.inCallDiagnostics.diagnostics.audio.rtt}</div>
+                                                    </div>
+
+                                                    <div >
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">Video Jitter: </div>
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.inCallDiagnostics.diagnostics.video.jitter}</div>
+                                                    </div>
+                                                    <div >
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">Video PacketLoss: </div>
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.inCallDiagnostics.diagnostics.video.packetLoss}</div>
+                                                    </div>
+                                                    <div >
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">Video Rtt: </div>
+                                                        <div className="ms-Grid-col ms-u-sm2 pre-call-grid-panel">{this.state.preCallDiagnosticsResults.inCallDiagnostics.diagnostics.video.rtt}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                        {
+                            this.state.showPreCallDiagnosticsSampleCode &&
+                            <pre>
+                                <code style={{ color: '#b3b0ad' }}>
+                                    {
+                                        preCallDiagnosticsSampleCode
+                                    }
+                                </code>
+                            </pre>
                         }
                     </div>
                 </div>
@@ -887,7 +1124,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         </h3>
                         <div>
                             From your current call, toggle your video on and off by clicking on the <Icon className="icon-text-xlarge" iconName="Video" /> icon.
-                            When you start you start your video, remote participants can see your video by receiving a stream and rendering it in an HTML element.
+                            When you start your video, remote participants can see your video by receiving a stream and rendering it in an HTML element.
                         </div>
                         <br></br>
                         <h3>

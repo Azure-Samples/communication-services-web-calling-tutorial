@@ -11,7 +11,11 @@ import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
 import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
-import CustomVideoEffects from "./CustomVideoEffects";
+import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
+import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
+import { Label } from '@fluentui/react/lib/Label';
+import { AzureLogger } from '@azure/logger';
+import VolumeVisualizer from "./VolumeVisualizer";
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -19,10 +23,11 @@ export default class CallCard extends React.Component {
         this.callFinishConnectingResolve = undefined;
         this.call = props.call;
         this.deviceManager = props.deviceManager;
+        this.remoteVolumeLevelSubscription = undefined;
+        this.handleRemoteVolumeSubscription = undefined;
         this.state = {
             callState: this.call.state,
             callId: this.call.id,
-            // localParticipantid: this.call.feature(Features.DebugInfo).localParticipantId,
             remoteParticipants: this.call.remoteParticipants,
             allRemoteParticipantStreams: [],
             videoOn: !!this.call.localVideoStreams[0],
@@ -41,12 +46,30 @@ export default class CallCard extends React.Component {
             showLocalVideo: false,
             callMessage: undefined,
             dominantSpeakerMode: false,
-            dominantRemoteParticipant: undefined
+            dominantRemoteParticipant: undefined,
+            logMediaStats: false,
+            sentResolution: '',
+            remoteVolumeIndicator: undefined,
+            remoteVolumeLevel: undefined
         };
     }
 
     async componentWillMount() {
         if (this.call) {
+            let handleRemoteVolumeSubscription = async () => {
+                if(this.call.remoteAudioStreams.length>0)  {
+                    let remoteVolumeIndicator = await this.call.remoteAudioStreams[0].getVolume();
+                let remoteVolumeStateSetter = ()=>{
+                    this.setState({ remoteVolumeLevel: remoteVolumeIndicator.level });
+                }
+                remoteVolumeIndicator.on('levelChanged', remoteVolumeStateSetter);
+                this.remoteVolumeLevelSubscription = remoteVolumeStateSetter;
+                this.setState({ remoteVolumeIndicator: remoteVolumeIndicator });
+                }                                            
+            }
+            this.call.on('remoteAudioStreamsUpdated', handleRemoteVolumeSubscription);
+            this.handleRemoteVolumeSubscription = handleRemoteVolumeSubscription;
+
             this.deviceManager.on('videoDevicesUpdated', async e => {
                 let newCameraDeviceToUse = undefined;
                 e.added.forEach(addedCameraDevice => {
@@ -194,6 +217,44 @@ export default class CallCard extends React.Component {
                     this.setState({ streams: this.state.allRemoteParticipantStreams.filter(s => { return s.participant !== p }) });
 
                 });
+            });
+
+            const mediaCollector = this.call.feature(Features.MediaStats).createCollector();
+            mediaCollector.on('sampleReported', (data) => {
+                if (this.state.logMediaStats) {
+                    AzureLogger.log(`${(new Date()).toISOString()} MediaStats sample: ${JSON.stringify(data)}`);
+                }
+                let sentResolution = '';
+                if (data?.video?.send?.length) {
+                    if (data.video.send[0].frameWidthSent && data.video.send[0].frameHeightSent) {
+                        sentResolution = `${data.video.send[0].frameWidthSent}x${data.video.send[0].frameHeightSent}`
+                    }
+                }
+                if (this.state.sentResolution !== sentResolution) {
+                    this.setState({ sentResolution });
+                }
+                let stats = {};
+                if (this.state.logMediaStats) {
+                    if (data?.video?.receive?.length) {
+                        data.video.receive.forEach(v => {
+                            stats[v.streamId] = v;
+                        });
+                    }
+                    if (data?.screenShare?.receive?.length) {
+                        data.screenShare.receive.forEach(v => {
+                            stats[v.streamId] = v;
+                        });
+                    }
+                }
+                this.state.allRemoteParticipantStreams.forEach(v => {
+                    let renderer = v.streamRendererComponentRef.current;
+                    renderer.updateReceiveStats(stats[v.stream.id]);
+                });
+            });
+            mediaCollector.on('summaryReported', (data) => {
+                if (this.state.logMediaStats) {
+                    AzureLogger.log(`${(new Date()).toISOString()} MediaStats summary: ${JSON.stringify(data)}`);
+                }
             });
 
             const dominantSpeakersChangedHandler = async () => {
@@ -405,7 +466,11 @@ export default class CallCard extends React.Component {
         this.setState(prevState => ({outgoingAudioMediaAccessActive: !prevState.outgoingAudioMediaAccessActive}));
     }
 
-    getDummyAudioStreamTrack() {
+    async handleMediaStatsLogState() {
+        this.setState(prevState => ({logMediaStats: !prevState.logMediaStats}));
+    }
+
+    getDummyAudioStream() {
         const context = new AudioContext();
         const dest = context.createMediaStreamDestination();
         const os = context.createOscillator();
@@ -414,14 +479,14 @@ export default class CallCard extends React.Component {
         os.connect(dest);
         os.start();
         const { stream } = dest;
-        const track = stream.getAudioTracks()[0];
-        return track;
+        return stream;
     }
 
     async startOutgoingAudioEffect() {
-        const track = this.getDummyAudioStreamTrack();
-        const localAudioStream = new LocalAudioStream(track);        
-        this.call.startAudio(localAudioStream);
+        const track = this.getDummyAudioStream();
+        const customLocalAudioStream = new LocalAudioStream(this.deviceManager.selectedMicrophone);        
+        customLocalAudioStream.setMediaStream(track);
+        this.call.startAudio(customLocalAudioStream);
     }
 
     async handleScreenSharingOnOff() {
@@ -528,7 +593,7 @@ export default class CallCard extends React.Component {
                         }
                         {
                             this.call &&
-                            <h2>Local Participant Id: {this.state.localParticipantid}</h2>
+                            <h2>Sent Resolution: {this.state.sentResolution}</h2>
                         }
                     </div>
                 </div>
@@ -574,20 +639,6 @@ export default class CallCard extends React.Component {
                                         )
                                     }
                                 </ul>
-                            </div>
-                            <div className="text-center">
-                                {
-                                    this.state.videoOn && 
-                                    <CustomVideoEffects call={this.call} deviceManager={this.deviceManager}/>
-                                }
-                            </div>
-                            <div>
-                                {
-                                    this.state.showLocalVideo &&
-                                    <div className="mb-3">
-                                        <LocalVideoPreviewCard selectedCameraDeviceId={this.state.selectedCameraDeviceId} deviceManager={this.deviceManager} />
-                                    </div>
-                                }
                             </div>
                         </div>
                     }
@@ -693,6 +744,19 @@ export default class CallCard extends React.Component {
                                         <Icon iconName="PlugDisconnected" />
                                     }
                                 </span>
+                                <span className="in-call-button"
+                                    title={`${this.state.logMediaStats? 'Stop' : 'Start'} logging MediaStats`}
+                                    variant="secondary"
+                                    onClick={() => this.handleMediaStatsLogState()}>
+                                    {
+                                        this.state.logMediaStats &&
+                                        <Icon iconName="NumberedList" />
+                                    }
+                                    {
+                                        !this.state.logMediaStats &&
+                                        <Icon iconName="NumberedListText" />
+                                    }
+                                </span>
                                 <Panel type={PanelType.medium}
                                     isLightDismiss
                                     isOpen={this.state.showSettings}
@@ -746,10 +810,43 @@ export default class CallCard extends React.Component {
                                                     styles={{ dropdown: { width: 400 } }}
                                                 />
                                             }
+                                            <div>
+                                            {
+                                                (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
+                                                <h3>Volume Visualizer</h3>
+                                            }
+                                            {   
+                                                (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
+                                                <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} remoteVolumeLevel={this.state.remoteVolumeLevel} />
+                                            }
+                                            </div>                                            
                                         </div>
                                     </div>
                                 </Panel>
                             </div>
+                        </div>
+                        <div className="ms-Grid-row text-center">
+                            {
+                                this.state.videoOn &&
+                                <div className='ms-Grid-row video-features-container'>
+                                    <div className='ms-Grid-col ms-sm12 ms-lg6 video-feature-sample'>
+                                        <Label className='title'>Raw Video access</Label>
+                                        <CustomVideoEffects call={this.call} deviceManager={this.deviceManager} />
+                                    </div>
+                                    <div className='ms-Grid-col ms-sm12 ms-lg6 video-feature-sample'>
+                                        <Label className='title'>Video effects</Label>
+                                        <VideoEffectsContainer call={ this.call } />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div>
+                            {
+                                this.state.showLocalVideo &&
+                                <div className="mb-3">
+                                    <LocalVideoPreviewCard selectedCameraDeviceId={this.state.selectedCameraDeviceId} deviceManager={this.deviceManager} />
+                                </div>
+                            }
                         </div>
                         {
                             <div className="video-grid-row">
