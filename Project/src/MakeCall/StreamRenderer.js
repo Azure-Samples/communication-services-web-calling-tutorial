@@ -1,7 +1,8 @@
 import React from "react";
 import { utils } from '../Utils/Utils';
 import { VideoStreamRenderer } from "@azure/communication-calling";
-import CustomVideoEffects from "./CustomVideoEffects";
+import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
+import VideoReceiveStats from './VideoReceiveStats';
 
 export default class StreamRenderer extends React.Component {
     constructor(props) {
@@ -20,6 +21,7 @@ export default class StreamRenderer extends React.Component {
         this.state = {
             isSpeaking: false,
             displayName: this.remoteParticipant.displayName?.trim(),
+            videoStats: undefined
         };
         this.call = props.call;
     }
@@ -120,6 +122,12 @@ export default class StreamRenderer extends React.Component {
         return this.renderer;
     }
 
+    updateReceiveStats(videoStats) {
+        if (this.state.videoStats !== videoStats) {
+            this.setState({ videoStats });
+        }
+    }
+
     async createRenderer() {
         console.info(`[App][StreamMedia][id=${this.stream.id}][renderStream] attempt to render stream type=${this.stream.mediaStreamType}, id=${this.stream.id}`);
         if (!this.renderer) {
@@ -161,6 +169,12 @@ export default class StreamRenderer extends React.Component {
                     <h4 className="video-title">
                         {this.state.displayName ? this.state.displayName : utils.getIdentifierText(this.remoteParticipant.identifier)}
                     </h4>
+                    {
+                        this.state.videoStats &&
+                        <h4 className="video-stats">
+                            <VideoReceiveStats videoStats={this.state.videoStats} />
+                        </h4>
+                    }
                 </div>
                 <CustomVideoEffects call={this.call} videoContainerId={this.videoContainerId} remoteParticipantId={this.remoteParticipant.identifier}/>
             </div>

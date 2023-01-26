@@ -1,7 +1,7 @@
 import React from "react";
 import { PrimaryButton } from 'office-ui-fabric-react'
 import cv from 'opencv-ts';
-import {LocalVideoStream} from "@azure/communication-calling";
+import { LocalVideoStream } from "@azure/communication-calling";
 
 export default class CustomVideoEffects extends React.Component {
 
@@ -211,7 +211,7 @@ export default class CustomVideoEffects extends React.Component {
     render() {
 
         return(
-            <div className="ms-Grid-col">
+            <div className="ms-Grid-row">
                 {
                     this.renderElm()
                 }
