@@ -2,23 +2,21 @@ import React from 'react';
 import './App.css';
 import MakeCall from './MakeCall/MakeCall'
 import { initializeIcons } from '@uifabric/icons';
-import * as packageJson from '../package.json';
 
 initializeIcons();
 
+function VWebSdkVersion() {
+  return require('../package.json').dependencies['@azure/communication-calling'];
+}
+
 function App() {
-
-  function VWebSdkVersion() {
-    return packageJson.dependencies['@azure/communication-calling'];
-  }
-
   return (
     <div className="App">
       <div className="header ms-Grid">
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-lg6">
             <h2>
-              Azure Communication Services - Calling SDK for Javascript - <VWebSdkVersion/>
+              Azure Communication Services - Calling SDK for Javascript - { VWebSdkVersion() }
             </h2>
           </div>
           <div className="ms-Grid-col ms-lg6">
