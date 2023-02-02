@@ -105,7 +105,6 @@ export default class StreamRenderer extends React.Component {
                 console.log(`[App][StreamMedia][id=${this.stream.id}][isAvailableChanged] triggered`);
                 if (this.stream.isAvailable && !this.renderer) {
                     if (this.call.activeRemoteVideoStreamViews?.size >= this.props.maximumNumberOfRenderers) {
-                        this.props.updateParent();
                         console.error(`[App][StreamMedia][id=${this.stream.id}][createRenderer] reached maximum number of renderers`);
                         return;
                     }
@@ -115,6 +114,7 @@ export default class StreamRenderer extends React.Component {
                 } else {
                     console.log(`[App][StreamMedia][id=${this.stream.id}][isAvailableChanged] isAvailable=${this.stream.isAvailable}`);
                     this.disposeRenderer();
+                    this.props.updateStreamList();
                 }
             } catch (e) {
                 console.error(e);

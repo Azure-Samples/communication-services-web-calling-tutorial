@@ -562,6 +562,13 @@ export default class CallCard extends React.Component {
         this.setState({ selectedMicrophoneDeviceId: microphoneDeviceInfo.id });
     };
 
+    updateStreamList() {
+        const allStreamsBKP = [...this.state.allRemoteParticipantStreams];
+        this.setState({ allRemoteParticipantStreams: [] });
+        setTimeout(() => {
+            this.setState({allRemoteParticipantStreams: [...allStreamsBKP]});
+        }, 0);
+    }
     render() {
         return (
             <div className="ms-Grid mt-2">
@@ -859,6 +866,7 @@ export default class CallCard extends React.Component {
                                                         dominantRemoteParticipant={this.state.dominantRemoteParticipant}
                                                         call={this.call}
                                                         maximumNumberOfRenderers={this.maximumNumberOfRenderers}
+                                                        updateStreamList={() => this.updateStreamList()}
                                                         />
                                     )
                                 }
