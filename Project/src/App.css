@@ -268,10 +268,10 @@ ul {
   box-shadow: 0px 0px 0px 2px #292827;
 }
 
-.video-grid-row, .custom-row {
+.video-grid-row {
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  justify-content: space-between;
   flex-flow: wrap;
 }
 
@@ -314,6 +314,10 @@ ul {
 
 .remote-video-container {
   position: relative;
+}
+
+.remote-video-container > div > video {
+  max-height: 360px;
 }
 
 .remote-video-loading-spinner {

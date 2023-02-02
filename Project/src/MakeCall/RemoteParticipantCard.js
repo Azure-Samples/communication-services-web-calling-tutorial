@@ -9,6 +9,7 @@ export default class RemoteParticipantCard extends React.Component {
         this.call = props.call;
         this.remoteParticipant = props.remoteParticipant;
         this.id = utils.getIdentifierText(this.remoteParticipant.identifier);
+        this._isComponentMounted = false;
 
         this.state = {
             isSpeaking: this.remoteParticipant.isSpeaking,
@@ -18,25 +19,42 @@ export default class RemoteParticipantCard extends React.Component {
         };
     }
 
-    componentWillMount() {
+    componentWillUnmount() {
+        this.remoteParticipant.off('isMutedChanged', () => {});
+        this.remoteParticipant.off('stateChanged', () => {});
+        this.remoteParticipant.off('isSpeakingChanged', () => {});
+        this.remoteParticipant.off('displayNameChanged', () => {});
+        this._isComponentMounted = false;
+    }
+
+    componentDidMount() {
         this.remoteParticipant.on('isMutedChanged', () => {
-            this.setState({ isMuted: this.remoteParticipant.isMuted });
-            if (this.remoteParticipant.isMuted) {
-                this.setState({ isSpeaking: false });
+            if (this._isComponentMounted){
+                this.setState({ isMuted: this.remoteParticipant.isMuted });
+                if (this.remoteParticipant.isMuted) {
+                    this.setState({ isSpeaking: false });
+                }
             }
         });
 
         this.remoteParticipant.on('stateChanged', () => {
-            this.setState({ state: this.remoteParticipant.state });
+            if (this._isComponentMounted) {
+                this.setState({ state: this.remoteParticipant.state });
+            }
         });
 
         this.remoteParticipant.on('isSpeakingChanged', () => {
-            this.setState({ isSpeaking: this.remoteParticipant.isSpeaking });
+            if (this._isComponentMounted) {
+                this.setState({ isSpeaking: this.remoteParticipant.isSpeaking });
+            }
         })
 
         this.remoteParticipant.on('displayNameChanged', () => {
-            this.setState({ displayName: this.remoteParticipant.displayName?.trim() });
+            if (this._isComponentMounted) {
+                this.setState({ displayName: this.remoteParticipant.displayName?.trim() });
+            }
         })
+        this._isComponentMounted = true;
     }
 
     handleRemoveParticipant(e, identifier) {

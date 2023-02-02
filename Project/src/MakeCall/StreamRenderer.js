@@ -18,6 +18,7 @@ export default class StreamRenderer extends React.Component {
         this.dominantRemoteParticipant = props.dominantRemoteParticipant;
         this.loadingSpinner = document.createElement('div');
         this.loadingSpinner.className = 'remote-video-loading-spinner';
+        this._isComponentMounted = false;
         this.state = {
             isSpeaking: false,
             displayName: this.remoteParticipant.displayName?.trim(),
@@ -36,6 +37,14 @@ export default class StreamRenderer extends React.Component {
         }
     }
 
+    componentWillUnmount() {
+        this.remoteParticipant.off('isSpeakingChanged', () => {});
+        this.remoteParticipant.off('isMutedChanged', () => {});
+        this.remoteParticipant.off('displayNameChanged', () => {});
+        this.stream.off('isReceivingChanged', () => {});
+        this.stream.off('isAvailableChanged', () => {});
+        this._isComponentMounted = false;
+    }
     /**
      * Start stream after DOM has rendered
      */
@@ -44,16 +53,20 @@ export default class StreamRenderer extends React.Component {
         this.videoContainer = document.getElementById(this.videoContainerId);
 
         this.remoteParticipant.on('isSpeakingChanged', () => {
-            this.setState({ isSpeaking: this.remoteParticipant.isSpeaking });
+            if (this._isComponentMounted) {
+                this.setState({ isSpeaking: this.remoteParticipant.isSpeaking });
+            }  
         });
 
         this.remoteParticipant.on('isMutedChanged', () => {
-            if (this.remoteParticipant.isMuted) {
+            if (this.remoteParticipant.isMuted && this._isComponentMounted) {
                 this.setState({ isSpeaking: false });
             }
         });
         this.remoteParticipant.on('displayNameChanged', () => {
-            this.setState({ displayName: this.remoteParticipant.displayName?.trim() });
+            if (this._isComponentMounted) {
+                this.setState({ displayName: this.remoteParticipant.displayName?.trim() });
+            }
         })
 
         console.log(`[App][StreamMedia][id=${this.stream.id}] handle new stream`);
@@ -91,6 +104,11 @@ export default class StreamRenderer extends React.Component {
 
                 console.log(`[App][StreamMedia][id=${this.stream.id}][isAvailableChanged] triggered`);
                 if (this.stream.isAvailable && !this.renderer) {
+                    if (this.call.activeRemoteVideoStreamViews?.size >= this.props.maximumNumberOfRenderers) {
+                        this.props.updateParent();
+                        console.error(`[App][StreamMedia][id=${this.stream.id}][createRenderer] reached maximum number of renderers`);
+                        return;
+                    }
                     console.log(`[App][StreamMedia][id=${this.stream.id}][isAvailableChanged] isAvailable=${this.stream.isAvailable}`);
                     await this.createRenderer();
                     this.attachRenderer();
@@ -116,6 +134,7 @@ export default class StreamRenderer extends React.Component {
         } catch (e) {
             console.error(e);
         }
+        this._isComponentMounted = true;
     }
 
     getRenderer() {
@@ -156,7 +175,9 @@ export default class StreamRenderer extends React.Component {
         if (this.renderer) {
             this.renderer.dispose();
             this.renderer = undefined;
-            document.getElementById(this.componentId).hidden = true;
+            if (document.getElementById(this.componentId)) {
+                document.getElementById(this.componentId).hidden = true;
+            }            
         } else {
             console.warn(`[App][StreamMedia][id=${this.stream.id}][disposeRender] no renderer to dispose`);
         }

@@ -821,7 +821,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                 isMultiline={true}
                                 onDismiss={() => { this.setState({ ufdMessages: [] }) }}
                                 dismissButtonAriaLabel="Close">
-                                {this.state.ufdMessages.map(msg => <li>{msg}</li>)}
+                                {this.state.ufdMessages.map((msg, index) => <li key={index}>{msg}</li>)}
                             </MessageBar>
                         }
                         {
