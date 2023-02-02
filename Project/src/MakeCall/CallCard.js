@@ -203,7 +203,7 @@ export default class CallCard extends React.Component {
 
             this.call.remoteParticipants.forEach(rp => this.subscribeToRemoteParticipant(rp));
             this.call.on('remoteParticipantsUpdated', e => {
-                console.log(`&& Call=${this.call.callId}, remoteParticipantsUpdated, added=${e.added}, removed=${e.removed}`);
+                console.log(`Call=${this.call.callId}, remoteParticipantsUpdated, added=${e.added}, removed=${e.removed}`);
                 e.added.forEach(p => {
                     console.log('participantAdded', p);
                     this.subscribeToRemoteParticipant(p);
