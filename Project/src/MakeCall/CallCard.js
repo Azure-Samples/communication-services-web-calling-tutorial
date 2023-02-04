@@ -2,7 +2,7 @@ import React from "react";
 import { MessageBar, MessageBarType, DefaultButton } from 'office-ui-fabric-react'
 import { Toggle } from '@fluentui/react/lib/Toggle';
 import { TooltipHost } from '@fluentui/react/lib/Tooltip';
-import StreamRenderer from "./StreamRenderer";
+import { FunctionalStreamRenderer as StreamRenderer} from "./FunctionalStreamRenderer";
 import AddParticipantPopover from "./AddParticipantPopover";
 import RemoteParticipantCard from "./RemoteParticipantCard";
 import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
@@ -326,9 +326,9 @@ export default class CallCard extends React.Component {
                 let participantStreamTuples = participantStreams.map(stream => { return { stream, participant, streamRendererComponentRef: React.createRef() }});
                 participantStreamTuples.forEach(participantStreamTuple => {
                     if (!this.state.allRemoteParticipantStreams.find((v) => { return v === participantStreamTuple })) {
-                        this.setState({
-                            allRemoteParticipantStreams: [...this.state.allRemoteParticipantStreams, participantStreamTuple]
-                        });
+                        this.setState(prevState => ({
+                            allRemoteParticipantStreams: [...prevState.allRemoteParticipantStreams, participantStreamTuple]
+                        }));
                     }
                 })
             }
@@ -563,10 +563,10 @@ export default class CallCard extends React.Component {
     };
 
     updateStreamList() {
-        const allStreamsBKP = [...this.state.allRemoteParticipantStreams];
+        const allStreamsBackup = [...this.state.allRemoteParticipantStreams];
         this.setState({ allRemoteParticipantStreams: [] });
         setTimeout(() => {
-            this.setState({allRemoteParticipantStreams: [...allStreamsBKP]});
+            this.setState({allRemoteParticipantStreams: [...allStreamsBackup]});
         }, 0);
     }
     render() {
