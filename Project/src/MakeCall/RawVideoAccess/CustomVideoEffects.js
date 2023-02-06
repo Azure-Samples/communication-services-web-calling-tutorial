@@ -1,6 +1,5 @@
 import React from "react";
 import { PrimaryButton } from 'office-ui-fabric-react'
-import cv from 'opencv-ts';
 import { LocalVideoStream } from "@azure/communication-calling";
 
 export default class CustomVideoEffects extends React.Component {
@@ -12,14 +11,29 @@ export default class CustomVideoEffects extends React.Component {
         this.remoteVideoElementId = props.videoContainerId;
         this.remoteParticipantId = props.remoteParticipantId;
         this.isOutgoingVideoComponent = !props.remoteParticipantId;
-        this.outgoingVideoBtnLabels = {
-            add: "Set B&W effect on local video",
-            remove: "Remove B&W effect on local video",
-            sendDummy: "Send dummy local video"
+        this.outgoingVideoBtns = {
+            add: {
+                label: "Set B/W effect on local video", 
+                disabled: false
+            },
+            remove: {
+                label: "Remove effect on local video", 
+                disabled: false
+            },
+            sendDummy: {
+                label: "Send dummy local video", 
+                disabled: false
+            }
         };
-        this.incomingVideoBtnLabels = {
-            add: "Set B/W effect on remote video",
-            remove: "Remove effect on remote video",
+        this.incomingVideoBtns = {
+            add: {
+                label: "Set B/W effect on remote video", 
+                disabled: false
+            },
+            remove: {
+                label: "Remove effect on remote video", 
+                disabled: false
+            }
         };
     }
 
@@ -31,11 +45,9 @@ export default class CustomVideoEffects extends React.Component {
         videoElem.width = width;
         videoElem.play();
         const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', {willReadFrequently: true});
         canvas.width = width;
         canvas.height = height;
-        let cap = new cv.VideoCapture( videoElem);
-        let src = new cv.Mat(height, width, cv.CV_8UC4);
-        let dst = new cv.Mat(height, width, cv.CV_8UC1);
         
 
         const FPS = 30;
@@ -43,12 +55,14 @@ export default class CustomVideoEffects extends React.Component {
             try {
                 let begin = Date.now();
                 // start processing.
-                cap.read(src);
-                cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY);
-                cv.imshow(canvas, dst);
+                ctx.filter = "grayscale(1)";
+                ctx.drawImage(videoElem, 0, 0, width, height);
+                const imageData = ctx.getImageData(0, 0, width, height);
+                ctx.putImageData(imageData, 0, 0);              
                 // schedule the next one.
                 let delay = Math.abs(1000/FPS - (Date.now() - begin));
-                setTimeout(processVideo, delay);
+                setTimeout(processVideo, delay)
+                ;
             } catch (err) {
                 console.error(err);
             }
@@ -70,24 +84,36 @@ export default class CustomVideoEffects extends React.Component {
 
     dummyStream() {
         const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', {willReadFrequently: true});
         canvas.width = 1280;
         canvas.height = 720;
         ctx.fillStyle = 'blue';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         const colors = ['red', 'yellow', 'green'];
-        window.setInterval(() => {
-            if (ctx) {
-                ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
-                const x = Math.floor(Math.random() * canvas.width);
-                const y = Math.floor(Math.random() * canvas.height);
-                const size = 100;
-                ctx.fillRect(x, y, size, size);
+        const FPS = 30;
+        function createShapes() {
+            try {
+                let begin = Date.now();
+                // start processing.
+                if (ctx) {
+                    ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                    const x = Math.floor(Math.random() * canvas.width);
+                    const y = Math.floor(Math.random() * canvas.height);
+                    const size = 100;
+                    ctx.fillRect(x, y, size, size);
+                }            
+                // schedule the next one.
+                let delay = Math.abs(1000/FPS - (Date.now() - begin));
+                setTimeout(createShapes, delay);
+            } catch (err) {
+                console.error(err);
             }
-        }, 1000 / 30);
+        };
 
-        return canvas.captureStream(30);
+        // schedule the first one.
+        setTimeout(createShapes, 0);
+        return canvas.captureStream(FPS);
     }
 
     async addEffect(e) {
@@ -100,31 +126,35 @@ export default class CustomVideoEffects extends React.Component {
 
         };
         switch (e.currentTarget.children[0].textContent) {
-            case this.outgoingVideoBtnLabels.add:
+            case this.outgoingVideoBtns.add.label:
                 //add filters to outgoing video  
                 const _addLocalVideoStream = this.call.localVideoStreams[0];
                 const _localVideoStreamRawStream = await _addLocalVideoStream.getMediaStream();
                 const bwStream = this.bwVideoStream(_localVideoStreamRawStream);
                 if(bwStream) {
+                    this.outgoingVideoBtns.add.disabled = true;
+                    this.outgoingVideoBtns.remove.disabled = false;
                     this.call.localVideoStreams[0].setMediaStream(bwStream);
                 }
                 break;
-            case this.outgoingVideoBtnLabels.remove:
+            case this.outgoingVideoBtns.remove.label:
                 //remove filters from outgoing video
-                const _removeLocalVideoStream = this.call.localVideoStreams[0];
-                await this.call.stopVideo(_removeLocalVideoStream);
                 const cameras = await this.deviceManager.getCameras();
                 const localVideoStream = new LocalVideoStream(cameras[0]);
+                const _removeLocalVideoStream = this.call.localVideoStreams[0];
+                await this.call.stopVideo(_removeLocalVideoStream);
                 await this.call.startVideo(localVideoStream);
+                this.outgoingVideoBtns.add.disabled = false;
+                this.outgoingVideoBtns.remove.disabled = true;
                 break;
-            case this.outgoingVideoBtnLabels.sendDummy:
+            case this.outgoingVideoBtns.sendDummy.label:
                 // send a dummy video
                 const _dummyStream = this.dummyStream();
                 if(_dummyStream) {
                     this.call.localVideoStreams[0].setMediaStream(_dummyStream);
                 }
                 break;
-            case this.incomingVideoBtnLabels.add:
+            case this.incomingVideoBtns.add.label:
                 //add filters to incoming video
                 this.call.remoteParticipants.forEach((participant) => {
                     identifierTable[participant.identifier.kind].forEach(async (prop) => {
@@ -139,7 +169,7 @@ export default class CustomVideoEffects extends React.Component {
                     })
                 });
                 break;
-            case this.incomingVideoBtnLabels.remove:
+            case this.incomingVideoBtns.remove.label:
                 //remove filters from incoming video
                 this.call.remoteParticipants.forEach((participant) => {
                     identifierTable[participant.identifier.kind].forEach(async (prop) => {
@@ -159,21 +189,31 @@ export default class CustomVideoEffects extends React.Component {
     renderElm() {
         return this.isOutgoingVideoComponent 
             ?
-                Object.keys(this.outgoingVideoBtnLabels).map((obj, idx) => {
-                    return <PrimaryButton key={`${idx}-abcd`} className="primary-button mt-3" onClick={async (e) => this.addEffect(e)}>{this.outgoingVideoBtnLabels[obj]}</PrimaryButton>
+                Object.keys(this.outgoingVideoBtns).map((obj, idx) => {
+                    return <PrimaryButton 
+                                key={`${idx}-abcd`} 
+                                className="primary-button mt-3" 
+                                onClick={async (e) => this.addEffect(e)}
+                                disabled={this.outgoingVideoBtns[obj].disabled}>
+                                    {this.outgoingVideoBtns[obj].label}
+                            </PrimaryButton>
                 })
             :
-                Object.keys(this.incomingVideoBtnLabels).map((obj, idx) => {
+                Object.keys(this.incomingVideoBtns).map((obj, idx) => {
                     const dataProps = {
                         "data-videocontainerid": this.props.videoContainerId
                     };
                     for (const id in this.props.remoteParticipantId) {
                         dataProps[`data-${id.toLowerCase()}`] = this.props.remoteParticipantId[id];
                     }
-                    return <PrimaryButton key={`${idx}-abcd`} 
-                                          data-videocontainerid={this.props.videoContainerId}
-                                          {...dataProps}
-                                          className="primary-button mt-3" onClick={async (e) => this.addEffect(e)}>{this.incomingVideoBtnLabels[obj]}</PrimaryButton>
+                    return <PrimaryButton 
+                                key={`${idx}-abcd`} 
+                                data-videocontainerid={this.props.videoContainerId}
+                                {...dataProps}
+                                className="primary-button mt-3" onClick={async (e) => this.addEffect(e)}
+                                disabled={this.incomingVideoBtns[obj].disabled}>
+                                    {this.incomingVideoBtns[obj].label}
+                            </PrimaryButton>
                 })
     }
 

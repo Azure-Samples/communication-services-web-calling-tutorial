@@ -2,7 +2,7 @@ import React from "react";
 import { MessageBar, MessageBarType, DefaultButton } from 'office-ui-fabric-react'
 import { Toggle } from '@fluentui/react/lib/Toggle';
 import { TooltipHost } from '@fluentui/react/lib/Tooltip';
-import StreamRenderer from "./StreamRenderer";
+import { FunctionalStreamRenderer as StreamRenderer} from "./FunctionalStreamRenderer";
 import AddParticipantPopover from "./AddParticipantPopover";
 import RemoteParticipantCard from "./RemoteParticipantCard";
 import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
@@ -25,6 +25,7 @@ export default class CallCard extends React.Component {
         this.deviceManager = props.deviceManager;
         this.remoteVolumeLevelSubscription = undefined;
         this.handleRemoteVolumeSubscription = undefined;
+        this.maximumNumberOfRenderers = 6;
         this.state = {
             callState: this.call.state,
             callId: this.call.id,
@@ -50,26 +51,30 @@ export default class CallCard extends React.Component {
             logMediaStats: false,
             sentResolution: '',
             remoteVolumeIndicator: undefined,
-            remoteVolumeLevel: undefined
+            remoteVolumeLevel: undefined,
+            mediaCollector: undefined
         };
     }
 
-    async componentWillMount() {
-        if (this.call) {
-            let handleRemoteVolumeSubscription = async () => {
-                if(this.call.remoteAudioStreams.length>0)  {
-                    let remoteVolumeIndicator = await this.call.remoteAudioStreams[0].getVolume();
-                let remoteVolumeStateSetter = ()=>{
-                    this.setState({ remoteVolumeLevel: remoteVolumeIndicator.level });
-                }
-                remoteVolumeIndicator.on('levelChanged', remoteVolumeStateSetter);
-                this.remoteVolumeLevelSubscription = remoteVolumeStateSetter;
-                this.setState({ remoteVolumeIndicator: remoteVolumeIndicator });
-                }                                            
-            }
-            this.call.on('remoteAudioStreamsUpdated', handleRemoteVolumeSubscription);
-            this.handleRemoteVolumeSubscription = handleRemoteVolumeSubscription;
+    componentWillUnmount() {
+        this.call.off('stateChanged', () => {});
+        this.deviceManager.off('videoDevicesUpdated', () => {});
+        this.deviceManager.off('audioDevicesUpdated', () => {});
+        this.deviceManager.off('selectedSpeakerChanged', () => {});
+        this.deviceManager.off('selectedMicrophoneChanged', () => {});
+        this.call.off('localVideoStreamsUpdated', () => {});
+        this.call.off('idChanged', () => {});
+        this.call.off('isMutedChanged', () => {});
+        this.call.off('isIncomingAudioMutedChanged', () => {});
+        this.call.off('isScreenSharingOnChanged', () => {});
+        this.call.off('remoteParticipantsUpdated', () => {});
+        this.state.mediaCollector?.off('sampleReported', () => {});
+        this.state.mediaCollector?.off('summaryReported', () => {});
+        this.call.feature(Features.DominantSpeakers).off('dominantSpeakersChanged', () => {});
+    }
 
+    componentDidMount() {
+        if (this.call) {
             this.deviceManager.on('videoDevicesUpdated', async e => {
                 let newCameraDeviceToUse = undefined;
                 e.added.forEach(addedCameraDevice => {
@@ -145,8 +150,6 @@ export default class CallCard extends React.Component {
 
             const callStateChanged = () => {
                 console.log('Call state changed ', this.call.state);
-                this.setState({ callState: this.call.state });
-
                 if (this.call.state !== 'None' &&
                     this.call.state !== 'Connecting' &&
                     this.call.state !== 'Incoming') {
@@ -160,8 +163,8 @@ export default class CallCard extends React.Component {
                     this.setState({ selectedMicrophoneDeviceId: microphoneDevices[0]?.id });
                 }
 
-                if (this.call.state === 'Disconnected') {
-                    this.setState({ dominantRemoteParticipant: undefined });
+                if (this.call.state !== 'Disconnected') {
+                    this.setState({ callState: this.call.state });
                 }
             }
             callStateChanged();
@@ -214,12 +217,12 @@ export default class CallCard extends React.Component {
                         }));
                     }
                     this.setState({ remoteParticipants: this.state.remoteParticipants.filter(remoteParticipant => { return remoteParticipant !== p }) });
-                    this.setState({ streams: this.state.allRemoteParticipantStreams.filter(s => { return s.participant !== p }) });
-
+                    this.setState({ allRemoteParticipantStreams: this.state.allRemoteParticipantStreams.filter(s => { return s.participant !== p }) });
+                    p.off('videoStreamsUpdated', () => {});
                 });
             });
-
             const mediaCollector = this.call.feature(Features.MediaStats).createCollector();
+            this.setState({ mediaCollector });
             mediaCollector.on('sampleReported', (data) => {
                 if (this.state.logMediaStats) {
                     AzureLogger.log(`${(new Date()).toISOString()} MediaStats sample: ${JSON.stringify(data)}`);
@@ -248,7 +251,7 @@ export default class CallCard extends React.Component {
                 }
                 this.state.allRemoteParticipantStreams.forEach(v => {
                     let renderer = v.streamRendererComponentRef.current;
-                    renderer.updateReceiveStats(stats[v.stream.id]);
+                    renderer?.updateReceiveStats(stats[v.stream.id]);
                 });
             });
             mediaCollector.on('summaryReported', (data) => {
@@ -317,14 +320,6 @@ export default class CallCard extends React.Component {
         if (!this.state.remoteParticipants.find((p) => { return p === participant })) {
             this.setState(prevState => ({ remoteParticipants: [...prevState.remoteParticipants, participant] }));
         }
-
-        participant.on('displayNameChanged', () => {
-            console.log('displayNameChanged ', participant.displayName);
-        });
-
-        participant.on('stateChanged', () => {
-            console.log('Participant state changed', participant.identifier.communicationUserId, participant.state);
-        });
 
         const addToListOfAllRemoteParticipantStreams = (participantStreams) => {
             if (participantStreams) {
@@ -567,6 +562,13 @@ export default class CallCard extends React.Component {
         this.setState({ selectedMicrophoneDeviceId: microphoneDeviceInfo.id });
     };
 
+    updateStreamList() {
+        const allStreamsBackup = [...this.state.allRemoteParticipantStreams];
+        this.setState({ allRemoteParticipantStreams: [] });
+        setTimeout(() => {
+            this.setState({allRemoteParticipantStreams: [...allStreamsBackup]});
+        }, 0);
+    }
     render() {
         return (
             <div className="ms-Grid mt-2">
@@ -854,14 +856,18 @@ export default class CallCard extends React.Component {
                                     (this.state.callState === 'Connected' ||
                                     this.state.callState === 'LocalHold' ||
                                     this.state.callState === 'RemoteHold') &&
-                                    this.state.allRemoteParticipantStreams.map(v =>
-                                        <StreamRenderer key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`}
+                                    this.state.allRemoteParticipantStreams.map(v => 
+                                        <StreamRenderer
+                                                        key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`}
                                                         ref ={v.streamRendererComponentRef}
                                                         stream={v.stream}
                                                         remoteParticipant={v.participant}
                                                         dominantSpeakerMode={this.state.dominantSpeakerMode}
                                                         dominantRemoteParticipant={this.state.dominantRemoteParticipant}
-                                                        call={this.call}/>
+                                                        call={this.call}
+                                                        maximumNumberOfRenderers={this.maximumNumberOfRenderers}
+                                                        updateStreamList={() => this.updateStreamList()}
+                                                        />
                                     )
                                 }
                             </div>
