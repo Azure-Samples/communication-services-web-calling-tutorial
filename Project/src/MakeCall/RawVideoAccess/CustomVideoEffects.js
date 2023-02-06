@@ -1,6 +1,5 @@
 import React from "react";
 import { PrimaryButton } from 'office-ui-fabric-react'
-import cv from 'opencv-ts';
 import { LocalVideoStream } from "@azure/communication-calling";
 
 export default class CustomVideoEffects extends React.Component {
@@ -46,11 +45,9 @@ export default class CustomVideoEffects extends React.Component {
         videoElem.width = width;
         videoElem.play();
         const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', {willReadFrequently: true});
         canvas.width = width;
         canvas.height = height;
-        let cap = new cv.VideoCapture( videoElem);
-        let src = new cv.Mat(height, width, cv.CV_8UC4);
-        let dst = new cv.Mat(height, width, cv.CV_8UC1);
         
 
         const FPS = 30;
@@ -58,12 +55,14 @@ export default class CustomVideoEffects extends React.Component {
             try {
                 let begin = Date.now();
                 // start processing.
-                cap.read(src);
-                cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY);
-                cv.imshow(canvas, dst);
+                ctx.filter = "grayscale(1)";
+                ctx.drawImage(videoElem, 0, 0, width, height);
+                const imageData = ctx.getImageData(0, 0, width, height);
+                ctx.putImageData(imageData, 0, 0);              
                 // schedule the next one.
                 let delay = Math.abs(1000/FPS - (Date.now() - begin));
-                setTimeout(processVideo, delay);
+                setTimeout(processVideo, delay)
+                ;
             } catch (err) {
                 console.error(err);
             }
@@ -85,24 +84,36 @@ export default class CustomVideoEffects extends React.Component {
 
     dummyStream() {
         const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', {willReadFrequently: true});
         canvas.width = 1280;
         canvas.height = 720;
         ctx.fillStyle = 'blue';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         const colors = ['red', 'yellow', 'green'];
-        window.setInterval(() => {
-            if (ctx) {
-                ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
-                const x = Math.floor(Math.random() * canvas.width);
-                const y = Math.floor(Math.random() * canvas.height);
-                const size = 100;
-                ctx.fillRect(x, y, size, size);
+        const FPS = 30;
+        function createShapes() {
+            try {
+                let begin = Date.now();
+                // start processing.
+                if (ctx) {
+                    ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                    const x = Math.floor(Math.random() * canvas.width);
+                    const y = Math.floor(Math.random() * canvas.height);
+                    const size = 100;
+                    ctx.fillRect(x, y, size, size);
+                }            
+                // schedule the next one.
+                let delay = Math.abs(1000/FPS - (Date.now() - begin));
+                setTimeout(createShapes, delay);
+            } catch (err) {
+                console.error(err);
             }
-        }, 1000 / 30);
+        };
 
-        return canvas.captureStream(30);
+        // schedule the first one.
+        setTimeout(createShapes, 0);
+        return canvas.captureStream(FPS);
     }
 
     async addEffect(e) {
@@ -128,10 +139,10 @@ export default class CustomVideoEffects extends React.Component {
                 break;
             case this.outgoingVideoBtns.remove.label:
                 //remove filters from outgoing video
-                const _removeLocalVideoStream = this.call.localVideoStreams[0];
-                await this.call.stopVideo(_removeLocalVideoStream);
                 const cameras = await this.deviceManager.getCameras();
                 const localVideoStream = new LocalVideoStream(cameras[0]);
+                const _removeLocalVideoStream = this.call.localVideoStreams[0];
+                await this.call.stopVideo(_removeLocalVideoStream);
                 await this.call.startVideo(localVideoStream);
                 this.outgoingVideoBtns.add.disabled = false;
                 this.outgoingVideoBtns.remove.disabled = true;

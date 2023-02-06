@@ -73,7 +73,7 @@ export default class MakeCall extends React.Component {
             try {
                 const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 this.tokenCredential = tokenCredential;
-                setLogLevel('verbose');
+                setLogLevel('error');
                 this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk", `#clientTag:${userDetails.clientTag}`] } });
                 this.environmentInfo = await this.callClient.getEnvironmentInfoInternal();
                 this.debugInfoFeature = await this.callClient.feature(Features.DebugInfo);
@@ -81,7 +81,6 @@ export default class MakeCall extends React.Component {
                 // override logger to be able to dowload logs locally
                 AzureLogger.log = (...args) => {
                     this.logBuffer.push(...args);
-                    window.acsLogBuffer = this.logBuffer;
                     if (args[0].startsWith('azure:ACS:info')) {
                         console.info(...args);
                     } else if (args[0].startsWith('azure:ACS:verbose')) {
@@ -94,7 +93,6 @@ export default class MakeCall extends React.Component {
                         console.log(...args);
                     }
                 };
-                window.callAgent = this.callAgent;
                 this.deviceManager = await this.callClient.getDeviceManager();
                 const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
                 this.setState({permissions: permissions});
@@ -821,7 +819,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                 isMultiline={true}
                                 onDismiss={() => { this.setState({ ufdMessages: [] }) }}
                                 dismissButtonAriaLabel="Close">
-                                {this.state.ufdMessages.map(msg => <li>{msg}</li>)}
+                                {this.state.ufdMessages.map((msg, index) => <li key={index}>{msg}</li>)}
                             </MessageBar>
                         }
                         {

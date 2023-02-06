@@ -18,12 +18,19 @@ export default class RemoteParticipantCard extends React.Component {
         };
     }
 
-    componentWillMount() {
+    componentWillUnmount() {
+        this.remoteParticipant.off('isMutedChanged', () => {});
+        this.remoteParticipant.off('stateChanged', () => {});
+        this.remoteParticipant.off('isSpeakingChanged', () => {});
+        this.remoteParticipant.off('displayNameChanged', () => {});
+    }
+
+    componentDidMount() {
         this.remoteParticipant.on('isMutedChanged', () => {
             this.setState({ isMuted: this.remoteParticipant.isMuted });
-            if (this.remoteParticipant.isMuted) {
-                this.setState({ isSpeaking: false });
-            }
+                if (this.remoteParticipant.isMuted) {
+                    this.setState({ isSpeaking: false });
+                }
         });
 
         this.remoteParticipant.on('stateChanged', () => {
@@ -36,7 +43,7 @@ export default class RemoteParticipantCard extends React.Component {
 
         this.remoteParticipant.on('displayNameChanged', () => {
             this.setState({ displayName: this.remoteParticipant.displayName?.trim() });
-        })
+        });
     }
 
     handleRemoveParticipant(e, identifier) {
