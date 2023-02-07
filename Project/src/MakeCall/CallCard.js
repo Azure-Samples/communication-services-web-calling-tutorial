@@ -478,9 +478,8 @@ export default class CallCard extends React.Component {
     }
 
     async startOutgoingAudioEffect() {
-        const track = this.getDummyAudioStream();
-        const customLocalAudioStream = new LocalAudioStream(this.deviceManager.selectedMicrophone);        
-        customLocalAudioStream.setMediaStream(track);
+        const stream = this.getDummyAudioStream();
+        const customLocalAudioStream = new LocalAudioStream(stream);        
         this.call.startAudio(customLocalAudioStream);
     }
 
