@@ -316,6 +316,10 @@ ul {
   position: relative;
 }
 
+.remote-video-container > div > video {
+  max-height: 360px;
+}
+
 .remote-video-loading-spinner {
   border: 12px solid #f3f3f3;
   border-radius: 50%;
