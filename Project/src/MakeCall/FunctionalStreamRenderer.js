@@ -7,7 +7,6 @@ import VideoReceiveStats from './VideoReceiveStats';
 export const FunctionalStreamRenderer = forwardRef(({ remoteParticipant, stream, dominantRemoteParticipant, dominantSpeakerMode, call, updateStreamList, maximumNumberOfRenderers }, ref) => {
     const componentId = `${utils.getIdentifierText(remoteParticipant.identifier)}-${stream.mediaStreamType}-${stream.id}`;
     const videoContainerId = componentId + '-videoContainer';
-    const loadingSpinner = document.createElement('div');
     const componentContainer = useRef(null);
     const videoContainer = useRef(null);
     const [renderer, setRenderer] = useState();
@@ -61,7 +60,6 @@ export const FunctionalStreamRenderer = forwardRef(({ remoteParticipant, stream,
             } else {
                 componentContainer.current.hidden = false;
                 videoContainer.current.appendChild(view?.target);
-                window.endPerformance = performance.now();
             }
         } catch (e) {
             console.error(e);
