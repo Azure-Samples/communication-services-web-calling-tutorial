@@ -316,10 +316,8 @@ export default class CallCard extends React.Component {
 
             const capabilitiesFeature =  this.call.feature(Features.Capabilities);
             const capabilities =  this.call.feature(Features.Capabilities).capabilities;
-            console.log(`Local Participant capabilities are=${JSON.stringify(capabilities)}`);
             capabilitiesFeature.on('capabilitiesChanged', () => {
                 const updatedCapabilities  = capabilitiesFeature.capabilities;
-                console.log(`EVENT, Local participant capabilities has changed`);
             });
         }
     }
