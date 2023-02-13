@@ -313,6 +313,12 @@ export default class CallCard extends React.Component {
                 this.setState({ dominantRemoteParticipant: utils.getRemoteParticipantObjFromIdentifier(dominantSpeakerIdentifier) })
             }
             this.call.feature(Features.DominantSpeakers).on('dominantSpeakersChanged', dominantSpeakersChangedHandler);
+
+            const capabilitiesFeature =  this.call.feature(Features.Capabilities);
+            const capabilities =  this.call.feature(Features.Capabilities).capabilities;
+            capabilitiesFeature.on('capabilitiesChanged', () => {
+                const updatedCapabilities  = capabilitiesFeature.capabilities;
+            });
         }
     }
 
@@ -424,7 +430,7 @@ export default class CallCard extends React.Component {
         }
     }
 
-    
+
 
     async handleIncomingAudioOnOff() {
         try {
@@ -479,7 +485,7 @@ export default class CallCard extends React.Component {
 
     async startOutgoingAudioEffect() {
         const stream = this.getDummyAudioStream();
-        const customLocalAudioStream = new LocalAudioStream(stream);        
+        const customLocalAudioStream = new LocalAudioStream(stream);
         this.call.startAudio(customLocalAudioStream);
     }
 
@@ -816,11 +822,11 @@ export default class CallCard extends React.Component {
                                                 (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
                                                 <h3>Volume Visualizer</h3>
                                             }
-                                            {   
+                                            {
                                                 (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
                                                 <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} remoteVolumeLevel={this.state.remoteVolumeLevel} />
                                             }
-                                            </div>                                            
+                                            </div>
                                         </div>
                                     </div>
                                 </Panel>
@@ -855,7 +861,7 @@ export default class CallCard extends React.Component {
                                     (this.state.callState === 'Connected' ||
                                     this.state.callState === 'LocalHold' ||
                                     this.state.callState === 'RemoteHold') &&
-                                    this.state.allRemoteParticipantStreams.map(v => 
+                                    this.state.allRemoteParticipantStreams.map(v =>
                                         <StreamRenderer
                                                         key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`}
                                                         ref ={v.streamRendererComponentRef}

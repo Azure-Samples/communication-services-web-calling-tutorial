@@ -27,6 +27,7 @@ export default class MakeCall extends React.Component {
         this.destinationGroup = null;
         this.meetingLink = null;
         this.meetingId = null;
+        this.roomsId = null;
         this.threadId = null;
         this.messageId = null;
         this.organizerId = null;
@@ -143,7 +144,7 @@ export default class MakeCall extends React.Component {
                 });
                 this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
                 this.debugInfoFeature.on('isCallClientActiveInAnotherTabChanged', () => {
-                    this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab }); 
+                    this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
                 });
 
                 this.setState({ loggedIn: true });
@@ -224,6 +225,16 @@ export default class MakeCall extends React.Component {
         try {
             const callOptions = await this.getCallOptions(withVideo);
             this.callAgent.join({ groupId: this.destinationGroup.value }, callOptions);
+        } catch (e) {
+            console.error('Failed to join a call', e);
+            this.setState({ callError: 'Failed to join a call: ' + e });
+        }
+    };
+
+    joinRooms = async (withVideo) => {
+        try {
+            const callOptions = await this.getCallOptions(withVideo);
+            this.callAgent.join({ meetingId: this.roomsId.value }, callOptions);
         } catch (e) {
             console.error('Failed to join a call', e);
             this.setState({ callError: 'Failed to join a call: ' + e });
@@ -339,8 +350,8 @@ export default class MakeCall extends React.Component {
     async runPreCallDiagnostics() {
         try {
             this.setState({
-                showPreCallDiagnostcisResults: false, 
-                isPreCallDiagnosticsCall: true, 
+                showPreCallDiagnostcisResults: false,
+                isPreCallDiagnosticsCall: true,
                 preCallDiagnosticsResults: {}
             });
             const preCallDiagnosticsResult = await this.callClient.feature(Features.PreCallDiagnostics).startTest(this.tokenCredential);
@@ -474,8 +485,8 @@ const isSupportedBrowser = this.environmentInfo.isSupportedBrowser;
 const isSupportedBrowserVersion = this.environmentInfo.isSupportedBrowserVersion;
 const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
 
-        `;   
-        
+        `;
+
         const preCallDiagnosticsSampleCode = `
 //Get new token or use existing token.
 const response = (await fetch('/tokens/provisionUser')).json();
@@ -889,6 +900,27 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                     </PrimaryButton>
                                 </div>
                                 <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                    <h3 className="mb-1">Join a Rooms call</h3>
+                                    <div>Enter Rooms ID</div>
+                                    <TextField className="mb-3"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        label="Rooms id"
+                                        componentRef={(val) => this.roomsId = val} />
+
+                                    <PrimaryButton className="primary-button"
+                                        iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                        text="Join Rooms call"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        onClick={() => this.joinRooms(false)}>
+                                    </PrimaryButton>
+                                    <PrimaryButton className="primary-button"
+                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                        text="Join Rooms call with video"
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        onClick={() => this.joinRooms(true)}>
+                                    </PrimaryButton>
+                                </div>
+                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
                                     <h3 className="mb-1">Join a Teams meeting</h3>
                                     <div>Enter meeting link</div>
                                     <TextField className="mb-3"
@@ -930,7 +962,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </div>
                         }
                         {
-                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress && 
+                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress &&
                             <div>
                                 Pre Call Diagnostics call in progress...
                             </div>
@@ -979,7 +1011,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </div>
                         </div>
                         {
-                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress && 
+                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress &&
                             <div>
                                 Pre Call Diagnostics call in progress...
                                 <div className="custom-row">
@@ -993,7 +1025,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                 {
                                     <div className="pre-call-grid-container">
                                         {
-                                            this.state.preCallDiagnosticsResults.deviceAccess && 
+                                            this.state.preCallDiagnosticsResults.deviceAccess &&
                                             <div className="pre-call-grid">
                                                 <span>Device Permission: </span>
                                                 <div  >
@@ -1007,7 +1039,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                             </div>
                                         }
                                         {
-                                            this.state.preCallDiagnosticsResults.deviceEnumeration && 
+                                            this.state.preCallDiagnosticsResults.deviceEnumeration &&
                                             <div className="pre-call-grid">
                                                 <span>Device Access: </span>
                                                 <div >
@@ -1025,7 +1057,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                             </div>
                                         }
                                         {
-                                            this.state.preCallDiagnosticsResults.browserSupport && 
+                                            this.state.preCallDiagnosticsResults.browserSupport &&
                                             <div className="pre-call-grid">
                                                 <span>Browser Support: </span>
                                                 <div >
@@ -1039,7 +1071,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                             </div>
                                         }
                                         {
-                                            this.state.preCallDiagnosticsResults.inCallDiagnostics && 
+                                            this.state.preCallDiagnosticsResults.inCallDiagnostics &&
                                             <div className="pre-call-grid">
                                                 <span>Call Diagnostics: </span>
                                                 <div className="pre-call-grid">
