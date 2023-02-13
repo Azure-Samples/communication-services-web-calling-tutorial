@@ -11,7 +11,7 @@ export const FunctionalStreamRenderer = forwardRef(({ remoteParticipant, stream,
     const videoContainer = useRef(null);
     const [renderer, setRenderer] = useState();
     const [view, setView] = useState();
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
     const [isSpeaking, setIsSpeaking] = useState(!!remoteParticipant?.isSpeaking);
     const [isMuted, setIsMuted] = useState(!!remoteParticipant?.isMuted);
     const [displayName, setDisplayName] = useState(remoteParticipant?.displayName?.trim() ?? '');
@@ -166,8 +166,11 @@ export const FunctionalStreamRenderer = forwardRef(({ remoteParticipant, stream,
         <div id={componentId} ref={componentContainer} className={`py-3 ms-Grid-col ms-sm-12 ms-lg12 ms-xl12 ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : `ms-xxl6`}`}>
             <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`} id={videoContainerId} ref={videoContainer}>
                 <h4 className="video-title">
-                    {displayName ? displayName : utils.getIdentifierText(remoteParticipant.identifier)}
+                    {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
                 </h4>
+                {
+                    isLoading && <div className="remote-video-loading-spinner"></div>
+                }
                 {
                     videoStats &&
                     <h4 className="video-stats">
