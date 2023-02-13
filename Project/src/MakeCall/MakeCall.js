@@ -233,13 +233,8 @@ export default class MakeCall extends React.Component {
 
     joinRooms = async (withVideo) => {
         try {
-            if(this.roomsId.value) {
-                const callOptions = await this.getCallOptions(withVideo);
-                this.callAgent.join({ meetingId: this.roomsId.value }, callOptions);
-            } else {
-                throw new Error('Please enter Rooms ID to join a Rooms call');
-            }
-
+            const callOptions = await this.getCallOptions(withVideo);
+            this.callAgent.join({ meetingId: this.roomsId.value }, callOptions);
         } catch (e) {
             console.error('Failed to join a call', e);
             this.setState({ callError: 'Failed to join a call: ' + e });
