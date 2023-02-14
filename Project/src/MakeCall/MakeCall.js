@@ -12,6 +12,7 @@ import { Icon } from '@fluentui/react/lib/Icon';
 import IncomingCallCard from './IncomingCallCard';
 import CallCard from '../MakeCall/CallCard'
 import Login from './Login';
+import MediaConstraint from './MediaConstraint';
 import { setLogLevel, AzureLogger } from '@azure/logger';
 
 export default class MakeCall extends React.Component {
@@ -34,6 +35,7 @@ export default class MakeCall extends React.Component {
         this.tenantId = null;
         this.callError = null;
         this.logBuffer = [];
+        this.videoConstraints = null;
         this.tokenCredential = null;
 
         this.state = {
@@ -67,6 +69,12 @@ export default class MakeCall extends React.Component {
                 this.setState({ ufdMessages: this.state.ufdMessages.slice(1) });
             }
         }, 10000);
+    }
+
+    handleMediaConstraint = (constraints) => {
+        if (constraints.video) {
+            this.videoConstraints = constraints.video;
+        }
     }
 
     handleLogIn = async (userDetails) => {
@@ -297,6 +305,9 @@ export default class MakeCall extends React.Component {
                     throw new Error('No camera devices found.');
                 } else if (cameraDevice) {
                     callOptions.videoOptions = { localVideoStreams: [new LocalVideoStream(cameraDevice)] };
+                    if (this.videoConstraints) {
+                        callOptions.videoOptions.constraints = this.videoConstraints;
+                    }
                 }
             } catch (e) {
                 cameraWarning = e.message;
@@ -778,6 +789,10 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <div className="ms-Grid-col ms-lg6 ms-sm6 mb-4">
                                 <h2>Placing and receiving calls</h2>
                                 <div>{`Permissions audio: ${this.state.permissions.audio} video: ${this.state.permissions.video}`}</div>
+                                <MediaConstraint
+                                    onChange={this.handleMediaConstraint}
+                                    disabled={this.state.call || !this.state.loggedIn}
+                                />
                             </div>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
