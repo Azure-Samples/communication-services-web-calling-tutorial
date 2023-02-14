@@ -789,10 +789,6 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <div className="ms-Grid-col ms-lg6 ms-sm6 mb-4">
                                 <h2>Placing and receiving calls</h2>
                                 <div>{`Permissions audio: ${this.state.permissions.audio} video: ${this.state.permissions.video}`}</div>
-                                <MediaConstraint
-                                    onChange={this.handleMediaConstraint}
-                                    disabled={this.state.call || !this.state.loggedIn}
-                                />
                             </div>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
@@ -850,131 +846,142 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         }
                         {
                             !this.state.incomingCall && !this.state.call &&
-                            <div className="ms-Grid-row mt-3">
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
-                                    <h3 className="mb-1">Place a call</h3>
-                                    <div>Enter an Identity to make a call to.</div>
-                                    <div>You can specify multiple Identities to call by using "," separated values.</div>
-                                    <div>If calling a Phone Identity, your Alternate Caller Id must be specified. </div>
-                                    <TextField
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        label="Destination Identity or Identities"
-                                        componentRef={(val) => this.destinationUserIds = val} />
-                                    <div className="ms-Grid-row mb-3 mt-3">
-                                        <div className="ms-Grid-col ms-lg6 ms-sm12">
-                                            <TextField
-                                                disabled={this.state.call || !this.state.loggedIn}
-                                                label="Destination Phone Identity or Phone Identities"
-                                                componentRef={(val) => this.destinationPhoneIds = val} />
+                            <div>
+                                <div className="ms-Grid-row mt-3">
+                                    <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                        <h3 className="mb-1">Place a call</h3>
+                                        <div>Enter an Identity to make a call to.</div>
+                                        <div>You can specify multiple Identities to call by using "," separated values.</div>
+                                        <div>If calling a Phone Identity, your Alternate Caller Id must be specified. </div>
+                                        <TextField
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            label="Destination Identity or Identities"
+                                            componentRef={(val) => this.destinationUserIds = val} />
+                                        <div className="ms-Grid-row mb-3 mt-3">
+                                            <div className="ms-Grid-col ms-lg6 ms-sm12">
+                                                <TextField
+                                                    disabled={this.state.call || !this.state.loggedIn}
+                                                    label="Destination Phone Identity or Phone Identities"
+                                                    componentRef={(val) => this.destinationPhoneIds = val} />
+                                            </div>
+                                            <div className="ms-Grid-col ms-lg6 ms-sm12">
+                                                <TextField
+                                                    disabled={this.state.call || !this.state.loggedIn}
+                                                    label="Alternate Caller Id (For calling phone numbers only)"
+                                                    componentRef={(val) => this.alternateCallerId = val} />
+                                            </div>
                                         </div>
-                                        <div className="ms-Grid-col ms-lg6 ms-sm12">
-                                            <TextField
-                                                disabled={this.state.call || !this.state.loggedIn}
-                                                label="Alternate Caller Id (For calling phone numbers only)"
-                                                componentRef={(val) => this.alternateCallerId = val} />
-                                        </div>
+                                        <PrimaryButton
+                                            className="primary-button"
+                                            iconProps={{ iconName: 'Phone', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Place call"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.placeCall(false)}>
+                                        </PrimaryButton>
+                                        <PrimaryButton
+                                            className="primary-button"
+                                            iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Place call with video"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.placeCall(true)}>
+                                        </PrimaryButton>
                                     </div>
-                                    <PrimaryButton
-                                        className="primary-button"
-                                        iconProps={{ iconName: 'Phone', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Place call"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.placeCall(false)}>
-                                    </PrimaryButton>
-                                    <PrimaryButton
-                                        className="primary-button"
-                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Place call with video"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.placeCall(true)}>
-                                    </PrimaryButton>
-                                </div>
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
-                                    <h3 className="mb-1">Join a group call</h3>
-                                    <div>Group Id must be in GUID format.</div>
-                                    <TextField
-                                        className="mb-3"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        label="Group Id"
-                                        placeholder="29228d3e-040e-4656-a70e-890ab4e173e5"
-                                        defaultValue="29228d3e-040e-4656-a70e-890ab4e173e5"
-                                        componentRef={(val) => this.destinationGroup = val} />
-                                    <PrimaryButton
-                                        className="primary-button"
-                                        iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join group call"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.joinGroup(false)}>
-                                    </PrimaryButton>
-                                    <PrimaryButton
-                                        className="primary-button"
-                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join group call with video"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.joinGroup(true)}>
-                                    </PrimaryButton>
-                                </div>
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
-                                    <h3 className="mb-1">Join a Rooms call</h3>
-                                    <div>Enter Rooms ID</div>
-                                    <TextField className="mb-3"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        label="Rooms id"
-                                        componentRef={(val) => this.roomsId = val} />
+                                    <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                        <h3 className="mb-1">Join a group call</h3>
+                                        <div>Group Id must be in GUID format.</div>
+                                        <TextField
+                                            className="mb-3"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            label="Group Id"
+                                            placeholder="29228d3e-040e-4656-a70e-890ab4e173e5"
+                                            defaultValue="29228d3e-040e-4656-a70e-890ab4e173e5"
+                                            componentRef={(val) => this.destinationGroup = val} />
+                                        <PrimaryButton
+                                            className="primary-button"
+                                            iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Join group call"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.joinGroup(false)}>
+                                        </PrimaryButton>
+                                        <PrimaryButton
+                                            className="primary-button"
+                                            iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Join group call with video"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.joinGroup(true)}>
+                                        </PrimaryButton>
+                                    </div>
+                                    <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                        <h3 className="mb-1">Join a Rooms call</h3>
+                                        <div>Enter Rooms ID</div>
+                                        <TextField className="mb-3"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            label="Rooms id"
+                                            componentRef={(val) => this.roomsId = val} />
 
-                                    <PrimaryButton className="primary-button"
-                                        iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join Rooms call"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.joinRooms(false)}>
-                                    </PrimaryButton>
-                                    <PrimaryButton className="primary-button"
-                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join Rooms call with video"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.joinRooms(true)}>
-                                    </PrimaryButton>
+                                        <PrimaryButton className="primary-button"
+                                            iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Join Rooms call"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.joinRooms(false)}>
+                                        </PrimaryButton>
+                                        <PrimaryButton className="primary-button"
+                                            iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Join Rooms call with video"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.joinRooms(true)}>
+                                        </PrimaryButton>
+                                    </div>
+                                    <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                        <h3 className="mb-1">Join a Teams meeting</h3>
+                                        <div>Enter meeting link</div>
+                                        <TextField className="mb-3"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            label="Meeting link"
+                                            componentRef={(val) => this.meetingLink = val} />
+                                        <div>Or enter meeting id</div>
+                                        <TextField className="mb-3"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            label="Meeting id"
+                                            componentRef={(val) => this.meetingId = val} />
+                                        <div> Or enter meeting coordinates (Thread Id, Message Id, Organizer Id, and Tenant Id)</div>
+                                        <TextField disabled={this.state.call || !this.state.loggedIn}
+                                            label="Thread Id"
+                                            componentRef={(val) => this.threadId = val} />
+                                        <TextField disabled={this.state.call || !this.state.loggedIn}
+                                            label="Message Id"
+                                            componentRef={(val) => this.messageId = val} />
+                                        <TextField disabled={this.state.call || !this.state.loggedIn}
+                                            label="Organizer Id"
+                                            componentRef={(val) => this.organizerId = val} />
+                                        <TextField className="mb-3"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            label="Tenant Id"
+                                            componentRef={(val) => this.tenantId = val} />
+                                        <PrimaryButton className="primary-button"
+                                            iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Join Teams meeting"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.joinTeamsMeeting(false)}>
+                                        </PrimaryButton>
+                                        <PrimaryButton className="primary-button"
+                                            iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Join Teams meeting with video"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.joinTeamsMeeting(true)}>
+                                        </PrimaryButton>
+                                    </div>
                                 </div>
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
-                                    <h3 className="mb-1">Join a Teams meeting</h3>
-                                    <div>Enter meeting link</div>
-                                    <TextField className="mb-3"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        label="Meeting link"
-                                        componentRef={(val) => this.meetingLink = val} />
-                                    <div>Or enter meeting id</div>
-                                    <TextField className="mb-3"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        label="Meeting id"
-                                        componentRef={(val) => this.meetingId = val} />
-                                    <div> Or enter meeting coordinates (Thread Id, Message Id, Organizer Id, and Tenant Id)</div>
-                                    <TextField disabled={this.state.call || !this.state.loggedIn}
-                                        label="Thread Id"
-                                        componentRef={(val) => this.threadId = val} />
-                                    <TextField disabled={this.state.call || !this.state.loggedIn}
-                                        label="Message Id"
-                                        componentRef={(val) => this.messageId = val} />
-                                    <TextField disabled={this.state.call || !this.state.loggedIn}
-                                        label="Organizer Id"
-                                        componentRef={(val) => this.organizerId = val} />
-                                    <TextField className="mb-3"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        label="Tenant Id"
-                                        componentRef={(val) => this.tenantId = val} />
-                                    <PrimaryButton className="primary-button"
-                                        iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join Teams meeting"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.joinTeamsMeeting(false)}>
-                                    </PrimaryButton>
-                                    <PrimaryButton className="primary-button"
-                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join Teams meeting with video"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.joinTeamsMeeting(true)}>
-                                    </PrimaryButton>
+                                <div className="ms-Grid-row mt-3">
+                                    <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                        <MediaConstraint
+                                            onChange={this.handleMediaConstraint}
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                        />
+                                    </div>
                                 </div>
                             </div>
+
                         }
                         {
                             this.state.call && this.state.isPreCallDiagnosticsCallInProgress &&

@@ -37,7 +37,7 @@ export default class MediaConstraint extends React.Component {
 
     render() {
         return (
-            !this.props.disabled && <div>
+            <div>
                 <Dropdown
                     ref={(ref) => this.videoSendHeightMaxDropdown = ref}
                     selectedKey={this.state.videoSendHeightMax}
@@ -45,6 +45,7 @@ export default class MediaConstraint extends React.Component {
                     label={'Video Constraint: Send Max Height Resolution'}
                     options={this.videoSendHeightMax}
                     styles={{ dropdown: { width: 200 }, label: { color: '#FFF'} }}
+                    disabled={this.props.disabled}
                 />
             </div>
         );
