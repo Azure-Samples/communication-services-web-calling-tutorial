@@ -570,7 +570,7 @@ export default class CallCard extends React.Component {
 
     updateStreamList() {
         const allStreamsBackup = [...this.state.allRemoteParticipantStreams];
-        this.setState({allRemoteParticipantStreams: []});
+        this.setState({ allRemoteParticipantStreams: [] });
         setTimeout(() => this.setState({allRemoteParticipantStreams: [...allStreamsBackup]}), 0);
     }
     render() {
