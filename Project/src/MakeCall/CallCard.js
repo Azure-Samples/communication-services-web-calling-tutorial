@@ -16,6 +16,7 @@ import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
 import { Label } from '@fluentui/react/lib/Label';
 import { AzureLogger } from '@azure/logger';
 import VolumeVisualizer from "./VolumeVisualizer";
+import CurrentCallInformation from "./CurrentCallInformation";
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -25,7 +26,7 @@ export default class CallCard extends React.Component {
         this.deviceManager = props.deviceManager;
         this.remoteVolumeLevelSubscription = undefined;
         this.handleRemoteVolumeSubscription = undefined;
-        this.maximumNumberOfRenderers = 6;
+        this.maximumNumberOfRenderers = 4;
         this.state = {
             callState: this.call.state,
             callId: this.call.id,
@@ -569,10 +570,8 @@ export default class CallCard extends React.Component {
 
     updateStreamList() {
         const allStreamsBackup = [...this.state.allRemoteParticipantStreams];
-        this.setState({ allRemoteParticipantStreams: [] });
-        setTimeout(() => {
-            this.setState({allRemoteParticipantStreams: [...allStreamsBackup]});
-        }, 0);
+        this.setState({allRemoteParticipantStreams: []});
+        setTimeout(() => this.setState({allRemoteParticipantStreams: [...allStreamsBackup]}), 0);
     }
     render() {
         return (
@@ -593,16 +592,10 @@ export default class CallCard extends React.Component {
                     <div className="ms-Grid-col ms-lg6">
                         <h2>{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
                     </div>
-                    <div className="ms-Grid-col ms-lg6 text-right">
-                        {
-                            this.call &&
-                            <h2>Call Id: {this.state.callId}</h2>
-                        }
-                        {
-                            this.call &&
-                            <h2>Sent Resolution: {this.state.sentResolution}</h2>
-                        }
-                    </div>
+                    {
+                        this.call &&
+                        <CurrentCallInformation callId={this.state.callId} sentResolution={this.state.sentResolution} call={this.call} />
+                    }
                 </div>
                 <div className="ms-Grid-row">
                     {

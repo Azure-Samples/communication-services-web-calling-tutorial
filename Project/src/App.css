@@ -950,3 +950,12 @@ h3 {
   border: 1px solid #605e5c;
   padding: 8px;
 }
+
+.stream-container {
+  order: 1;
+}
+
+.stream-container[id*="ScreenSharing"] {
+  order: 0;
+  flex-basis: 100%;
+}
