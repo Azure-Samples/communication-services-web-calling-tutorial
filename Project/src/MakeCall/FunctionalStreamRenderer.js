@@ -17,7 +17,6 @@ export const FunctionalStreamRenderer = forwardRef(({
     const videoContainerId = componentId + '-videoContainer';
     const componentContainer = useRef(null);
     const videoContainer = useRef(null);
-    const videoElem = useRef(null);
     const [renderer, setRenderer] = useState();
     const [view, setView] = useState();
     const [isLoading, setIsLoading] = useState(false);
@@ -29,12 +28,14 @@ export const FunctionalStreamRenderer = forwardRef(({
     useEffect(() => {
         initializeComponent();
         return () => {
-            disposeRenderer();
             stream.off('isReceivingChanged', isReceivingChanged);
             stream.off('isAvailableChanged', isAvailableChanged);
             remoteParticipant.off('isSpeakingChanged', isSpeakingChanged);
             remoteParticipant.off('isMutedChanged', isMutedChanged);
             remoteParticipant.off('displayNameChanged', isDisplayNameChanged);
+            if (renderer) {
+                disposeRenderer();
+            }
         }
     }, []);
 
@@ -156,7 +157,9 @@ export const FunctionalStreamRenderer = forwardRef(({
 
     useImperativeHandle(ref, () => ({
         updateReceiveStats(videoStatsReceived) {
-            setVideoStats(videoStatsReceived);
+            if (stream.isAvailable) {
+                setVideoStats(videoStatsReceived);
+            }
         }
     }));
 
