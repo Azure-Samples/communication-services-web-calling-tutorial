@@ -4,11 +4,20 @@ import { VideoStreamRenderer } from "@azure/communication-calling";
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoReceiveStats from './VideoReceiveStats';
 
-export const FunctionalStreamRenderer = forwardRef(({ remoteParticipant, stream, dominantRemoteParticipant, dominantSpeakerMode, call, updateStreamList, maximumNumberOfRenderers }, ref) => {
+export const FunctionalStreamRenderer = forwardRef(({
+    remoteParticipant,
+    stream,
+    dominantRemoteParticipant,
+    dominantSpeakerMode,
+    call,
+    updateStreamList,
+    maximumNumberOfRenderers
+}, ref) => {
     const componentId = `${utils.getIdentifierText(remoteParticipant.identifier)}-${stream.mediaStreamType}-${stream.id}`;
     const videoContainerId = componentId + '-videoContainer';
     const componentContainer = useRef(null);
     const videoContainer = useRef(null);
+    const videoElem = useRef(null);
     const [renderer, setRenderer] = useState();
     const [view, setView] = useState();
     const [isLoading, setIsLoading] = useState(false);
@@ -16,6 +25,7 @@ export const FunctionalStreamRenderer = forwardRef(({ remoteParticipant, stream,
     const [isMuted, setIsMuted] = useState(!!remoteParticipant?.isMuted);
     const [displayName, setDisplayName] = useState(remoteParticipant?.displayName?.trim() ?? '');
     const [videoStats, setVideoStats] = useState();
+
     useEffect(() => {
         initializeComponent();
         return () => {
@@ -58,7 +68,7 @@ export const FunctionalStreamRenderer = forwardRef(({ remoteParticipant, stream,
             if (!view.target) {
                 throw new Error(`[App][StreamMedia][id=${stream.id}][attachRenderer] target is undefined. Must create renderer first`);
             } else {
-                componentContainer.current.hidden = false;
+                componentContainer.current.style.display = 'block';
                 videoContainer.current.appendChild(view?.target);
             }
         } catch (e) {
@@ -69,9 +79,8 @@ export const FunctionalStreamRenderer = forwardRef(({ remoteParticipant, stream,
     const disposeRenderer = () => {
         if (videoContainer.current && componentContainer.current) {
             videoContainer.current.innerHTML = '';
-            componentContainer.current.hidden = true;
+            componentContainer.current.style.display = 'none';
         }
-
         if (renderer) {
             renderer.dispose();
         } else {
@@ -86,32 +95,23 @@ export const FunctionalStreamRenderer = forwardRef(({ remoteParticipant, stream,
         }
     };
 
-    /*
-     * Returns the amount of videos currently rendered excluding the ScreenSharing
-     */
-    const getCurrentNumberOfRenderers = () => {
-        return document.querySelector('.video-grid-row').querySelectorAll('.stream-container:not([id*="ScreenSharing"]) video').length;
-    };
-
     const isAvailableChanged = async () => {
         try {
             if (dominantSpeakerMode && dominantRemoteParticipant !== remoteParticipant) {
                 return;
             }
-            if (getCurrentNumberOfRenderers() >= maximumNumberOfRenderers && !stream.isAvailable) {
+            if (call.activeRemoteVideoStreamViews?.size >= maximumNumberOfRenderers && !stream.isAvailable) {
                 updateStreamList();
             }
             if (stream.isAvailable && !renderer) {
-                if (getCurrentNumberOfRenderers() >= maximumNumberOfRenderers) {
+                if (call.activeRemoteVideoStreamViews?.size >= maximumNumberOfRenderers) {
                     console.error(`[App][StreamMedia][id=${stream.id}][createRenderer] reached maximum number of renderers`);
                     return;
                 }
                 console.log(`[App][StreamMedia][id=${stream.id}][isAvailableChanged] isAvailable=${stream.isAvailable}`);
                 createRenderer();
-            } else {
-                if (!stream.isAvailable) {
-                    disposeRenderer();
-                }
+            } else if (!stream.isAvailable) {
+                disposeRenderer();
             }
         } catch (e) {
             console.error(e);
@@ -133,8 +133,6 @@ export const FunctionalStreamRenderer = forwardRef(({ remoteParticipant, stream,
      * Start stream after DOM has rendered
      */
     const initializeComponent = async () => {
-        componentContainer.current.hidden = true;
-
         stream.on('isReceivingChanged', isReceivingChanged);
 
         stream.on('isAvailableChanged', isAvailableChanged);

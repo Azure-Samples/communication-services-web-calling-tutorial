@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Features } from "@azure/communication-calling";
+import { AzureLogger } from '@azure/logger';
+
 const CurrentCallInformation = ({ callId, sentResolution, call }) => {
     const [ovcFeature, setOvcFeature] = useState();
     const [optimalVideoCount, setOptimalVideoCount] = useState(1);
@@ -8,7 +10,7 @@ const CurrentCallInformation = ({ callId, sentResolution, call }) => {
         try {
             setOvcFeature(call.feature(Features.OptimalVideoCount));
         } catch (error) {
-            console.error("Feature not implemented yet");
+            AzureLogger.log("Feature not implemented yet");
         }
 
         return () => {
@@ -27,8 +29,12 @@ const CurrentCallInformation = ({ callId, sentResolution, call }) => {
     return (
         <div className="ms-Grid-col ms-lg6 text-right">
             <p>Call Id: {callId}</p>
-            <p>Sent Resolution: {sentResolution}</p>
-            <p>Optimal Video Count: {optimalVideoCount}</p>
+            {
+                sentResolution && <p>Sent Resolution: {sentResolution}</p>
+            }
+            {
+                ovcFeature && <p>Optimal Video Count: {optimalVideoCount}</p>
+            }           
         </div>
     );
 }

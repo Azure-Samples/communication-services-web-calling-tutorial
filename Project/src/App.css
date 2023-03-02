@@ -953,6 +953,7 @@ h3 {
 
 .stream-container {
   order: 1;
+  display: none;
 }
 
 .stream-container[id*="ScreenSharing"] {

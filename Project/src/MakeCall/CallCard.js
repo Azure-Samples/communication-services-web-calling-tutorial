@@ -82,6 +82,7 @@ export default class CallCard extends React.Component {
                     newCameraDeviceToUse = addedCameraDevice;
                     const addedCameraDeviceOption = { key: addedCameraDevice.id, text: addedCameraDevice.name };
                     this.setState(prevState => ({
+                        ...prevState,
                         cameraDeviceOptions: [...prevState.cameraDeviceOptions, addedCameraDeviceOption]
                     }));
                 });
@@ -100,6 +101,7 @@ export default class CallCard extends React.Component {
 
                 e.removed.forEach(removedCameraDevice => {
                     this.setState(prevState => ({
+                        ...prevState,
                         cameraDeviceOptions: prevState.cameraDeviceOptions.filter(option => { return option.key !== removedCameraDevice.id })
                     }))
                 });
@@ -119,10 +121,12 @@ export default class CallCard extends React.Component {
                     const addedAudioDeviceOption = { key: addedAudioDevice.id, text: addedAudioDevice.name };
                     if (addedAudioDevice.deviceType === 'Speaker') {
                         this.setState(prevState => ({
+                            ...prevState,
                             speakerDeviceOptions: [...prevState.speakerDeviceOptions, addedAudioDeviceOption]
                         }));
                     } else if (addedAudioDevice.deviceType === 'Microphone') {
                         this.setState(prevState => ({
+                            ...prevState,
                             microphoneDeviceOptions: [...prevState.microphoneDeviceOptions, addedAudioDeviceOption]
                         }));
                     }
@@ -131,10 +135,12 @@ export default class CallCard extends React.Component {
                 e.removed.forEach(removedAudioDevice => {
                     if (removedAudioDevice.deviceType === 'Speaker') {
                         this.setState(prevState => ({
+                            ...prevState,
                             speakerDeviceOptions: prevState.speakerDeviceOptions.filter(option => { return option.key !== removedAudioDevice.id })
                         }))
                     } else if (removedAudioDevice.deviceType === 'Microphone') {
                         this.setState(prevState => ({
+                            ...prevState,
                             microphoneDeviceOptions: prevState.microphoneDeviceOptions.filter(option => { return option.key !== removedAudioDevice.id })
                         }))
                     }
@@ -213,6 +219,7 @@ export default class CallCard extends React.Component {
                     console.log('participantRemoved', p);
                     if(p.callEndReason) {
                         this.setState(prevState => ({
+                            ...prevState,
                             callMessage: `${prevState.callMessage ? prevState.callMessage + `\n` : ``}
                                         Remote participant ${utils.getIdentifierText(p.identifier)} disconnected: code: ${p.callEndReason.code}, subCode: ${p.callEndReason.subCode}.`
                         }));
@@ -325,7 +332,10 @@ export default class CallCard extends React.Component {
 
     subscribeToRemoteParticipant(participant) {
         if (!this.state.remoteParticipants.find((p) => { return p === participant })) {
-            this.setState(prevState => ({ remoteParticipants: [...prevState.remoteParticipants, participant] }));
+            this.setState(prevState => ({
+                ...prevState,
+                remoteParticipants: [...prevState.remoteParticipants, participant]
+            }));
         }
 
         const addToListOfAllRemoteParticipantStreams = (participantStreams) => {
@@ -334,6 +344,7 @@ export default class CallCard extends React.Component {
                 participantStreamTuples.forEach(participantStreamTuple => {
                     if (!this.state.allRemoteParticipantStreams.find((v) => { return v === participantStreamTuple })) {
                         this.setState(prevState => ({
+                            ...prevState,
                             allRemoteParticipantStreams: [...prevState.allRemoteParticipantStreams, participantStreamTuple]
                         }));
                     }
@@ -346,6 +357,7 @@ export default class CallCard extends React.Component {
                 const tupleToRemove = this.state.allRemoteParticipantStreams.find((v) => { return v.stream === streamToRemove })
                 if (tupleToRemove) {
                     this.setState({
+                        ...prevState,
                         allRemoteParticipantStreams: this.state.allRemoteParticipantStreams.filter(streamTuple => { return streamTuple !== tupleToRemove })
                     });
                 }
@@ -465,11 +477,17 @@ export default class CallCard extends React.Component {
             this.startOutgoingAudioEffect();
         }
 
-        this.setState(prevState => ({outgoingAudioMediaAccessActive: !prevState.outgoingAudioMediaAccessActive}));
+        this.setState(prevState => ({
+            ...prevState,
+            outgoingAudioMediaAccessActive: !prevState.outgoingAudioMediaAccessActive
+        }));
     }
 
     async handleMediaStatsLogState() {
-        this.setState(prevState => ({logMediaStats: !prevState.logMediaStats}));
+        this.setState(prevState => ({
+            ...prevState,
+            logMediaStats: !prevState.logMediaStats
+        }));
     }
 
     getDummyAudioStream() {
