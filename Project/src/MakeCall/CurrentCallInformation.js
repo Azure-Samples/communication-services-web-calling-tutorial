@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Features } from "@azure/communication-calling";
 import { AzureLogger } from '@azure/logger';
 
-const CurrentCallInformation = ({ callId, sentResolution, call }) => {
+const CurrentCallInformation = ({ sentResolution, call }) => {
     const [ovcFeature, setOvcFeature] = useState();
     const [optimalVideoCount, setOptimalVideoCount] = useState(1);
 
@@ -28,7 +28,7 @@ const CurrentCallInformation = ({ callId, sentResolution, call }) => {
 
     return (
         <div className="ms-Grid-col ms-lg6 text-right">
-            <p>Call Id: {callId}</p>
+            <p>Call Id: {call.id}</p>
             {
                 sentResolution && <p>Sent Resolution: {sentResolution}</p>
             }

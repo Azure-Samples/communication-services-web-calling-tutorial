@@ -612,7 +612,7 @@ export default class CallCard extends React.Component {
                     </div>
                     {
                         this.call &&
-                        <CurrentCallInformation callId={this.state.callId} sentResolution={this.state.sentResolution} call={this.call} />
+                        <CurrentCallInformation sentResolution={this.state.sentResolution} call={this.call} />
                     }
                 </div>
                 <div className="ms-Grid-row">
@@ -883,6 +883,7 @@ export default class CallCard extends React.Component {
                                                         call={this.call}
                                                         maximumNumberOfRenderers={this.maximumNumberOfRenderers}
                                                         updateStreamList={() => this.updateStreamList()}
+                                                        showMediaStats={this.state.logMediaStats}
                                                         />
                                     )
                                 }

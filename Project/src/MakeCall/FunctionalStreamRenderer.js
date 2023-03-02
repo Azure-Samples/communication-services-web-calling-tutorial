@@ -11,7 +11,8 @@ export const FunctionalStreamRenderer = forwardRef(({
     dominantSpeakerMode,
     call,
     updateStreamList,
-    maximumNumberOfRenderers
+    maximumNumberOfRenderers,
+    showMediaStats
 }, ref) => {
     const componentId = `${utils.getIdentifierText(remoteParticipant.identifier)}-${stream.mediaStreamType}-${stream.id}`;
     const videoContainerId = componentId + '-videoContainer';
@@ -77,13 +78,13 @@ export const FunctionalStreamRenderer = forwardRef(({
         }
     }
 
-    const disposeRenderer = () => {
+    const disposeRenderer = async () => {
         if (videoContainer.current && componentContainer.current) {
             videoContainer.current.innerHTML = '';
             componentContainer.current.style.display = 'none';
         }
         if (renderer) {
-            renderer.dispose();
+            await renderer.dispose();
         } else {
             console.warn(`[App][StreamMedia][id=${stream.id}][disposeRender] no renderer to dispose`);
         }
@@ -113,6 +114,9 @@ export const FunctionalStreamRenderer = forwardRef(({
                 createRenderer();
             } else if (!stream.isAvailable) {
                 disposeRenderer();
+                if (videoStats) {
+                    setVideoStats(null);
+                }
             }
         } catch (e) {
             console.error(e);
@@ -157,8 +161,14 @@ export const FunctionalStreamRenderer = forwardRef(({
 
     useImperativeHandle(ref, () => ({
         updateReceiveStats(videoStatsReceived) {
-            if (stream.isAvailable) {
-                setVideoStats(videoStatsReceived);
+            if (videoStatsReceived) {
+                console.log('***** VIDEOSTATS RECEIVED', videoStatsReceived);
+                console.log('***** current videoStats', videoStats);
+                console.log('***** STREAM', stream.isAvailable);
+                console.log('***** RENDERER', renderer);
+                if (videoStatsReceived !== videoStats && stream.isAvailable) {
+                    setVideoStats(videoStatsReceived);
+                }
             }
         }
     }));
@@ -172,13 +182,13 @@ export const FunctionalStreamRenderer = forwardRef(({
                 {
                     isLoading && <div className="remote-video-loading-spinner"></div>
                 }
-                {
-                    videoStats &&
-                    <h4 className="video-stats">
-                        <VideoReceiveStats videoStats={videoStats} />
-                    </h4>
-                }
             </div>
+            {
+                videoStats && showMediaStats &&
+                <h4 className="video-stats">
+                    <VideoReceiveStats videoStats={videoStats} />
+                </h4>
+            }
             <CustomVideoEffects call={call} videoContainerId={videoContainerId} remoteParticipantId={remoteParticipant.identifier} />
         </div>
     );
