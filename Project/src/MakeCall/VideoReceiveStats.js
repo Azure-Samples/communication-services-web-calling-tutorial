@@ -6,7 +6,6 @@ export default class VideoReceiveStats extends React.Component {
     }
 
     render() {
-        console.log('**** video RECEIVING STATS?', this.props.videoStats?.jitterInMs);
         if (!this.props.videoStats) {
             return null;
         }
