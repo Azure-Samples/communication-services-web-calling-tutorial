@@ -9,7 +9,7 @@ export default class IncomingCallCard extends React.Component {
         this.acceptCallWithVideoOptions = props.acceptCallWithVideoOptions;
     }
 
-    async componentWillMount() {
+    async componentDidMount() {
         this.acceptCallOptions = { videoOptions: (await this.acceptCallOptions()).videoOptions };
         this.acceptCallWithVideoOptions = { videoOptions: (await this.acceptCallWithVideoOptions()).videoOptions };
     }
