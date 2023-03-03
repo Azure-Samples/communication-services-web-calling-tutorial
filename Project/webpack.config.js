@@ -1,7 +1,7 @@
 
 const CommunicationIdentityClient = require("@azure/communication-administration").CommunicationIdentityClient;
 const HtmlWebPackPlugin = require("html-webpack-plugin");
-const config = require("./config.json");
+const config = require("./serverConfig.json");
 const axios = require("axios");
 const bodyParser = require('body-parser');
 

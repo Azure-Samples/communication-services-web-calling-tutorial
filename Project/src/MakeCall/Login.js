@@ -6,7 +6,7 @@ import {
 import { utils } from "../Utils/Utils";
 import { v4 as uuid } from 'uuid';
 import OneSignal from "react-onesignal";
-import * as config from '../../config.json';
+import * as config from '../../clientConfig.json';
 
 export default class Login extends React.Component {
     constructor(props) {
@@ -27,29 +27,13 @@ export default class Login extends React.Component {
 
     async componentDidMount() {
         try {
-            if (config.oneSignalAppId &&
-                config.functionAppOneSignalTokenRegistrationUrl &&
-                config.functionAppOneSignalTokenRegistrationApiKey) {
-
+            if (config.oneSignalAppId) {
                 if (location.protocol !== 'https:') {
                     this.setState({
-                        loginWarningMessage: 'You can only test web push notifications on HTTPS. ' +
-                        'Remove keys \'oneSignalAppId\', \'functionAppOneSignalTokenRegistrationUrl\', and \'functionAppOneSignalTokenRegistrationApiKey\' ' +
-                        'from the ./config.json file'
+                        loginWarningMessage: 'Web push notifications can only be tested on trusted HTTPS.'
                     });
                     return;
                 }
-
-                if (location.hostname === "localhost" ||
-                    location.hostname === "127.0.0.1") {
-                    this.setState({
-                        loginWarningMessage: 'You cannot test web push notifications on localhost. ' +
-                        'Remove keys \'oneSignalAppId\', \'functionAppOneSignalTokenRegistrationUrl\', and \'functionAppOneSignalTokenRegistrationApiKey\' ' +
-                        'from the ./config.json file'
-                    });
-                    return;
-                }
-
 
                 await OneSignal.init({
                     appId: config.oneSignalAppId,
