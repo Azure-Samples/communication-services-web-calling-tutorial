@@ -1,6 +1,5 @@
 import React from "react";
 import { CallClient, LocalVideoStream, Features } from '@azure/communication-calling';
-import { utils } from "../Utils/Utils";
 import { AzureCommunicationTokenCredential } from '@azure/communication-common';
 import {
     PrimaryButton,
@@ -37,6 +36,7 @@ export default class MakeCall extends React.Component {
         this.logBuffer = [];
         this.videoConstraints = null;
         this.tokenCredential = null;
+        this.logInComponentRef = React.createRef();
 
         this.state = {
             id: undefined,
@@ -80,23 +80,24 @@ export default class MakeCall extends React.Component {
     handleLogIn = async (userDetails) => {
         if (userDetails) {
             try {
-                const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
+                const tokenCredential = new AzureCommunicationTokenCredential(userDetails.acsUserAccessToken);
                 this.tokenCredential = tokenCredential;
                 setLogLevel('error');
                 this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk", `#clientTag:${userDetails.clientTag}`] } });
                 this.environmentInfo = await this.callClient.getEnvironmentInfoInternal();
                 this.debugInfoFeature = await this.callClient.feature(Features.DebugInfo);
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
+                this.logInComponentRef.current.setCallAgent(this.callAgent);
                 // override logger to be able to dowload logs locally
                 AzureLogger.log = (...args) => {
                     this.logBuffer.push(...args);
-                    if (args[0].startsWith('azure:ACS:info')) {
+                    if (args[0].startsWith('azure:ACS-calling:info')) {
                         console.info(...args);
-                    } else if (args[0].startsWith('azure:ACS:verbose')) {
+                    } else if (args[0].startsWith('azure:ACS-calling:verbose')) {
                         console.debug(...args);
-                    } else if (args[0].startsWith('azure:ACS:warning')) {
+                    } else if (args[0].startsWith('azure:ACS-calling:warning')) {
                         console.warn(...args);
-                    } else if (args[0].startsWith('azure:ACS:error')) {
+                    } else if (args[0].startsWith('azure:ACS-calling:error')) {
                         console.error(...args);
                     } else {
                         console.log(...args);
@@ -500,7 +501,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
 
         const preCallDiagnosticsSampleCode = `
 //Get new token or use existing token.
-const response = (await fetch('/tokens/provisionUser')).json();
+const response = (await fetch('getAcsUserAccessToken')).json();
 const token = response.token;
 const tokenCredential = new AzureCommunicationTokenCredential(token);
 
@@ -748,7 +749,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
 
         return (
             <div>
-                <Login onLoggedIn={this.handleLogIn} />
+                <Login onLoggedIn={this.handleLogIn} ref={this.logInComponentRef}/>
                 <div className="card">
                     <div className="ms-Grid">
                         <div className="ms-Grid-row">

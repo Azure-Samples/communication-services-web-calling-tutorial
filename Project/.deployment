@@ -1,0 +1,2 @@
+[config]
+SCM_DO_BUILDDURING_DEPLOYMENT=true

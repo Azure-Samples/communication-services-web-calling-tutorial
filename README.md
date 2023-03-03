@@ -30,6 +30,21 @@ products:
 6. npm run start
 7. Open localhost:5000 in a browser. (Supported browsers are Chrome, Edge Chromium, and Safari)
 
+## Deploying to Azure App Service
+This app has been setup to be easily deployed to Azure App Service with a webpack dev-server
+- webpack.config.js.
+   - allowedHosts: Specifies that it allows this app to be hosted in \<appname\>.azurewebsites.org which is how Azure App Service hosts web apps.
+   - contentBase: The folder where public assets can be served from. For example, a request to your app like GET https://\<appname\>.azurewebsites.org/file.txt, will serve the file.txt that resides in the contentBase folder. This app has this field set to the './public' folder.
+- package.json
+   - "start-local" script. This will start the server on local machine at port 5000.
+   - "build-local" script. This will build the the application in development mode
+   - "start" script. Used by Azure App Service when deploying. This will start server in port 8080. Port 8080 is specified in webpack.config.js. Do not change this port when deploying to Azrue App Service becaue this is the port that Azure App Service uses. 
+    "build" script. Used by Azure App Service when deploying to build the application.
+
+## Troubleshooting
+   - Make sure your ACS connecting string is specified in config.json or you wont be able to provision ACS User Access tokens for the app.
+   - If any errors occur, check the browser console logs for errors. Also, check the webpack server side console logs for errors.
+   - Web Push Notifications - In order to test web push notifications, we must run the app in HTTPS, hence you will need to deploy this app to a secured server that will serve the application with HTTPS. You will need to specify values in ./config.json for the keys "functionAppOneSignalTokenRegistrationUrl", "functionAppOneSignalTokenRegistrationApiKey", "oneSignalAppId", and "oneSignalSafariWebId". To learn how to set up a web push notification architecture for the ACS Web Calling SDK, please follow our web push notifications quickstart documentation: \<will add link to docs\>
 ## Resources
 
 1. Documentation on how to use the ACS Calling SDK for Javascript can be found on https://docs.microsoft.com/en-gb/azure/communication-services/quickstarts/voice-video-calling/calling-client-samples?pivots=platform-web

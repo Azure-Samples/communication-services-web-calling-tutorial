@@ -1,7 +1,9 @@
 import React from "react";
-import { TextField, PrimaryButton } from 'office-ui-fabric-react'
+import { TextField, PrimaryButton, Checkbox, Label } from 'office-ui-fabric-react'
 import { utils } from "../Utils/Utils";
 import { v4 as uuid } from 'uuid';
+import OneSignal from "react-onesignal";
+import * as config from '../../config.json';
 
 export default class Login extends React.Component {
     constructor(props) {
@@ -9,26 +11,100 @@ export default class Login extends React.Component {
         this.userDetailsResponse = undefined;
         this.displayName = undefined;
         this.clientTag = uuid();
+        this.initializedOneSignal = false;
         this.state = {
+            initializeCallAgentAfterPushRegistration: true,
             showUserProvisioningAndSdkInitializationCode: false,
             showSpinner: false,
             disableInitializeButton: false,
-            loggedIn: false
+            acsUserAccessToken: undefined,
         }
     }
 
-    provisionNewUser = async () => {
+    async componentDidMount() {
         try {
+            if (config.oneSignalAppId) {
+                await OneSignal.init({
+                    appId: config.oneSignalAppId,
+                    safari_web_id: config.oneSignalSafariWebId,
+                    notifyButton: {
+                        enable: true,
+                    },
+                    allowLocalhostAsSecureOrigin: true
+                });
+
+                // HTTPS only
+                OneSignal.addListenerForNotificationOpened(async function (event) {
+                    console.log('Push notification clicked and app will open if it is currently closed');
+                    await this.handlePushNotification(event);
+                }.bind(this));
+
+                // HTTPS only
+                OneSignal.on('notificationDisplay', async function (event) {
+                    console.log('Push notification displayed');
+                    await this.handlePushNotification(event);
+                }.bind(this));
+
+                // HTTPS only
+                OneSignal.on('subscriptionChange', async function(isSubscribed) {
+                    console.log("Push notification subscription state is now: ", isSubscribed);
+                }.bind(this));
+
+                this.initializedOneSignal = true;
+            }
+        } catch (e) {
+            console.warn(e);
+        }
+    }
+
+    async getAcsUserAccessToken() {
+        try {
+            const registerForWebPushNotifications = this.initializedOneSignal &&
+                !!(await OneSignal.isPushNotificationsEnabled()) && !!(await OneSignal.getSubscription());
             this.setState({ showSpinner: true, disableInitializeButton: true });
-            this.userDetailsResponse = await utils.provisionNewUser();
+            this.userDetailsResponse = await utils.getAcsUserAccessToken(registerForWebPushNotifications);
+            this.setState({ acsUserAccessToken: this.userDetailsResponse.acsUserAccessToken });
+            if (registerForWebPushNotifications) {
+                OneSignal.setExternalUserId(this.userDetailsResponse.oneSignalRegistrationToken);
+            }
             this.setState({ id: utils.getIdentifierText(this.userDetailsResponse.user) });
-            await this.props.onLoggedIn({ id: this.state.id, token: this.userDetailsResponse.token, displayName: this.displayName, clientTag: this.clientTag });
-            this.setState({ loggedIn: true });
+            if (!registerForWebPushNotifications ||
+                (registerForWebPushNotifications && this.initializeCallAgentAfterPushRegistration)) {
+                await this.props.onLoggedIn({
+                    id: this.state.id,
+                    acsUserAccessToken: this.userDetailsResponse.acsUserAccessToken,
+                    displayName: this.displayName,
+                    clientTag: this.clientTag
+                });
+            }
         } catch (error) {
             console.log(error);
         } finally {
             this.setState({ disableInitializeButton: false, showSpinner: false });
         }
+    }
+
+    async handlePushNotification(event) {
+        if (!this.callAgent && !!event.data.incomingCallContext) {
+            if (!this.state.acsUserAccessToken) {
+                const oneSignalRegistrationToken = await OneSignal.getExternalUserId();
+                this.userDetailsResponse = await utils.getAcsUserAccessTokenForOneSignalRegistrationToken(oneSignalRegistrationToken);
+            }
+            await this.props.onLoggedIn({
+                id: this.state.id,
+                acsUserAccessToken: this.userDetailsResponse.acsUserAccessToken,
+                displayName: this.displayName,
+                clientTag: this.clientTag
+            });
+            if (!this.callAgent.handlePushNotification) {
+                throw new Error('Handle push notification feature is not implemented in ACS Web Calling SDK yet.');
+            }
+            await this.callAgent.handlePushNotification(event.data);
+        }
+    }
+
+    setCallAgent(callAgent) {
+        this.callAgent = callAgent;
     }
 
     render() {
@@ -39,7 +115,7 @@ export default class Login extends React.Component {
  **************************************************************************************/
 import  { CommunicationIdentityClient } from @azure/communication-administration;
 const communicationIdentityClient = new CommunicationIdentityClient(<RESOURCE CONNECTION STRING>);
-app.get('/tokens/provisionUser', async (request, response) => {
+app.get('/getAcsUserAccessToken', async (request, response) => {
     try {
         const communicationUserId = await communicationIdentityClient.createUser();
         const tokenResponse = await communicationIdentityClient.issueToken({ communicationUserId }, ['voip']);
@@ -65,7 +141,7 @@ export class MyCallingApp {
     }
 
     public async initCallClient() {
-        const response = (await fetch('/tokens/provisionUser')).json();
+        const response = (await fetch('/getAcsUserAccessToken')).json();
         const token = response.token;
         const tokenCredential = new AzureCommunicationTokenCredential(token);
 
@@ -189,7 +265,7 @@ export class MyCallingApp {
                     <div>The ACS Administration SDK can be used to create a user access token which authenticates the calling clients. </div>
                     <div>The example code shows how to use the ACS Administration SDK from a backend service. A walkthrough of integrating the ACS Administration SDK can be found on <a className="sdk-docs-link" target="_blank" href="https://docs.microsoft.com/en-us/azure/communication-services/quickstarts/access-tokens?pivots=programming-language-javascript">Microsoft Docs</a></div>
                     {
-                        this.state.loggedIn && 
+                        this.state.acsUserAccessToken && 
                         <div>
                             <br></br>
                             <div>Congrats! You've provisioned an ACS user identity and initialized the ACS Calling Client Web SDK. You are ready to start making calls!</div>
@@ -205,10 +281,10 @@ export class MyCallingApp {
                         </div>
                     }
                     {
-                        !this.state.loggedIn &&
+                        !this.state.acsUserAccessToken &&
                         <div>
                             <div className="ms-Grid-row">
-                                <div className="ms-Grid-col ms-sm12 ms-lg6 ms-xl6 ms-xxl3">
+                                <div className="ms-Grid-col ms-sm12 ms-lg6 ms-xl6 ms-xxl6">
                                     <TextField className="mt-3"
                                                 defaultValue={undefined}
                                                 label="Optional display name"
@@ -217,14 +293,21 @@ export class MyCallingApp {
                                                 defaultValue={this.clientTag}
                                                 label="Optional: Tag this usage session"
                                                 onChange={(e) => { this.clientTag = e.target.value }} />
+                                    <div className="mt-4">
+                                        Push Notifications options
+                                        <Checkbox className="mt-2 ml-3"
+                                                    label="Initialize Call Agent"
+                                                    checked={this.state.initializeCallAgentAfterPushRegistration}
+                                                    onChange={(e, isChecked) => { this.setState({ initializeCallAgentAfterPushRegistration: isChecked })}}/>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="mt-1">
+                            <div className="mt-3">
                                 <PrimaryButton className="primary-button mt-3"
                                     iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
                                     label="Provision an user" 
                                     disabled={this.state.disableInitializeButton}
-                                    onClick={() => this.provisionNewUser()}>
+                                    onClick={() => this.getAcsUserAccessToken()}>
                                         Provision user and initialize SDK
                                 </PrimaryButton>
                             </div>

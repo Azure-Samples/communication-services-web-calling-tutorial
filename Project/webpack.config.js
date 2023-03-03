@@ -2,6 +2,8 @@
 const CommunicationIdentityClient = require("@azure/communication-administration").CommunicationIdentityClient;
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const config = require("./config.json");
+const axios = require("axios");
+const bodyParser = require('body-parser');
 
 if(!config || !config.connectionString || config.connectionString.indexOf('endpoint=') === -1)
 {
@@ -11,6 +13,16 @@ if(!config || !config.connectionString || config.connectionString.indexOf('endpo
 const communicationIdentityClient = new  CommunicationIdentityClient(config.connectionString);
 
 const PORT = process.env.port || 8080;
+
+
+const onSignalRegistrationTokenToAcsUserAccesTokenMap = new Map();
+
+const generateGuid = function () {
+    function s4() {
+        return Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1);
+    }
+    return `${s4()}${s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
+}
 
 module.exports = {
     devtool: 'inline-source-map',
@@ -53,14 +65,54 @@ module.exports = {
     devServer: {
         open: true,
         port: PORT,
+        contentBase:'./public',
+        allowedHosts:[
+            '.azurewebsites.net'
+        ],
         before: function(app) {
-            app.post('/tokens/provisionUser', async (req, res) => {
+            app.use(bodyParser.json());
+            app.post('/getAcsUserAccessToken', async (req, res) => {
                 try {
-                    let communicationUserId = await communicationIdentityClient.createUser();
-                    const tokenResponse = await communicationIdentityClient.issueToken(communicationUserId, ["voip"]);
-                    res.json(tokenResponse);
-                } catch (error) {
-                    console.error(error);
+                    const user = await communicationIdentityClient.createUser();
+                    const acsUserAccessToken = await communicationIdentityClient.issueToken(user, ["voip"]);
+                    let oneSignalRegistrationToken;
+                    const registerForPushNotifications = req.body.registerForPushNotifications;
+                    if (!!registerForPushNotifications) {
+                        oneSignalRegistrationToken = generateGuid()
+                        await axios({
+                            url: config.functionAppOneSignalTokenRegistrationUrl,
+                            method: 'PUT',
+                            headers: {
+                                'x-functions-key': config.functionAppOneSignalTokenRegistrationApiKey,
+                                'Content-Type': 'application/json'
+                            },
+                            data: JSON.stringify({
+                                communicationUserId: user.communicationUserId,
+                                oneSignalRegistrationToken: oneSignalRegistrationToken
+                            })
+                        }).then((response) => { return response.data });
+                        onSignalRegistrationTokenToAcsUserAccesTokenMap.set(oneSignalRegistrationToken, acsUserAccessToken);
+                    }
+                    res.setHeader('Content-Type', 'application/json');
+                    res.status(200).json({
+                        acsUserAccessToken: acsUserAccessToken.token,
+                        user: acsUserAccessToken.user,
+                        oneSignalRegistrationToken
+                    });
+                } catch (e) {
+                    console.log('Error setting registration token', e);
+                    res.sendStatus(500);
+                }
+            });
+            app.post('/getAcsUserAccessTokenForOneSignalRegistrationToken', async (req, res) => {
+                try {
+                    const oneSignalRegistrationToken = req.body.oneSignalRegistrationToken;
+                    const acsUserAccessToken = onSignalRegistrationTokenToAcsUserAccesTokenMap.get(oneSignalRegistrationToken);
+                    res.setHeader('Content-Type', 'application/json');
+                    res.status(200).json({ acsUserAccessToken: acsUserAccessToken.token, user: acsUserAccessToken.user, oneSignalRegistrationToken });
+                } catch (e) {
+                    console.log('Error setting registration token', e);
+                    res.sendStatus(500);
                 }
             });
         }

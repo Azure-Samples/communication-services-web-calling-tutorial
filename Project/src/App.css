@@ -196,6 +196,17 @@ ul {
   border-bottom: 1px solid #605e5c;
 }
 
+div.ms-Checkbox > input[type="checkbox"] + label.ms-Checkbox-label > div.ms-Checkbox-checkbox {
+  background-color: #201f1e;
+  border: 1px solid #605e5c;
+}
+
+div.ms-Checkbox > input[type="checkbox"] + label.ms-Checkbox-label > span.ms-Checkbox-text {
+  color: white;
+  font-size: 0.8rem;
+}
+
+
 .primary-button {
   color: #edebe9;
   background-color: #ca5010;

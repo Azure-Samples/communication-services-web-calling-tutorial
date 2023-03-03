@@ -4,26 +4,39 @@ import {
     isMicrosoftTeamsUserIdentifier,
     isUnknownIdentifier
 } from '@azure/communication-common';
+import axios from 'axios';
 
 export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    provisionNewUser: async (userId) => {
-        let response = await fetch('/tokens/provisionUser', {
+    getAcsUserAccessToken: async (registerForPushNotifications) => {
+        let response = await axios({
+            url: 'getAcsUserAccessToken',
             method: 'POST',
-            body: { userId },
             headers: {
-                'Accept': 'application/json, text/plain, */*',
                 'Content-Type': 'application/json'
             },
-        });
-
-        if (response.ok) {
-            return response.json();
+            data: JSON.stringify({registerForPushNotifications})
+        })
+        if (response.status === 200) {
+            return response.data;
         }
-
-        throw new Error('Invalid token response');
+        throw new Error('Failed to get ACS User Access token');
+    },
+    getAcsUserAccessTokenForOneSignalRegistrationToken: async (oneSignalRegistrationToken) => {
+        let response = await axios({
+            url: 'getAcsUserAccessTokenForOneSignalRegistrationToken',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify({oneSignalRegistrationToken})
+        });
+        if (response.status === 200) {
+            return response.data;
+        }
+        throw new Error('Failed to get ACS User Acccess token for the given OneSignal Registration Token');
     },
     getIdentifierText: (identifier) => {
         if (isCommunicationUserIdentifier(identifier)) {
