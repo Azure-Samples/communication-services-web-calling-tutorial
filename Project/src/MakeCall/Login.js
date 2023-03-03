@@ -1,5 +1,8 @@
 import React from "react";
-import { TextField, PrimaryButton, Checkbox, Label } from 'office-ui-fabric-react'
+import {
+    TextField, PrimaryButton, Checkbox,
+    MessageBar, MessageBarType
+} from 'office-ui-fabric-react'
 import { utils } from "../Utils/Utils";
 import { v4 as uuid } from 'uuid';
 import OneSignal from "react-onesignal";
@@ -11,26 +14,48 @@ export default class Login extends React.Component {
         this.userDetailsResponse = undefined;
         this.displayName = undefined;
         this.clientTag = uuid();
-        this.initializedOneSignal = false;
         this.state = {
+            initializedOneSignal: false,
             initializeCallAgentAfterPushRegistration: true,
             showUserProvisioningAndSdkInitializationCode: false,
             showSpinner: false,
             disableInitializeButton: false,
             acsUserAccessToken: undefined,
+            loginWarningMessage: undefined
         }
     }
 
     async componentDidMount() {
         try {
-            if (config.oneSignalAppId) {
+            if (config.oneSignalAppId &&
+                config.functionAppOneSignalTokenRegistrationUrl &&
+                config.functionAppOneSignalTokenRegistrationApiKey) {
+
+                if (location.protocol !== 'https:') {
+                    this.setState({
+                        loginWarningMessage: 'You can only test web push notifications on HTTPS. ' +
+                        'Remove keys \'oneSignalAppId\', \'functionAppOneSignalTokenRegistrationUrl\', and \'functionAppOneSignalTokenRegistrationApiKey\' ' +
+                        'from the ./config.json file'
+                    });
+                    return;
+                }
+
+                if (location.hostname === "localhost" ||
+                    location.hostname === "127.0.0.1") {
+                    this.setState({
+                        loginWarningMessage: 'You cannot test web push notifications on localhost. ' +
+                        'Remove keys \'oneSignalAppId\', \'functionAppOneSignalTokenRegistrationUrl\', and \'functionAppOneSignalTokenRegistrationApiKey\' ' +
+                        'from the ./config.json file'
+                    });
+                    return;
+                }
+
+
                 await OneSignal.init({
                     appId: config.oneSignalAppId,
-                    safari_web_id: config.oneSignalSafariWebId,
                     notifyButton: {
                         enable: true,
                     },
-                    allowLocalhostAsSecureOrigin: true
                 });
 
                 // HTTPS only
@@ -50,7 +75,7 @@ export default class Login extends React.Component {
                     console.log("Push notification subscription state is now: ", isSubscribed);
                 }.bind(this));
 
-                this.initializedOneSignal = true;
+                this.setState({ initializedOneSignal: true});
             }
         } catch (e) {
             console.warn(e);
@@ -59,7 +84,7 @@ export default class Login extends React.Component {
 
     async getAcsUserAccessToken() {
         try {
-            const registerForWebPushNotifications = this.initializedOneSignal &&
+            const registerForWebPushNotifications = this.state.initializedOneSignal &&
                 !!(await OneSignal.isPushNotificationsEnabled()) && !!(await OneSignal.getSubscription());
             this.setState({ showSpinner: true, disableInitializeButton: true });
             this.userDetailsResponse = await utils.getAcsUserAccessToken(registerForWebPushNotifications);
@@ -69,7 +94,7 @@ export default class Login extends React.Component {
             }
             this.setState({ id: utils.getIdentifierText(this.userDetailsResponse.user) });
             if (!registerForWebPushNotifications ||
-                (registerForWebPushNotifications && this.initializeCallAgentAfterPushRegistration)) {
+                (registerForWebPushNotifications && this.state.initializeCallAgentAfterPushRegistration)) {
                 await this.props.onLoggedIn({
                     id: this.state.id,
                     acsUserAccessToken: this.userDetailsResponse.acsUserAccessToken,
@@ -254,6 +279,19 @@ export class MyCallingApp {
                             </PrimaryButton>
                         </div>
                     </div>
+                    <div className="ms-Grid-row">
+                    {
+                        this.state.loginWarningMessage &&
+                        <MessageBar
+                            className="mb-2"
+                            messageBarType={MessageBarType.warning}
+                            isMultiline={true}
+                            onDismiss={() => { this.setState({ loginWarningMessage: undefined }) }}
+                            dismissButtonAriaLabel="Close">
+                            <b>{this.state.loginWarningMessage}</b>
+                        </MessageBar>
+                    }
+                    </div>
                     {
                         this.state.showUserProvisioningAndSdkInitializationCode &&
                         <pre>
@@ -262,8 +300,8 @@ export class MyCallingApp {
                             </code>
                         </pre>
                     }
-                    <div>The ACS Administration SDK can be used to create a user access token which authenticates the calling clients. </div>
-                    <div>The example code shows how to use the ACS Administration SDK from a backend service. A walkthrough of integrating the ACS Administration SDK can be found on <a className="sdk-docs-link" target="_blank" href="https://docs.microsoft.com/en-us/azure/communication-services/quickstarts/access-tokens?pivots=programming-language-javascript">Microsoft Docs</a></div>
+                    <div>The ACS Identity SDK can be used to create a user access token which authenticates the calling clients. </div>
+                    <div>The example code shows how to use the ACS Identity SDK from a backend service. A walkthrough of integrating the ACS Identity SDK can be found on <a className="sdk-docs-link" target="_blank" href="https://docs.microsoft.com/en-us/azure/communication-services/quickstarts/access-tokens?pivots=programming-language-javascript">Microsoft Docs</a></div>
                     {
                         this.state.acsUserAccessToken && 
                         <div>
@@ -293,10 +331,11 @@ export class MyCallingApp {
                                                 defaultValue={this.clientTag}
                                                 label="Optional: Tag this usage session"
                                                 onChange={(e) => { this.clientTag = e.target.value }} />
-                                    <div className="mt-4">
+                                    <div className="push-notification-options mt-4" disabled={!this.state.initializedOneSignal}>
                                         Push Notifications options
                                         <Checkbox className="mt-2 ml-3"
                                                     label="Initialize Call Agent"
+                                                    disabled={!this.state.initializedOneSignal}
                                                     checked={this.state.initializeCallAgentAfterPushRegistration}
                                                     onChange={(e, isChecked) => { this.setState({ initializeCallAgentAfterPushRegistration: isChecked })}}/>
                                     </div>
