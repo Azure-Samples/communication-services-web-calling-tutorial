@@ -16,10 +16,9 @@ products:
 2. [Node.js](https://nodejs.org/en/download/)
 
 ## Code structure
-
 * ./src: client side source code
 * ./webpack.config.js: Project bundler. Has a simple local server for user token provisioning.
-* ./config.json: configuration file for specifying the connection strings.
+* ./serverConfig.json: configuration file for specifying the connection strings.
 
 ## Before running the sample for the first time
 1. git clone https://github.com/Azure-Samples/communication-services-web-calling-tutorial
@@ -44,9 +43,9 @@ products:
 Note: If you want to deploy this application with a different deployment environment other than Azure App Service, you may need to change these configurations according to your deployment environment specifications.
 
 ## Troubleshooting
-   - Make sure your ACS connecting string is specified in config.json or you wont be able to provision ACS User Access tokens for the app.
+   - Make sure your ACS connecting string is specified in serverConfig.json or you wont be able to provision ACS User Access tokens for the app.
    - If any errors occur, check the browser console logs for errors. Also, check the webpack server side console logs for errors.
-   - Web Push Notifications - In order to test web push notifications, we must run the app in HTTPS, hence you will need to deploy this app to a secured server that will serve the application with HTTPS. You will need to specify values in ./config.json for the keys "functionAppOneSignalTokenRegistrationUrl", "functionAppOneSignalTokenRegistrationApiKey", "oneSignalAppId", and "oneSignalSafariWebId". To learn how to set up a web push notification architecture for the ACS Web Calling SDK, please follow our web push notifications quickstart documentation: \<will add link to docs\>
+   - Web Push Notifications - In order to test web push notifications, we must run the app in HTTPS, hence you will need to deploy this app to a secured server that will serve the application with HTTPS. You will need to specify values in ./clientConfig.json for the key "oneSignalAppId". And you will need to specify values for the keys "functionAppOneSignalTokenRegistrationUrl" and "functionAppOneSignalTokenRegistrationApiKey" in ./serverConfig.json. To learn how to set up a web push notification architecture for the ACS Web Calling SDK, please follow our web push notifications quickstart documentation: \<will add link to docs\>
 ## Resources
 
 1. Documentation on how to use the ACS Calling SDK for Javascript can be found on https://docs.microsoft.com/en-gb/azure/communication-services/quickstarts/voice-video-calling/calling-client-samples?pivots=platform-web
