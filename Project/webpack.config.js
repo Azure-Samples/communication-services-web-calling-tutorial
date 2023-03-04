@@ -76,8 +76,7 @@ module.exports = {
                     const user = await communicationIdentityClient.createUser();
                     const acsUserAccessToken = await communicationIdentityClient.issueToken(user, ["voip"]);
                     let oneSignalRegistrationToken;
-                    const registerForPushNotifications = req.body.registerForPushNotifications;
-                    if (!!registerForPushNotifications) {
+                    if (config.functionAppOneSignalTokenRegistrationUrl && config.functionAppOneSignalTokenRegistrationApiKey) {
                         oneSignalRegistrationToken = generateGuid()
                         await axios({
                             url: config.functionAppOneSignalTokenRegistrationUrl,

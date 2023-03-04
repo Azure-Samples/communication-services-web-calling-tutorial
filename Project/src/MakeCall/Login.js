@@ -16,6 +16,7 @@ export default class Login extends React.Component {
         this.clientTag = uuid();
         this.state = {
             initializedOneSignal: false,
+            subscribedForPushNotifications: false,
             initializeCallAgentAfterPushRegistration: true,
             showUserProvisioningAndSdkInitializationCode: false,
             showSpinner: false,
@@ -42,24 +43,27 @@ export default class Login extends React.Component {
                     },
                 });
 
-                // HTTPS only
                 OneSignal.addListenerForNotificationOpened(async function (event) {
                     console.log('Push notification clicked and app will open if it is currently closed');
                     await this.handlePushNotification(event);
                 }.bind(this));
 
-                // HTTPS only
                 OneSignal.on('notificationDisplay', async function (event) {
                     console.log('Push notification displayed');
                     await this.handlePushNotification(event);
                 }.bind(this));
 
-                // HTTPS only
                 OneSignal.on('subscriptionChange', async function(isSubscribed) {
                     console.log("Push notification subscription state is now: ", isSubscribed);
+                    this.setState({ subscribedForPushNotifications:
+                        (await OneSignal.isPushNotificationsEnabled()) && (await OneSignal.getSubscription())
+                    });
                 }.bind(this));
 
                 this.setState({ initializedOneSignal: true});
+                this.setState({ subscribedForPushNotifications:
+                    (await OneSignal.isPushNotificationsEnabled()) && (await OneSignal.getSubscription())
+                });
             }
         } catch (e) {
             console.warn(e);
@@ -68,17 +72,15 @@ export default class Login extends React.Component {
 
     async getAcsUserAccessToken() {
         try {
-            const registerForWebPushNotifications = this.state.initializedOneSignal &&
-                !!(await OneSignal.isPushNotificationsEnabled()) && !!(await OneSignal.getSubscription());
             this.setState({ showSpinner: true, disableInitializeButton: true });
-            this.userDetailsResponse = await utils.getAcsUserAccessToken(registerForWebPushNotifications);
+            this.userDetailsResponse = await utils.getAcsUserAccessToken();
             this.setState({ acsUserAccessToken: this.userDetailsResponse.acsUserAccessToken });
-            if (registerForWebPushNotifications) {
+            if (this.state.initializedOneSignal) {
                 OneSignal.setExternalUserId(this.userDetailsResponse.oneSignalRegistrationToken);
             }
             this.setState({ id: utils.getIdentifierText(this.userDetailsResponse.user) });
-            if (!registerForWebPushNotifications ||
-                (registerForWebPushNotifications && this.state.initializeCallAgentAfterPushRegistration)) {
+            if (!this.state.subscribedForPushNotifications ||
+                (this.state.subscribedForPushNotifications && this.state.initializeCallAgentAfterPushRegistration)) {
                 await this.props.onLoggedIn({
                     id: this.state.id,
                     acsUserAccessToken: this.userDetailsResponse.acsUserAccessToken,
@@ -98,6 +100,8 @@ export default class Login extends React.Component {
             if (!this.state.acsUserAccessToken) {
                 const oneSignalRegistrationToken = await OneSignal.getExternalUserId();
                 this.userDetailsResponse = await utils.getAcsUserAccessTokenForOneSignalRegistrationToken(oneSignalRegistrationToken);
+                this.setState({ acsUserAccessToken: this.userDetailsResponse.acsUserAccessToken });
+                this.setState({ id: utils.getIdentifierText(this.userDetailsResponse.user) });
             }
             await this.props.onLoggedIn({
                 id: this.state.id,
@@ -315,11 +319,12 @@ export class MyCallingApp {
                                                 defaultValue={this.clientTag}
                                                 label="Optional: Tag this usage session"
                                                 onChange={(e) => { this.clientTag = e.target.value }} />
-                                    <div className="push-notification-options mt-4" disabled={!this.state.initializedOneSignal}>
+                                    <div className="push-notification-options mt-4"
+                                        disabled={!this.state.initializedOneSignal || !this.state.subscribedForPushNotifications}>
                                         Push Notifications options
                                         <Checkbox className="mt-2 ml-3"
                                                     label="Initialize Call Agent"
-                                                    disabled={!this.state.initializedOneSignal}
+                                                    disabled={!this.state.initializedOneSignal || !this.state.subscribedForPushNotifications}
                                                     checked={this.state.initializeCallAgentAfterPushRegistration}
                                                     onChange={(e, isChecked) => { this.setState({ initializeCallAgentAfterPushRegistration: isChecked })}}/>
                                     </div>

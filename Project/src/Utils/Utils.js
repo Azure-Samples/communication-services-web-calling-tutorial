@@ -10,14 +10,13 @@ export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    getAcsUserAccessToken: async (registerForPushNotifications) => {
+    getAcsUserAccessToken: async () => {
         let response = await axios({
             url: 'getAcsUserAccessToken',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            },
-            data: JSON.stringify({registerForPushNotifications})
+            }
         })
         if (response.status === 200) {
             return response.data;
