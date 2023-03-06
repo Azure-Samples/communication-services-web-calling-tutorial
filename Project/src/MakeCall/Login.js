@@ -14,6 +14,7 @@ export default class Login extends React.Component {
         this.userDetailsResponse = undefined;
         this.displayName = undefined;
         this.clientTag = uuid();
+        this.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
         this.state = {
             initializedOneSignal: false,
             subscribedForPushNotifications: false,
@@ -37,6 +38,9 @@ export default class Login extends React.Component {
                     safari_web_id: config.oneSignalSafariWebId,
                     notifyButton: {
                         enable: true,
+                        colors: {
+                            'circle.background': '#ca5010'
+                        }
                     },
                 });
 
@@ -61,6 +65,8 @@ export default class Login extends React.Component {
                 this.setState({ subscribedForPushNotifications:
                     (await OneSignal.isPushNotificationsEnabled()) && (await OneSignal.getSubscription())
                 });
+
+                await OneSignal.registerForPushNotifications();
             }
         } catch (error) {
             this.setState({
@@ -363,11 +369,19 @@ export class MyCallingApp {
                             </div>
                             <div className="ms-Grid-row">
                                 <div className="push-notification-options mt-4"
-                                    disabled={!this.state.initializedOneSignal || !this.state.subscribedForPushNotifications}>
+                                    disabled={
+                                        !this.state.initializedOneSignal ||
+                                        !this.state.subscribedForPushNotifications ||
+                                        this.isSafari
+                                    }>
                                     Push Notifications options
                                     <Checkbox className="mt-2 ml-3"
                                                 label="Initialize Call Agent"
-                                                disabled={!this.state.initializedOneSignal || !this.state.subscribedForPushNotifications}
+                                                disabled={
+                                                    !this.state.initializedOneSignal ||
+                                                    !this.state.subscribedForPushNotifications ||
+                                                    this.isSafari
+                                                }
                                                 checked={this.state.initializeCallAgentAfterPushRegistration}
                                                 onChange={(e, isChecked) => { this.setState({ initializeCallAgentAfterPushRegistration: isChecked })}}/>
                                 </div>

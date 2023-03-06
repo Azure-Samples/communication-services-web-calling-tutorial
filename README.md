@@ -23,7 +23,7 @@ products:
 ## Before running the sample for the first time
 1. git clone https://github.com/Azure-Samples/communication-services-web-calling-tutorial
 2. cd communication-services-web-calling-tutorial/Project
-3. Get a connection string by provisioning an Azure Communication Services resource from the Azure portal. Use the connection string as value for key `connectionString` in config.json file.
+3. Get a connection string by provisioning an Azure Communication Services resource from the Azure portal. Use the connection string as value for key `connectionString` in serverConfig.json file.
 4. npm install
 5. npm run build
 6. npm run start
