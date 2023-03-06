@@ -196,6 +196,41 @@ ul {
   border-bottom: 1px solid #605e5c;
 }
 
+.ms-TextField-field {
+  background-color: #292827;
+  color: #edebe9;
+  outline: 1px solid #484644;
+  box-shadow: 0px 0px 0px 2px #484644;
+}
+
+.ms-TextField-field:disabled {
+  background-color: #292827;
+  color: #484644 !important;
+  outline: 1px solid #292827;
+  box-shadow: 0px 0px 0px 2px #292827;
+}
+
+div.push-notification-options[disabled],
+div.ms-Checkbox.is-disabled > input[type="checkbox"] + label.ms-Checkbox-label > span.ms-Checkbox-text,
+.ms-TextField-field:disabled, .ms-TextField.is-disabled > .ms-TextField-wrapper > label,
+div.ms-Checkbox.is-disabled > input[type="checkbox"] + label.ms-Checkbox-label > div.ms-Checkbox-checkbox > i.ms-Checkbox-checkmark  {
+  color: #484644;
+}
+
+div.ms-Checkbox > input[type="checkbox"] + label.ms-Checkbox-label > div.ms-Checkbox-checkbox {
+  background-color: #201f1e;
+  border: 1px solid #605e5c;
+}
+
+div.ms-Checkbox.is-disabled > input[type="checkbox"] + label.ms-Checkbox-label > div.ms-Checkbox-checkbox {
+  border: 1px solid #484644;
+}
+
+div.ms-Checkbox > input[type="checkbox"] + label.ms-Checkbox-label > span.ms-Checkbox-text {
+  color: white;
+  font-size: 0.8rem;
+}
+
 .primary-button {
   color: #edebe9;
   background-color: #ca5010;
@@ -248,24 +283,6 @@ ul {
   color: #edebe9;
   font-weight: 400;
   font-size: 12px;;
-}
-
-.ms-TextField-field:disabled, .ms-TextField.is-disabled > .ms-TextField-wrapper > label {
-  color: #484644;
-}
-
-.ms-TextField-field {
-  background-color: #292827;
-  color: #edebe9;
-  outline: 1px solid #484644;
-  box-shadow: 0px 0px 0px 2px #484644;
-}
-
-.ms-TextField-field:disabled {
-  background-color: #292827;
-  color: #484644 !important;
-  outline: 1px solid #292827;
-  box-shadow: 0px 0px 0px 2px #292827;
 }
 
 .video-grid-row {
@@ -440,6 +457,10 @@ ul {
 }
 .text-center {
   text-align: center;
+}
+.inline-block {
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /*********************************
