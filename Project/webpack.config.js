@@ -15,7 +15,24 @@ const communicationIdentityClient = new  CommunicationIdentityClient(config.conn
 const PORT = process.env.port || 8080;
 
 
-const onSignalRegistrationTokenToAcsUserAccesTokenMap = new Map();
+const oneSignalRegistrationTokenToAcsUserAccesTokenMap = new Map();
+const registerCommunicationUserForOneSignal = async (communicationUserToken) => {
+    const oneSignalRegistrationToken = generateGuid();
+    await axios({
+        url: config.functionAppOneSignalTokenRegistrationUrl,
+        method: 'PUT',
+        headers: {
+            'x-functions-key': config.functionAppOneSignalTokenRegistrationApiKey,
+            'Content-Type': 'application/json'
+        },
+        data: JSON.stringify({
+            communicationUserId: communicationUserToken.user.communicationUserId,
+            oneSignalRegistrationToken
+        })
+    }).then((response) => { return response.data });
+    oneSignalRegistrationTokenToAcsUserAccesTokenMap.set(oneSignalRegistrationToken, communicationUserToken);
+    return oneSignalRegistrationToken;
+}
 
 const generateGuid = function () {
     function s4() {
@@ -71,44 +88,53 @@ module.exports = {
         ],
         before: function(app) {
             app.use(bodyParser.json());
-            app.post('/getAcsUserAccessToken', async (req, res) => {
+            app.post('/getCommunicationUserToken', async (req, res) => {
                 try {
-                    const user = await communicationIdentityClient.createUser();
-                    const acsUserAccessToken = await communicationIdentityClient.issueToken(user, ["voip"]);
+                    const communicationUserIdentifier = await communicationIdentityClient.createUser();
+                    const communicationUserToken = await communicationIdentityClient.issueToken(communicationUserIdentifier, ["voip"]);
                     let oneSignalRegistrationToken;
                     if (config.functionAppOneSignalTokenRegistrationUrl && config.functionAppOneSignalTokenRegistrationApiKey) {
-                        oneSignalRegistrationToken = generateGuid()
-                        await axios({
-                            url: config.functionAppOneSignalTokenRegistrationUrl,
-                            method: 'PUT',
-                            headers: {
-                                'x-functions-key': config.functionAppOneSignalTokenRegistrationApiKey,
-                                'Content-Type': 'application/json'
-                            },
-                            data: JSON.stringify({
-                                communicationUserId: user.communicationUserId,
-                                oneSignalRegistrationToken: oneSignalRegistrationToken
-                            })
-                        }).then((response) => { return response.data });
-                        onSignalRegistrationTokenToAcsUserAccesTokenMap.set(oneSignalRegistrationToken, acsUserAccessToken);
+                        oneSignalRegistrationToken = await registerCommunicationUserForOneSignal(communicationUserToken);
                     }
                     res.setHeader('Content-Type', 'application/json');
-                    res.status(200).json({
-                        acsUserAccessToken: acsUserAccessToken.token,
-                        user: acsUserAccessToken.user,
-                        oneSignalRegistrationToken
-                    });
+                    res.status(200).json({communicationUserToken, oneSignalRegistrationToken });
                 } catch (e) {
                     console.log('Error setting registration token', e);
                     res.sendStatus(500);
                 }
             });
-            app.post('/getAcsUserAccessTokenForOneSignalRegistrationToken', async (req, res) => {
+            app.post('/getCommunicationUserTokenForOneSignalRegistrationToken', async (req, res) => {
                 try {
                     const oneSignalRegistrationToken = req.body.oneSignalRegistrationToken;
-                    const acsUserAccessToken = onSignalRegistrationTokenToAcsUserAccesTokenMap.get(oneSignalRegistrationToken);
+                    const communicationUserToken = oneSignalRegistrationTokenToAcsUserAccesTokenMap.get(oneSignalRegistrationToken);
                     res.setHeader('Content-Type', 'application/json');
-                    res.status(200).json({ acsUserAccessToken: acsUserAccessToken.token, user: acsUserAccessToken.user, oneSignalRegistrationToken });
+                    res.status(200).json({ communicationUserToken, oneSignalRegistrationToken });
+                } catch (e) {
+                    console.log('Error setting registration token', e);
+                    res.sendStatus(500);
+                }
+            });
+            app.post('/getOneSignalRegistrationTokenForCommunicationUserToken', async (req, res) => {
+                try {
+                    const communicationUserToken = {
+                        token: req.body.token,
+                        user: { communicationUserId: req.body.communicationUserId }
+                    };
+                    let pair = [...oneSignalRegistrationTokenToAcsUserAccesTokenMap.entries()].find((pair) => {
+                        return pair[1].token === communicationUserToken.token &&
+                            pair[1].user.communicationUserId === communicationUserToken.user.communicationUserId;
+                    });
+                    let oneSignalRegistrationToken;
+                    if (pair) {
+                        oneSignalRegistrationToken = pair[0];
+                    } else {
+                        oneSignalRegistrationToken = await registerCommunicationUserForOneSignal(communicationUserToken);
+                    }
+                    res.setHeader('Content-Type', 'application/json');
+                    res.status(200).json({
+                        communicationUserToken, 
+                        oneSignalRegistrationToken
+                    });
                 } catch (e) {
                     console.log('Error setting registration token', e);
                     res.sendStatus(500);

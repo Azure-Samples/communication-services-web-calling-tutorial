@@ -10,9 +10,9 @@ export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    getAcsUserAccessToken: async () => {
+    getCommunicationUserToken: async () => {
         let response = await axios({
-            url: 'getAcsUserAccessToken',
+            url: 'getCommunicationUserToken',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -23,14 +23,28 @@ export const utils = {
         }
         throw new Error('Failed to get ACS User Access token');
     },
-    getAcsUserAccessTokenForOneSignalRegistrationToken: async (oneSignalRegistrationToken) => {
+    getCommunicationUserTokenForOneSignalRegistrationToken: async (oneSignalRegistrationToken) => {
         let response = await axios({
-            url: 'getAcsUserAccessTokenForOneSignalRegistrationToken',
+            url: 'getCommunicationUserTokenForOneSignalRegistrationToken',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             data: JSON.stringify({oneSignalRegistrationToken})
+        });
+        if (response.status === 200) {
+            return response.data;
+        }
+        throw new Error('Failed to get ACS User Acccess token for the given OneSignal Registration Token');
+    },
+    getOneSignalRegistrationTokenForCommunicationUserToken: async (token, communicationUserId) => {
+        let response = await axios({
+            url: 'getOneSignalRegistrationTokenForCommunicationUserToken',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify({token, communicationUserId})
         });
         if (response.status === 200) {
             return response.data;

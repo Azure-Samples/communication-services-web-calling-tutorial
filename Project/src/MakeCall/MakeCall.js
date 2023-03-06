@@ -80,7 +80,7 @@ export default class MakeCall extends React.Component {
     handleLogIn = async (userDetails) => {
         if (userDetails) {
             try {
-                const tokenCredential = new AzureCommunicationTokenCredential(userDetails.acsUserAccessToken);
+                const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 this.tokenCredential = tokenCredential;
                 setLogLevel('error');
                 this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk", `#clientTag:${userDetails.clientTag}`] } });

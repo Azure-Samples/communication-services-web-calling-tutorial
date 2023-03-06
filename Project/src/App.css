@@ -458,6 +458,10 @@ div.ms-Checkbox > input[type="checkbox"] + label.ms-Checkbox-label > span.ms-Che
 .text-center {
   text-align: center;
 }
+.inline-block {
+  display: inline-block;
+  vertical-align: middle;
+}
 
 /*********************************
 *       Margin and Padding       *
