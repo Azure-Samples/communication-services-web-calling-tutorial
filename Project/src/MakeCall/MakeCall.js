@@ -69,6 +69,22 @@ export default class MakeCall extends React.Component {
                 this.setState({ ufdMessages: this.state.ufdMessages.slice(1) });
             }
         }, 10000);
+
+        // override logger to be able to dowload logs locally
+        AzureLogger.log = (...args) => {
+            this.logBuffer.push(...args);
+            if (args[0].startsWith('azure:ACS-calling:info')) {
+                console.info(...args);
+            } else if (args[0].startsWith('azure:ACS-calling:verbose')) {
+                console.debug(...args);
+            } else if (args[0].startsWith('azure:ACS-calling:warning')) {
+                console.warn(...args);
+            } else if (args[0].startsWith('azure:ACS-calling:error')) {
+                console.error(...args);
+            } else {
+                console.log(...args);
+            }
+        };
     }
 
     handleMediaConstraint = (constraints) => {
@@ -82,31 +98,11 @@ export default class MakeCall extends React.Component {
             try {
                 const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 this.tokenCredential = tokenCredential;
-                setLogLevel('error');
+                setLogLevel('verbose');
                 this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk", `#clientTag:${userDetails.clientTag}`] } });
                 this.environmentInfo = await this.callClient.getEnvironmentInfoInternal();
                 this.debugInfoFeature = await this.callClient.feature(Features.DebugInfo);
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
-                this.logInComponentRef.current.setCallAgent(this.callAgent);
-                // override logger to be able to dowload logs locally
-                AzureLogger.log = (...args) => {
-                    this.logBuffer.push(...args);
-                    if (args[0].startsWith('azure:ACS-calling:info')) {
-                        console.info(...args);
-                    } else if (args[0].startsWith('azure:ACS-calling:verbose')) {
-                        console.debug(...args);
-                    } else if (args[0].startsWith('azure:ACS-calling:warning')) {
-                        console.warn(...args);
-                    } else if (args[0].startsWith('azure:ACS-calling:error')) {
-                        console.error(...args);
-                    } else {
-                        console.log(...args);
-                    }
-                };
-                this.deviceManager = await this.callClient.getDeviceManager();
-                const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
-                this.setState({permissions: permissions});
-
                 this.callAgent.on('callsUpdated', e => {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
 
@@ -155,8 +151,12 @@ export default class MakeCall extends React.Component {
                 this.debugInfoFeature.on('isCallClientActiveInAnotherTabChanged', () => {
                     this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
                 });
-
                 this.setState({ loggedIn: true });
+                this.logInComponentRef.current.setCallAgent(this.callAgent);
+
+                this.deviceManager = await this.callClient.getDeviceManager();
+                const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
+                this.setState({permissions: permissions});
             } catch (e) {
                 console.error(e);
             }

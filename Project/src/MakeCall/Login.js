@@ -15,6 +15,8 @@ export default class Login extends React.Component {
         this.displayName = undefined;
         this.clientTag = uuid();
         this.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        this._callAgentInitPromise = undefined;
+        this._callAgentInitPromiseResolve = undefined;
         this.state = {
             initializedOneSignal: false,
             subscribedForPushNotifications: false,
@@ -117,30 +119,42 @@ export default class Login extends React.Component {
     }
 
     async handlePushNotification(event) {
-        if (!this.callAgent && !!event.data.incomingCallContext) {
-            if (!this.state.token) {
-                const oneSignalRegistrationToken = await OneSignal.getExternalUserId();
-                this.userDetailsResponse = await utils.getCommunicationUserTokenForOneSignalRegistrationToken(oneSignalRegistrationToken);
-                this.setState({
-                    token: this.userDetailsResponse.communicationUserToken.token
-                });
-                this.setState({
-                    communicationUserId: utils.getIdentifierText(this.userDetailsResponse.communicationUserToken.user)
-                });
+        try {
+            if (!this.callAgent && !!event.data.incomingCallContext) {
+                if (!this.state.token) {
+                    const oneSignalRegistrationToken = await OneSignal.getExternalUserId();
+                    this.userDetailsResponse = await utils.getCommunicationUserTokenForOneSignalRegistrationToken(oneSignalRegistrationToken);
+                    this.setState({
+                        token: this.userDetailsResponse.communicationUserToken.token
+                    });
+                    this.setState({
+                        communicationUserId: utils.getIdentifierText(this.userDetailsResponse.communicationUserToken.user)
+                    });
+                }
+                this.props.onLoggedIn({ communicationUserId: this.userDetailsResponse.communicationUserToken.user.communicationUserId,
+                    token: this.userDetailsResponse.communicationUserToken.token, displayName: this.displayName, clientTag:this.clientTag });
+                this._callAgentInitPromise = new Promise((resolve) => { this._callAgentInitPromiseResolve = resolve });
+                await this._callAgentInitPromise;
+                console.log('Login response: ', this.userDetailsResponse);
+                this.setState({ loggedIn: true })
+                if (!this.callAgent.handlePushNotification) {
+                    throw new Error('Handle push notification feature is not implemented in ACS Web Calling SDK yet.');
+                }
+                await this.callAgent.handlePushNotification(event.data);
             }
-            await this.props.onLoggedIn({ communicationUserId: this.userDetailsResponse.communicationUserToken.user.communicationUserId,
-                token: this.userDetailsResponse.communicationUserToken.token, displayName: this.displayName, clientTag:this.clientTag });
-            console.log('Login response: ', this.userDetailsResponse);
-            this.setState({ loggedIn: true })
-            if (!this.callAgent.handlePushNotification) {
-                throw new Error('Handle push notification feature is not implemented in ACS Web Calling SDK yet.');
-            }
-            await this.callAgent.handlePushNotification(event.data);
+        } catch (error) {
+            this.setState({
+                loginErrorMessage: error.message
+            });
+            console.log(error);
         }
     }
 
     setCallAgent(callAgent) {
         this.callAgent = callAgent;
+        if (!!this._callAgentInitPromiseResolve) {
+            this._callAgentInitPromiseResolve();
+        }
     }
 
     render() {
