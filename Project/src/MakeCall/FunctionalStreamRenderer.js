@@ -91,9 +91,12 @@ export const FunctionalStreamRenderer = forwardRef(({
     }
     const isReceivingChanged = () => {
         try {
-            if (view && stream) {
-                setIsLoading(stream.isAvailable && !stream.isReceiving);
+            if (stream?.isAvailable) {
+                setIsLoading(!stream.isReceiving);
+            } else {
+                setIsLoading(false);
             }
+            
         } catch (e) {
             console.error(e);
         }
