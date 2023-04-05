@@ -4,6 +4,9 @@ const HtmlWebPackPlugin = require("html-webpack-plugin");
 const config = require("./serverConfig.json");
 const axios = require("axios");
 const bodyParser = require('body-parser');
+const cors = require('cors');
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const CommunicationRelayClient = require('@azure/communication-network-traversal').CommunicationRelayClient;
 
 if(!config || !config.connectionString || config.connectionString.indexOf('endpoint=') === -1)
 {
@@ -40,6 +43,34 @@ const generateGuid = function () {
     }
     return `${s4()}${s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
 }
+
+const processUrl = (originalUrl) => {
+    const urlRegExp = new RegExp(`(proxy[:0-9]*)/(.*)$`);
+    const matches = originalUrl.match(urlRegExp);
+    if (!matches || matches.length < 3) {
+      return originalUrl;
+    }
+    const returnUrl = `https://${matches[2]}`;
+    console.log(`Proxying ${originalUrl} to ${returnUrl}`)
+    return returnUrl;
+};
+
+const proxyRouter = (req) => {
+    if (!req.originalUrl && !req.url) {
+        return '';
+    }
+    return processUrl(req.originalUrl || req.url);
+};
+
+const useProxy = createProxyMiddleware({
+    router: proxyRouter,
+    changeOrigin: true,
+    secure: false,
+    followRedirects: true,
+    ignorePath: true,
+    ws: true,
+    logLevel: 'debug'
+});
 
 module.exports = {
     devtool: 'inline-source-map',
@@ -86,7 +117,9 @@ module.exports = {
         allowedHosts:[
             '.azurewebsites.net'
         ],
+        https: true,
         before: function(app) {
+            app.use('/proxy', cors(), useProxy);
             app.use(bodyParser.json());
             app.post('/getCommunicationUserToken', async (req, res) => {
                 try {
@@ -137,6 +170,23 @@ module.exports = {
                     });
                 } catch (e) {
                     console.log('Error setting registration token', e);
+                    res.sendStatus(500);
+                }
+            });
+            app.get('/customRelayConfig', async (req, res) => {
+                console.log('Requesting custom TURN server configuration');
+                try {
+                    const relayClient = new CommunicationRelayClient(config.connectionString);
+                    const relayConfig = await relayClient.getRelayConfiguration();
+                    if (relayConfig) {
+                        res.status(200).json({
+                            relayConfig
+                        });
+                    } else {
+                        throw 'No relay config returned from service';
+                    }
+                } catch (e) {
+                    console.log(`Error creating custom TURN configuration: ${e}`);
                     res.sendStatus(500);
                 }
             });

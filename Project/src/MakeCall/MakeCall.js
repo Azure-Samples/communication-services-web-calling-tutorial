@@ -37,6 +37,7 @@ export default class MakeCall extends React.Component {
         this.videoConstraints = null;
         this.tokenCredential = null;
         this.logInComponentRef = React.createRef();
+        this.currentCustomTurnConfig = null;
 
         this.state = {
             id: undefined,
@@ -99,7 +100,21 @@ export default class MakeCall extends React.Component {
                 const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 this.tokenCredential = tokenCredential;
                 setLogLevel('verbose');
-                this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk", `#clientTag:${userDetails.clientTag}`] } });
+
+                const proxyConfiguration = userDetails.proxy.useProxy ? { url: userDetails.proxy.url } : undefined;
+                const turnConfiguration = userDetails.customTurn.useCustomTurn && !userDetails.customTurn.isLoading ? userDetails.customTurn.turn : undefined;
+                this.callClient = new CallClient({ 
+                    diagnostics: { 
+                        appName: 'azure-communication-services', 
+                        appVersion: '1.3.1-beta.1', 
+                        tags: ["javascript_calling_sdk", 
+                        `#clientTag:${userDetails.clientTag}`] 
+                    },
+                    networkConfiguration: {
+                        proxy: proxyConfiguration,
+                        turn: turnConfiguration
+                    }
+                });
                 this.environmentInfo = await this.callClient.getEnvironmentInfoInternal();
                 this.debugInfoFeature = await this.callClient.feature(Features.DebugInfo);
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });

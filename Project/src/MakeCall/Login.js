@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     TextField, PrimaryButton, Checkbox,
     MessageBar, MessageBarType
@@ -11,12 +11,15 @@ import * as config from '../../clientConfig.json';
 export default class Login extends React.Component {
     constructor(props) {
         super(props);
+        const defaultProxy = `${window.location.protocol}//${window.location.host}/proxy`;
+
         this.userDetailsResponse = undefined;
         this.displayName = undefined;
         this.clientTag = uuid();
         this.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
         this._callAgentInitPromise = undefined;
         this._callAgentInitPromiseResolve = undefined;
+        this.currentCustomTurnConfig = undefined;
         this.state = {
             initializedOneSignal: false,
             subscribedForPushNotifications: false,
@@ -24,7 +27,17 @@ export default class Login extends React.Component {
             showUserProvisioningAndSdkInitializationCode: false,
             showSpinner: false,
             loginWarningMessage: undefined,
-            loginErrorMessage: undefined
+            loginErrorMessage: undefined,
+            proxy: {
+                useProxy: false,
+                defaultUrl: defaultProxy,
+                url: defaultProxy
+            },
+            customTurn: {
+                useCustomTurn: false,
+                isLoading: false,
+                turn: null
+            }
         }
     }
 
@@ -103,8 +116,14 @@ export default class Login extends React.Component {
             }
             if (!this.state.subscribedForPushNotifications ||
                 (this.state.subscribedForPushNotifications && this.state.initializeCallAgentAfterPushRegistration)) {
-                await this.props.onLoggedIn({ communicationUserId: this.userDetailsResponse.communicationUserToken.user.communicationUserId,
-                    token: this.userDetailsResponse.communicationUserToken.token, displayName: this.displayName, clientTag:this.clientTag });
+                await this.props.onLoggedIn({ 
+                    communicationUserId: this.userDetailsResponse.communicationUserToken.user.communicationUserId,
+                    token: this.userDetailsResponse.communicationUserToken.token,
+                    displayName: this.displayName,
+                    clientTag:this.clientTag,
+                    proxy: this.state.proxy,
+                    customTurn: this.state.customTurn
+                });
             }
             console.log('Login response: ', this.userDetailsResponse);
             this.setState({ loggedIn: true });
@@ -131,8 +150,14 @@ export default class Login extends React.Component {
                         communicationUserId: utils.getIdentifierText(this.userDetailsResponse.communicationUserToken.user)
                     });
                 }
-                this.props.onLoggedIn({ communicationUserId: this.userDetailsResponse.communicationUserToken.user.communicationUserId,
-                    token: this.userDetailsResponse.communicationUserToken.token, displayName: this.displayName, clientTag:this.clientTag });
+                this.props.onLoggedIn({ 
+                    communicationUserId: this.userDetailsResponse.communicationUserToken.user.communicationUserId,
+                    token: this.userDetailsResponse.communicationUserToken.token,
+                    displayName: this.displayName,
+                    clientTag:this.clientTag,
+                    proxy: this.state.proxy,
+                    customTurn: this.state.customTurn
+                });
                 this._callAgentInitPromise = new Promise((resolve) => { this._callAgentInitPromiseResolve = resolve });
                 await this._callAgentInitPromise;
                 console.log('Login response: ', this.userDetailsResponse);
@@ -155,6 +180,160 @@ export default class Login extends React.Component {
         if (!!this._callAgentInitPromiseResolve) {
             this._callAgentInitPromiseResolve();
         }
+    }
+
+    handleProxyChecked = (e, isChecked) => {
+        this.setState({
+            ...this.state,
+            proxy: {
+                ...this.state.proxy,
+                useProxy: isChecked
+            }
+        });
+    };
+
+    handleAddProxyUrl = (input) => {
+        if (input) {
+            this.setState({
+                ...this.state,
+                proxy: {
+                    ...this.state.proxy,
+                    url: input
+                }
+            });
+        }
+    };
+
+    handleProxyUrlReset = () => {
+        this.setState({
+            ...this.state,
+            proxy: {
+                ...this.state.proxy,
+                url: this.state.proxy.defaultUrl
+            }
+        });
+    };
+
+    handleAddTurnConfig = (iceServer) => {
+        const turnConfig = this.state.customTurn.turn ?? {
+            iceServers: []
+        };
+        turnConfig.iceServers.push(iceServer);
+
+        this.setState({
+            ...this.state,
+            customTurn: {
+                ...this.state.customTurn,
+                turn: turnConfig
+            }
+        });
+    }
+
+    handleCustomTurnChecked = (e, isChecked) => {
+        if (isChecked) {
+            this.setState({
+                ...this.state,
+                customTurn: {
+                    ...this.state.customTurn,
+                    useCustomTurn: true,
+                    isLoading: true
+                }
+            });
+    
+            this.getOrCreateCustomTurnConfiguration().then(res => {
+                this.setState({
+                    ...this.state,
+                    customTurn: {
+                        ...this.state.customTurn,
+                        useCustomTurn: !!res ?? false,
+                        isLoading: false,
+                        turn: res
+                    }
+                });
+            }).catch(error => {
+                console.error(`Not able to fetch custom TURN: ${error}`);
+                this.setState({
+                    ...this.state,
+                    customTurn: {
+                        ...this.state.customTurn,
+                        useCustomTurn: false,
+                        isLoading: false,
+                        turn: null
+                    }
+                });
+            });
+        } else {
+            this.setState({
+                ...this.state,
+                customTurn: {
+                    ...this.state.customTurn,
+                    useCustomTurn: false,
+                    isLoading: false,
+                    turn: null
+                }
+            });
+        }
+    }
+
+    getOrCreateCustomTurnConfiguration = async () => {
+        if (!this.currentCustomTurnConfig || Date.now() > new Date(this.currentCustomTurnConfig.expiresOn).getTime()) {
+            // Credentials expired. Try to get new ones.
+            const response = await fetch(`${window.location.protocol}//${window.location.host}/customRelayConfig`);
+            const relayConfig = (await response.json()).relayConfig;
+            this.currentCustomTurnConfig = relayConfig;
+        }
+
+        const iceServers = this.currentCustomTurnConfig.iceServers.map(iceServer => {
+            return {
+                urls: [...iceServer.urls],
+                username: iceServer.username,
+                credential: iceServer.credential
+            };
+        });
+
+        return { iceServers };
+    }
+
+    handleTurnUrlResetToDefault = () => {
+        this.setState({
+            ...this.state,
+            customTurn: {
+                ...this.state.customTurn,
+                isLoading: true
+            }
+        });
+
+        this.getOrCreateCustomTurnConfiguration().then(res => {
+            this.setState({
+                ...this.state,
+                customTurn: {
+                    ...this.state.customTurn,
+                    isLoading: false,
+                    turn: res
+                }
+            });
+        }).catch(error => {
+            console.error(`Not able to fetch custom TURN: ${error}`);
+            this.setState({
+                ...this.state,
+                customTurn: {
+                    ...this.state.customTurn,
+                    useCustomTurn: false,
+                    isLoading: false,
+                    turn: null
+                }
+            });
+        });
+    }
+
+    handleTurnUrlReset = () => {
+        this.setState({
+            ...this.state,
+            customTurn: {
+                ...this.state.customTurn,
+                turn: null
+            }
+        });
     }
 
     render() {
@@ -382,7 +561,7 @@ export class MyCallingApp {
                                 </div>
                             </div>
                             <div className="ms-Grid-row">
-                                <div className="push-notification-options mt-4"
+                                <div className="pre-init-option push-notification-options ms-Grid-col ms-lg4 ms-sm12"
                                     disabled={
                                         !this.state.initializedOneSignal ||
                                         !this.state.subscribedForPushNotifications ||
@@ -399,6 +578,19 @@ export class MyCallingApp {
                                                 checked={this.state.initializeCallAgentAfterPushRegistration}
                                                 onChange={(e, isChecked) => { this.setState({ initializeCallAgentAfterPushRegistration: isChecked })}}/>
                                 </div>
+                                <ProxyConfiguration 
+                                    proxy={this.state.proxy}
+                                    handleProxyChecked={this.handleProxyChecked}
+                                    handleAddProxyUrl={this.handleAddProxyUrl}
+                                    handleProxyUrlReset={this.handleProxyUrlReset}
+                                />
+                                <TurnConfiguration
+                                    customTurn={this.state.customTurn}
+                                    handleCustomTurnChecked={this.handleCustomTurnChecked}
+                                    handleAddTurnConfig={this.handleAddTurnConfig}
+                                    handleTurnUrlResetToDefault={this.handleTurnUrlResetToDefault}
+                                    handleTurnUrlReset={this.handleTurnUrlReset}
+                                />
                             </div>
                             <div className="mt-3">
                                 <PrimaryButton className="primary-button mt-3"
@@ -414,4 +606,149 @@ export class MyCallingApp {
             </div>
         );
     }
+}
+
+const ProxyConfiguration = (props) => {
+    const [proxyUrl, setProxyUrl] = useState('');
+
+    return (
+        <div className='pre-init-option proxy-configuration ms-Grid-col ms-lg4 ms-sm12'>
+            Proxy configuration
+            <Checkbox 
+                className='mt-2 ml-3'
+                label='Use proxy'
+                checked={props.proxy.useProxy}
+                onChange={props.handleProxyChecked}
+            />
+            <div className='mt-2 ml-3'>{props.proxy.url}</div>
+            <TextField
+                className='mt-2 ml-3'
+                label='URL'
+                onChange={(e) => {
+                    setProxyUrl(e.target.value);
+                }}
+            >
+            </TextField>
+            <div className='button-group ms-Grid-row mt-2 ml-3'>
+                <div className='button-container ms-Grid-col ms-sm6'>
+                    <PrimaryButton
+                        text='Update URL'
+                        disabled={!props.proxy.useProxy}
+                        onClick={() => props.handleAddProxyUrl(proxyUrl)}
+                    />
+                </div>
+                <div className='button-container ms-Grid-col ms-sm6'>
+                    <PrimaryButton
+                        text='Reset'
+                        disabled={!props.proxy.useProxy}
+                        onClick={props.handleProxyUrlReset}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+const TurnConfiguration = (props) => {
+    const [turnUrls, setTurnUrls] = useState('');
+    const [turnUsername, setTurnUsername] = useState('');
+    const [turnCredential, setTurnCredential] = useState('');
+
+    const handleAddTurn = () => {
+        if (turnUrls) {
+            const iceServer = {
+                urls: !!turnUrls ? turnUrls.split(';') : [],
+                username: turnUsername,
+                credential: turnCredential
+            };
+    
+            props.handleAddTurnConfig(iceServer);
+        }
+    };
+
+    return (
+        <div className='pre-init-option proxy-configuration ms-Grid-col ms-lg4 ms-sm12'>
+            Turn configuration
+            <Checkbox 
+                className='mt-2 ml-3'
+                disabled={props.customTurn.isLoading}
+                label='Use custom TURN'
+                checked={props.customTurn.useCustomTurn}
+                onChange={props.handleCustomTurnChecked}
+            />
+            <div className='mt-2 ml-3'>
+                {props.customTurn.turn &&
+                    props.customTurn.turn?.iceServers?.map((iceServer, key) => {
+                        if (iceServer.urls && iceServer.urls.length > 0) {
+                            return (
+                                <div key={`iceServer-${key}`}>
+                                    {iceServer?.urls?.map((url, key) => {
+                                        return (
+                                            <div key={`url-${key}`}>
+                                                <span>{url}</span><br/>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )
+                        }
+
+                        return (
+                            <div key={`iceServer-${key}`}></div>
+                        )
+                    })
+                }
+            </div>
+            <TextField
+                className='mt-2 ml-3'
+                label='URLs (seperate each by semicolon)'
+                value={turnUrls}
+                onChange={(e) => {
+                    setTurnUrls(e.target.value);
+                }}
+            >
+            </TextField>
+            <TextField
+                className='mt-2 ml-3'
+                label='Username'
+                value={turnUsername}
+                onChange={(e) => {
+                    setTurnUsername(e.target.value);
+                }}
+            >
+            </TextField>
+            <TextField
+                className='mt-2 ml-3'
+                label='Credential'
+                value={turnCredential}
+                onChange={(e) => {
+                    setTurnCredential(e.target.value);
+                }}
+            >
+            </TextField>
+            <div className='button-group ms-Grid-row mt-2 ml-3'>
+                <div className='button-container ms-Grid-col ms-sm6'>
+                    <PrimaryButton
+                        text='Add TURN(s)'
+                        onClick={handleAddTurn}
+                        disabled={!props.customTurn.useCustomTurn}
+                    />
+                </div>
+                <div className='button-container ms-Grid-col ms-sm6'>
+                    <PrimaryButton
+                        text='Reset to default'
+                        onClick={props.handleTurnUrlResetToDefault}
+                        disabled={!props.customTurn.useCustomTurn}
+                    />
+                </div>
+                <div className='button-container ms-Grid-col ms-sm6'>
+                    <PrimaryButton
+                        text='Clear'
+                        onClick={props.handleTurnUrlReset}
+                        disabled={!props.customTurn.useCustomTurn}
+                    />
+                </div>
+            </div>
+        </div>
+    )
 }
