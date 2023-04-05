@@ -118,10 +118,10 @@ module.exports = {
         allowedHosts:[
             '.azurewebsites.net'
         ],
-        https: true,
+        // https: true,
         before: function(app) {
-            app.use('/proxy', cors(), useProxy);
             app.use(bodyParser.json());
+            app.use('/proxy', cors(), useProxy);
             app.post('/getCommunicationUserToken', async (req, res) => {
                 try {
                     const communicationUserIdentifier = await communicationIdentityClient.createUser();
