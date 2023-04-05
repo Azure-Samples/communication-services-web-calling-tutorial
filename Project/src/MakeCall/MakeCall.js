@@ -37,7 +37,6 @@ export default class MakeCall extends React.Component {
         this.videoConstraints = null;
         this.tokenCredential = null;
         this.logInComponentRef = React.createRef();
-        this.currentCustomTurnConfig = null;
 
         this.state = {
             id: undefined,

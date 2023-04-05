@@ -44,6 +44,7 @@ const generateGuid = function () {
     return `${s4()}${s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
 }
 
+// An example proxy server config
 const processUrl = (originalUrl) => {
     const urlRegExp = new RegExp(`(proxy[:0-9]*)/(.*)$`);
     const matches = originalUrl.match(urlRegExp);
