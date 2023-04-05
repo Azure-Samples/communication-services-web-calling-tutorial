@@ -9,7 +9,8 @@ import {
 } from 'office-ui-fabric-react'
 import { Icon } from '@fluentui/react/lib/Icon';
 import IncomingCallCard from './IncomingCallCard';
-import CallCard from '../MakeCall/CallCard'
+import CallCard from '../MakeCall/CallCard';
+import CallSurvey from '../MakeCall/CallSurvey';
 import Login from './Login';
 import MediaConstraint from './MediaConstraint';
 import { setLogLevel, AzureLogger } from '@azure/logger';
@@ -43,6 +44,7 @@ export default class MakeCall extends React.Component {
             loggedIn: false,
             isCallClientActiveInAnotherTab: false,
             call: undefined,
+            callSurvey: undefined,
             incomingCall: undefined,
             showCallSampleCode: false,
             showEnvironmentInfoCode: false,
@@ -165,10 +167,10 @@ export default class MakeCall extends React.Component {
 
     displayCallEndReason = (callEndReason) => {
         if (callEndReason.code !== 0 || callEndReason.subCode !== 0) {
-            this.setState({ callError: `Call end reason: code: ${callEndReason.code}, subcode: ${callEndReason.subCode}` });
+            this.setState({ callSurvey: this.state.call, callError: `Call end reason: code: ${callEndReason.code}, subcode: ${callEndReason.subCode}` });
         }
 
-        this.setState({ call: null, incomingCall: null });
+        this.setState({ call: null, callSurvey: this.state.call, incomingCall: null });
     }
 
     placeCall = async (withVideo) => {
@@ -357,6 +359,10 @@ export default class MakeCall extends React.Component {
         }
 
         return callOptions;
+    }
+
+    handleCallSurveySubmitted() {
+        this.setState({ callSurvey: null, call: null });
     }
 
     async runPreCallDiagnostics() {
@@ -784,6 +790,13 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         <div>{`Current environment supported:  ${this.environmentInfo?.isSupportedEnvironment}.`}</div>
                     </div>
                 </div>
+                {
+                    this.state?.callSurvey &&
+                    <CallSurvey
+                        onSubmitted={() => this.handleCallSurveySubmitted()}
+                        call={this.state.callSurvey}
+                    />
+                }
                 <div className="card">
                     <div className="ms-Grid">
                         <div className="ms-Grid-row">
@@ -816,14 +829,17 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </pre>
                         }
                         {
-                            this.state.callError &&
-                            <MessageBar
-                                messageBarType={MessageBarType.error}
-                                isMultiline={false}
-                                onDismiss={() => { this.setState({ callError: undefined }) }}
-                                dismissButtonAriaLabel="Close">
-                                <b>{this.state.callError}</b>
-                            </MessageBar>
+                            this.state.callError && 
+                            <div>
+                                <MessageBar
+                                    messageBarType={MessageBarType.error}
+                                    isMultiline={false}
+                                    onDismiss={() => { this.setState({ callError: undefined }) }}
+                                    dismissButtonAriaLabel="Close">
+                                    <b>{this.state.callError}</b>
+                                </MessageBar>
+
+                            </div>
                         }
                         {
                             this.state.deviceManagerWarning &&
@@ -846,7 +862,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </MessageBar>
                         }
                         {
-                            !this.state.incomingCall && !this.state.call &&
+                            !this.state.incomingCall && !this.state.call && !this.state.callSurvey &&
                             <div>
                                 <div className="ms-Grid-row mt-3">
                                     <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
@@ -991,7 +1007,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </div>
                         }
                         {
-                            this.state.call && !this.state.isPreCallDiagnosticsCallInProgress &&
+                            this.state.call && !this.state.callSurvey && !this.state.isPreCallDiagnosticsCallInProgress &&
                             <CallCard
                                 call={this.state.call}
                                 deviceManager={this.deviceManager}
