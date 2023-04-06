@@ -64,6 +64,7 @@ const proxyRouter = (req) => {
 };
 
 const useProxy = createProxyMiddleware({
+    target: 'https://www.microsoft.com', // Not used, but need to mention here
     router: proxyRouter,
     changeOrigin: true,
     secure: false,
@@ -118,10 +119,10 @@ module.exports = {
         allowedHosts:[
             '.azurewebsites.net'
         ],
-        // https: true,
+        https: true,
         before: function(app) {
-            app.use(bodyParser.json());
             app.use('/proxy', cors(), useProxy);
+            app.use(bodyParser.json());
             app.post('/getCommunicationUserToken', async (req, res) => {
                 try {
                     const communicationUserIdentifier = await communicationIdentityClient.createUser();
