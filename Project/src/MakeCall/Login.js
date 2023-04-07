@@ -11,7 +11,6 @@ import * as config from '../../clientConfig.json';
 export default class Login extends React.Component {
     constructor(props) {
         super(props);
-        const defaultProxy = `${window.location.protocol}//${window.location.host}/proxy`;
 
         this.userDetailsResponse = undefined;
         this.displayName = undefined;
@@ -30,8 +29,7 @@ export default class Login extends React.Component {
             loginErrorMessage: undefined,
             proxy: {
                 useProxy: false,
-                defaultUrl: defaultProxy,
-                url: defaultProxy
+                url: ''
             },
             customTurn: {
                 useCustomTurn: false,
@@ -209,7 +207,7 @@ export default class Login extends React.Component {
             ...this.state,
             proxy: {
                 ...this.state.proxy,
-                url: this.state.proxy.defaultUrl
+                url: ''
             }
         });
     };
@@ -578,18 +576,18 @@ export class MyCallingApp {
                                                 checked={this.state.initializeCallAgentAfterPushRegistration}
                                                 onChange={(e, isChecked) => { this.setState({ initializeCallAgentAfterPushRegistration: isChecked })}}/>
                                 </div>
-                                <ProxyConfiguration 
-                                    proxy={this.state.proxy}
-                                    handleProxyChecked={this.handleProxyChecked}
-                                    handleAddProxyUrl={this.handleAddProxyUrl}
-                                    handleProxyUrlReset={this.handleProxyUrlReset}
-                                />
                                 <TurnConfiguration
                                     customTurn={this.state.customTurn}
                                     handleCustomTurnChecked={this.handleCustomTurnChecked}
                                     handleAddTurnConfig={this.handleAddTurnConfig}
                                     handleTurnUrlResetToDefault={this.handleTurnUrlResetToDefault}
                                     handleTurnUrlReset={this.handleTurnUrlReset}
+                                />
+                                <ProxyConfiguration 
+                                    proxy={this.state.proxy}
+                                    handleProxyChecked={this.handleProxyChecked}
+                                    handleAddProxyUrl={this.handleAddProxyUrl}
+                                    handleProxyUrlReset={this.handleProxyUrlReset}
                                 />
                             </div>
                             <div className="mt-3">
@@ -619,6 +617,7 @@ const ProxyConfiguration = (props) => {
                 label='Use proxy'
                 checked={props.proxy.useProxy}
                 onChange={props.handleProxyChecked}
+                disabled={!props.proxy.url}
             />
             <div className='mt-2 ml-3'>{props.proxy.url}</div>
             <TextField
@@ -627,21 +626,24 @@ const ProxyConfiguration = (props) => {
                 onChange={(e) => {
                     setProxyUrl(e.target.value);
                 }}
+                value={proxyUrl}
             >
             </TextField>
             <div className='button-group ms-Grid-row mt-2 ml-3'>
                 <div className='button-container ms-Grid-col ms-sm6'>
                     <PrimaryButton
-                        text='Update URL'
-                        disabled={!props.proxy.useProxy}
+                        text='Add URL'
+                        disabled={!proxyUrl}
                         onClick={() => props.handleAddProxyUrl(proxyUrl)}
                     />
                 </div>
                 <div className='button-container ms-Grid-col ms-sm6'>
                     <PrimaryButton
                         text='Reset'
-                        disabled={!props.proxy.useProxy}
-                        onClick={props.handleProxyUrlReset}
+                        onClick={() => {
+                            setProxyUrl('');
+                            props.handleProxyUrlReset();
+                        }}
                     />
                 </div>
             </div>
@@ -727,21 +729,14 @@ const TurnConfiguration = (props) => {
             >
             </TextField>
             <div className='button-group ms-Grid-row mt-2 ml-3'>
-                <div className='button-container ms-Grid-col ms-sm6'>
+                <div className='button-container ms-Grid-col ms-sm6 ms-xl6 ms-xxl4'>
                     <PrimaryButton
                         text='Add TURN(s)'
                         onClick={handleAddTurn}
                         disabled={!props.customTurn.useCustomTurn}
                     />
                 </div>
-                <div className='button-container ms-Grid-col ms-sm6'>
-                    <PrimaryButton
-                        text='Reset to default'
-                        onClick={props.handleTurnUrlResetToDefault}
-                        disabled={!props.customTurn.useCustomTurn}
-                    />
-                </div>
-                <div className='button-container ms-Grid-col ms-sm6'>
+                <div className='button-container ms-Grid-col ms-sm6 ms-xl6 ms-xxl4'>
                     <PrimaryButton
                         text='Clear'
                         onClick={props.handleTurnUrlReset}

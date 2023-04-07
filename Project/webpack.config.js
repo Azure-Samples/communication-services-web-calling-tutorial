@@ -4,8 +4,6 @@ const HtmlWebPackPlugin = require("html-webpack-plugin");
 const config = require("./serverConfig.json");
 const axios = require("axios");
 const bodyParser = require('body-parser');
-const cors = require('cors');
-const { createProxyMiddleware } = require('http-proxy-middleware');
 const CommunicationRelayClient = require('@azure/communication-network-traversal').CommunicationRelayClient;
 
 if(!config || !config.connectionString || config.connectionString.indexOf('endpoint=') === -1)
@@ -43,36 +41,6 @@ const generateGuid = function () {
     }
     return `${s4()}${s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
 }
-
-// An example proxy server config
-const processUrl = (originalUrl) => {
-    const urlRegExp = new RegExp(`(proxy[:0-9]*)/(.*)$`);
-    const matches = originalUrl.match(urlRegExp);
-    if (!matches || matches.length < 3) {
-      return originalUrl;
-    }
-    const returnUrl = `https://${matches[2]}`;
-    console.log(`Proxying ${originalUrl} to ${returnUrl}`)
-    return returnUrl;
-};
-
-const proxyRouter = (req) => {
-    if (!req.originalUrl && !req.url) {
-        return '';
-    }
-    return processUrl(req.originalUrl || req.url);
-};
-
-const useProxy = createProxyMiddleware({
-    target: 'https://www.microsoft.com', // Not used, but need to mention here
-    router: proxyRouter,
-    changeOrigin: true,
-    secure: false,
-    followRedirects: true,
-    ignorePath: true,
-    ws: true,
-    logLevel: 'debug'
-});
 
 module.exports = {
     devtool: 'inline-source-map',
@@ -121,7 +89,6 @@ module.exports = {
         ],
         https: true,
         before: function(app) {
-            app.use('/proxy', cors(), useProxy);
             app.use(bodyParser.json());
             app.post('/getCommunicationUserToken', async (req, res) => {
                 try {
