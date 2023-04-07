@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@azure/communication-administration": "1.0.0-beta.4",
-    "@azure/communication-calling": "file:./custom_dependencies/azure-communication-calling-1.13.0-beta.1.tgz",
+    "@azure/communication-calling": "1.12.0-beta.2",
     "@azure/communication-calling-effects": "1.0.0-beta.1",
     "@azure/communication-network-traversal": "^1.1.0-beta.1",
     "@fluentui/react": "^7.158.1",
@@ -13,7 +13,7 @@
     "react-onesignal": "^2.0.4"
   },
   "scripts": {
-    "start-local": "webpack-dev-server --port 3000 --mode development",
+    "start-local": "webpack-dev-server --port 5000 --mode development",
     "build-local": "webpack --mode development",
     "start": "webpack-dev-server --host 0.0.0.0",
     "build": "webpack"
