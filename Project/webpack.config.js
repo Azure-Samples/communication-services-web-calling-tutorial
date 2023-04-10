@@ -87,7 +87,6 @@ module.exports = {
         allowedHosts:[
             '.azurewebsites.net'
         ],
-        https: true,
         before: function(app) {
             app.use(bodyParser.json());
             app.post('/getCommunicationUserToken', async (req, res) => {
