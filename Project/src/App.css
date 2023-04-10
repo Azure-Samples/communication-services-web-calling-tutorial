@@ -981,3 +981,21 @@ h3 {
   order: 0;
   flex-basis: 100%;
 }
+
+.pre-init-option {
+  padding-top: 2rem;
+}
+.pre-init-option .button-group {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.pre-init-option .button-container {
+  padding: 10px 10px 0 0;
+  display: flex;
+  justify-content: center;
+}
+.pre-init-option button {
+  width: 100%;
+  max-width: 150px;
+}

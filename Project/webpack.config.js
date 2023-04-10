@@ -4,6 +4,7 @@ const HtmlWebPackPlugin = require("html-webpack-plugin");
 const config = require("./serverConfig.json");
 const axios = require("axios");
 const bodyParser = require('body-parser');
+const CommunicationRelayClient = require('@azure/communication-network-traversal').CommunicationRelayClient;
 
 if(!config || !config.connectionString || config.connectionString.indexOf('endpoint=') === -1)
 {
@@ -137,6 +138,23 @@ module.exports = {
                     });
                 } catch (e) {
                     console.log('Error setting registration token', e);
+                    res.sendStatus(500);
+                }
+            });
+            app.get('/customRelayConfig', async (req, res) => {
+                console.log('Requesting custom TURN server configuration');
+                try {
+                    const relayClient = new CommunicationRelayClient(config.connectionString);
+                    const relayConfig = await relayClient.getRelayConfiguration();
+                    if (relayConfig) {
+                        res.status(200).json({
+                            relayConfig
+                        });
+                    } else {
+                        throw 'No relay config returned from service';
+                    }
+                } catch (e) {
+                    console.log(`Error creating custom TURN configuration: ${e}`);
                     res.sendStatus(500);
                 }
             });
