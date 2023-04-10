@@ -43,37 +43,15 @@ export default class StarRating extends React.Component {
                 <div className="ms-Grid-row">
                     <div className="ms-Grid-col ms-sm6">
                         <div className="text-center">
-                            <span className="in-call-button"
-                                title={`1`}
-                                variant="secondary"
-                                onClick={() => this.rate(1)}>
-                                <Icon iconName={`${this.state.currentScore >= 1 ? 'FavoriteStarFill' : 'FavoriteStar'}`} />
-                            </span>
-                            <span className="in-call-button"
-                                title={`1`}
-                                variant="secondary"
-                                onClick={() => this.rate(2)}>
-                                <Icon iconName={`${this.state.currentScore >= 2 ? 'FavoriteStarFill' : 'FavoriteStar'}`} />
-                            </span>
-                            <span className="in-call-button"
-                                title={`1`}
-                                variant="secondary"
-                                onClick={() => this.rate(3)}>
-                                <Icon iconName={`${this.state.currentScore >= 3 ? 'FavoriteStarFill' : 'FavoriteStar'}`} />
-                            </span>
-                            <span className="in-call-button"
-                                title={`1`}
-                                variant="secondary"
-                                onClick={() => this.rate(4)}>
-                                <Icon iconName={`${this.state.currentScore >= 4 ? 'FavoriteStarFill' : 'FavoriteStar'}`} />
-                            </span>
-                            <span className="in-call-button"
-                                title={`1`}
-                                variant="secondary"
-                                onClick={() => this.rate(5)}>
-                                <Icon iconName={`${this.state.currentScore >= 5 ? 'FavoriteStarFill' : 'FavoriteStar'}`} />
-                            </span>
-
+                            {[1, 2, 3, 4, 5].map(v =>
+                                <span className="in-call-button"
+                                    key={v}
+                                    title={v}
+                                    variant="secondary"
+                                    onClick={() => this.rate(v)}>
+                                    <Icon iconName={`${this.state.currentScore >= v ? 'FavoriteStarFill' : 'FavoriteStar'}`} />
+                                </span>
+                            )}
                         </div>
                     </div>
                     <div className="ms-Grid-col ms-sm6">
