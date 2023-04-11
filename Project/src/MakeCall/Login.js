@@ -7,16 +7,20 @@ import { utils } from "../Utils/Utils";
 import { v4 as uuid } from 'uuid';
 import OneSignal from "react-onesignal";
 import * as config from '../../clientConfig.json';
+import { TurnConfiguration } from './NetworkConfiguration/TurnConfiguration';
+import { ProxyConfiguration } from './NetworkConfiguration/ProxyConfiguration';
 
 export default class Login extends React.Component {
     constructor(props) {
         super(props);
+
         this.userDetailsResponse = undefined;
         this.displayName = undefined;
         this.clientTag = uuid();
         this.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
         this._callAgentInitPromise = undefined;
         this._callAgentInitPromiseResolve = undefined;
+        this.currentCustomTurnConfig = undefined;
         this.state = {
             initializedOneSignal: false,
             subscribedForPushNotifications: false,
@@ -24,7 +28,16 @@ export default class Login extends React.Component {
             showUserProvisioningAndSdkInitializationCode: false,
             showSpinner: false,
             loginWarningMessage: undefined,
-            loginErrorMessage: undefined
+            loginErrorMessage: undefined,
+            proxy: {
+                useProxy: false,
+                url: ''
+            },
+            customTurn: {
+                useCustomTurn: false,
+                isLoading: false,
+                turn: null
+            }
         }
     }
 
@@ -103,8 +116,14 @@ export default class Login extends React.Component {
             }
             if (!this.state.subscribedForPushNotifications ||
                 (this.state.subscribedForPushNotifications && this.state.initializeCallAgentAfterPushRegistration)) {
-                await this.props.onLoggedIn({ communicationUserId: this.userDetailsResponse.communicationUserToken.user.communicationUserId,
-                    token: this.userDetailsResponse.communicationUserToken.token, displayName: this.displayName, clientTag:this.clientTag });
+                await this.props.onLoggedIn({ 
+                    communicationUserId: this.userDetailsResponse.communicationUserToken.user.communicationUserId,
+                    token: this.userDetailsResponse.communicationUserToken.token,
+                    displayName: this.displayName,
+                    clientTag:this.clientTag,
+                    proxy: this.state.proxy,
+                    customTurn: this.state.customTurn
+                });
             }
             console.log('Login response: ', this.userDetailsResponse);
             this.setState({ loggedIn: true });
@@ -131,8 +150,14 @@ export default class Login extends React.Component {
                         communicationUserId: utils.getIdentifierText(this.userDetailsResponse.communicationUserToken.user)
                     });
                 }
-                this.props.onLoggedIn({ communicationUserId: this.userDetailsResponse.communicationUserToken.user.communicationUserId,
-                    token: this.userDetailsResponse.communicationUserToken.token, displayName: this.displayName, clientTag:this.clientTag });
+                this.props.onLoggedIn({ 
+                    communicationUserId: this.userDetailsResponse.communicationUserToken.user.communicationUserId,
+                    token: this.userDetailsResponse.communicationUserToken.token,
+                    displayName: this.displayName,
+                    clientTag:this.clientTag,
+                    proxy: this.state.proxy,
+                    customTurn: this.state.customTurn
+                });
                 this._callAgentInitPromise = new Promise((resolve) => { this._callAgentInitPromiseResolve = resolve });
                 await this._callAgentInitPromise;
                 console.log('Login response: ', this.userDetailsResponse);
@@ -155,6 +180,160 @@ export default class Login extends React.Component {
         if (!!this._callAgentInitPromiseResolve) {
             this._callAgentInitPromiseResolve();
         }
+    }
+
+    handleProxyChecked = (e, isChecked) => {
+        this.setState({
+            ...this.state,
+            proxy: {
+                ...this.state.proxy,
+                useProxy: isChecked
+            }
+        });
+    };
+
+    handleAddProxyUrl = (input) => {
+        if (input) {
+            this.setState({
+                ...this.state,
+                proxy: {
+                    ...this.state.proxy,
+                    url: input
+                }
+            });
+        }
+    };
+
+    handleProxyUrlReset = () => {
+        this.setState({
+            ...this.state,
+            proxy: {
+                ...this.state.proxy,
+                url: ''
+            }
+        });
+    };
+
+    handleAddTurnConfig = (iceServer) => {
+        const turnConfig = this.state.customTurn.turn ?? {
+            iceServers: []
+        };
+        turnConfig.iceServers.push(iceServer);
+
+        this.setState({
+            ...this.state,
+            customTurn: {
+                ...this.state.customTurn,
+                turn: turnConfig
+            }
+        });
+    }
+
+    handleCustomTurnChecked = (e, isChecked) => {
+        if (isChecked) {
+            this.setState({
+                ...this.state,
+                customTurn: {
+                    ...this.state.customTurn,
+                    useCustomTurn: true,
+                    isLoading: true
+                }
+            });
+    
+            this.getOrCreateCustomTurnConfiguration().then(res => {
+                this.setState({
+                    ...this.state,
+                    customTurn: {
+                        ...this.state.customTurn,
+                        useCustomTurn: !!res ?? false,
+                        isLoading: false,
+                        turn: res
+                    }
+                });
+            }).catch(error => {
+                console.error(`Not able to fetch custom TURN: ${error}`);
+                this.setState({
+                    ...this.state,
+                    customTurn: {
+                        ...this.state.customTurn,
+                        useCustomTurn: false,
+                        isLoading: false,
+                        turn: null
+                    }
+                });
+            });
+        } else {
+            this.setState({
+                ...this.state,
+                customTurn: {
+                    ...this.state.customTurn,
+                    useCustomTurn: false,
+                    isLoading: false,
+                    turn: null
+                }
+            });
+        }
+    }
+
+    getOrCreateCustomTurnConfiguration = async () => {
+        if (!this.currentCustomTurnConfig || Date.now() > new Date(this.currentCustomTurnConfig.expiresOn).getTime()) {
+            // Credentials expired. Try to get new ones.
+            const response = await fetch(`${window.location.protocol}//${window.location.host}/customRelayConfig`);
+            const relayConfig = (await response.json()).relayConfig;
+            this.currentCustomTurnConfig = relayConfig;
+        }
+
+        const iceServers = this.currentCustomTurnConfig.iceServers.map(iceServer => {
+            return {
+                urls: [...iceServer.urls],
+                username: iceServer.username,
+                credential: iceServer.credential
+            };
+        });
+
+        return { iceServers };
+    }
+
+    handleTurnUrlResetToDefault = () => {
+        this.setState({
+            ...this.state,
+            customTurn: {
+                ...this.state.customTurn,
+                isLoading: true
+            }
+        });
+
+        this.getOrCreateCustomTurnConfiguration().then(res => {
+            this.setState({
+                ...this.state,
+                customTurn: {
+                    ...this.state.customTurn,
+                    isLoading: false,
+                    turn: res
+                }
+            });
+        }).catch(error => {
+            console.error(`Not able to fetch custom TURN: ${error}`);
+            this.setState({
+                ...this.state,
+                customTurn: {
+                    ...this.state.customTurn,
+                    useCustomTurn: false,
+                    isLoading: false,
+                    turn: null
+                }
+            });
+        });
+    }
+
+    handleTurnUrlReset = () => {
+        this.setState({
+            ...this.state,
+            customTurn: {
+                ...this.state.customTurn,
+                turn: null
+            }
+        });
     }
 
     render() {
@@ -382,7 +561,7 @@ export class MyCallingApp {
                                 </div>
                             </div>
                             <div className="ms-Grid-row">
-                                <div className="push-notification-options mt-4"
+                                <div className="pre-init-option push-notification-options ms-Grid-col ms-lg4 ms-sm12"
                                     disabled={
                                         !this.state.initializedOneSignal ||
                                         !this.state.subscribedForPushNotifications ||
@@ -399,6 +578,19 @@ export class MyCallingApp {
                                                 checked={this.state.initializeCallAgentAfterPushRegistration}
                                                 onChange={(e, isChecked) => { this.setState({ initializeCallAgentAfterPushRegistration: isChecked })}}/>
                                 </div>
+                                <TurnConfiguration
+                                    customTurn={this.state.customTurn}
+                                    handleCustomTurnChecked={this.handleCustomTurnChecked}
+                                    handleAddTurnConfig={this.handleAddTurnConfig}
+                                    handleTurnUrlResetToDefault={this.handleTurnUrlResetToDefault}
+                                    handleTurnUrlReset={this.handleTurnUrlReset}
+                                />
+                                <ProxyConfiguration 
+                                    proxy={this.state.proxy}
+                                    handleProxyChecked={this.handleProxyChecked}
+                                    handleAddProxyUrl={this.handleAddProxyUrl}
+                                    handleProxyUrlReset={this.handleProxyUrlReset}
+                                />
                             </div>
                             <div className="mt-3">
                                 <PrimaryButton className="primary-button mt-3"
