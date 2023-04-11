@@ -61,7 +61,7 @@ export default class CallSurvey extends React.Component {
         rating.overallRating = { score: this.state.overallRating, issues: [this.state.overallIssue] };
         if (this.state.audioRating !== 0) rating.audioRating = { score: this.state.audioRating, issues: [this.state.audioIssue] };
         if (this.state.videoRating !== 0) rating.videoRating = { score: this.state.videoRating, issues: [this.state.videoIssue] };
-        if (this.state.screenShareRating !== 0) rating.screenShareRating = { score: this.state.screenShareRating, issues: [this.state.screenShareIssue] };
+        if (this.state.screenShareRating !== 0) rating.screenshareRating = { score: this.state.screenShareRating, issues: [this.state.screenShareIssue] };
         this.call.feature(Features.CallSurvey).submitSurvey(rating).then(() => {
             this.props.onSubmitted();
         }).catch((e) => {
