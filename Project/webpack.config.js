@@ -120,6 +120,14 @@ module.exports = {
                         token: req.body.token,
                         user: { communicationUserId: req.body.communicationUserId }
                     };
+
+                    if (!config.functionAppOneSignalTokenRegistrationApiKey) {
+                        res.setHeader('Content-Type', 'application/json');
+                        res.status(200).json({
+                            communicationUserToken
+                        });
+                    }
+
                     let pair = [...oneSignalRegistrationTokenToAcsUserAccesTokenMap.entries()].find((pair) => {
                         return pair[1].token === communicationUserToken.token &&
                             pair[1].user.communicationUserId === communicationUserToken.user.communicationUserId;
