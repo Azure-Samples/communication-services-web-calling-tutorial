@@ -546,7 +546,7 @@ export class MyCallingApp {
                                                     onChange={(e) => { this.displayName = e.target.value }} />
                                     <TextField className="mt-3"
                                                 defaultValue={this.clientTag}
-                                                label="Optinal - Usage tag for this session"
+                                                label="Optional - Usage tag for this session"
                                                 onChange={(e) => { this.clientTag = e.target.value }} />
                                 </div>
                                 <div className="ms-Grid-col ms-sm12 ms-lg6 ms-xl6 ms-xxl6">
