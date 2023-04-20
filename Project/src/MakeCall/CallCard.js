@@ -594,19 +594,20 @@ export default class CallCard extends React.Component {
     }
 
     remoteParticipantSelectionChanged(identifier, isChecked) {
+        console.log('### remoteParticipantSelectionChanged', isChecked);
         if (isChecked) {
-            this.selectedRemoteParticipants.set(identifier);
+            this.selectedRemoteParticipants.add(identifier);
+        } else {
+            this.selectedRemoteParticipants.delete(identifier);
         }
         const selectedParticipants = [];
         const allParticipants = new Set(this.call.remoteParticipants.map(rp => rp.identifier));
-        // TODO check sync, participant removed
         this.selectedRemoteParticipants.forEach(identifier => {
             if (allParticipants.has(identifier)) {
                 selectedParticipants.push(identifier);
             }
         });
         //this.dataChannelRef.current.changeParticipants(selectedParticipants);
-        console.log('###', selectedParticipants);
     }
 
     render() {

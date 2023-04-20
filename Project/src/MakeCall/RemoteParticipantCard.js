@@ -58,20 +58,14 @@ export default class RemoteParticipantCard extends React.Component {
     }
 
     handleCheckboxChange(e) {
-        if (this.props.onSelectionChanged) {
-            this.props.onSelectionChanged(this.remoteParticipant.identifier, e.target.checked);
-        }
+        this.props.onSelectionChanged(this.remoteParticipant.identifier, e.target.checked);
     }
 
     render() {
         return (
             <li className={`participant-item`} key={utils.getIdentifierText(this.remoteParticipant.identifier)}>
                 <div className="ms-Grid-row">
-                    <div className="ms-Grid-col ms-lg11 ms-sm10">
-                    {
-                        this.isCheckable &&
-                        <input type="checkbox" onChange={e => this.handleCheckboxChange(e)} />
-                    }
+                    <div className="ms-Grid-col ms-lg9 ms-sm8">
                     <Persona className={this.state.isSpeaking ? `speaking-border-for-initials` : ``}
                             size={PersonaSize.size40}
                             text={ this.state.displayName ? this.state.displayName : utils.getIdentifierText(this.remoteParticipant.identifier) }
@@ -87,6 +81,12 @@ export default class RemoteParticipantCard extends React.Component {
                             !this.state.isMuted &&
                             <Icon className="icon-text-large" iconName="Microphone"/>
                         }
+                    </div>
+                    <div className="ms-Grid-col ms-lg1 ms-sm2">
+                    {
+                        this.isCheckable &&
+                        <input type="checkbox" onChange={e => this.handleCheckboxChange(e)} />
+                    }
                     </div>
                 </div>
                 <div className="text-right">
