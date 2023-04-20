@@ -56,6 +56,7 @@ export default class CallCard extends React.Component {
             mediaCollector: undefined
         };
         this.selectedRemoteParticipants = new Set();
+        this.dataChannelRef = React.createRef();
     }
 
     componentWillUnmount() {
@@ -607,7 +608,7 @@ export default class CallCard extends React.Component {
                 selectedParticipants.push(identifier);
             }
         });
-        //this.dataChannelRef.current.changeParticipants(selectedParticipants);
+        this.dataChannelRef.current.setParticipants(selectedParticipants);
     }
 
     render() {
@@ -912,6 +913,12 @@ export default class CallCard extends React.Component {
                             </div>
                         }
                     </div>
+                </div>
+                <div className="ms-Grid-row">
+                {
+                    this.state.callState === 'Connected' &&  this.state.remoteParticipants.length > 0 &&
+                        <DataChannel call={this.call} ref={this.dataChannelRef} remoteParticipants={this.state.remoteParticipants} />
+                }
                 </div>
             </div>
         );
