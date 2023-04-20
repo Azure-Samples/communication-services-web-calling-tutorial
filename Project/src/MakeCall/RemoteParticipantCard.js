@@ -2,6 +2,7 @@ import React, { useEffect, createRef } from "react";
 import { utils } from '../Utils/Utils';
 import { Persona, PersonaSize } from 'office-ui-fabric-react';
 import { Icon } from '@fluentui/react/lib/Icon';
+import { isCommunicationUserIdentifier, isMicrosoftTeamsUserIdentifier } from '@azure/communication-common';
 
 export default class RemoteParticipantCard extends React.Component {
     constructor(props) {
@@ -9,6 +10,8 @@ export default class RemoteParticipantCard extends React.Component {
         this.call = props.call;
         this.remoteParticipant = props.remoteParticipant;
         this.id = utils.getIdentifierText(this.remoteParticipant.identifier);
+        this.isCheckable = isCommunicationUserIdentifier(this.remoteParticipant.identifier) ||
+            isMicrosoftTeamsUserIdentifier(this.remoteParticipant.identifier);
 
         this.state = {
             isSpeaking: this.remoteParticipant.isSpeaking,
@@ -23,6 +26,9 @@ export default class RemoteParticipantCard extends React.Component {
         this.remoteParticipant.off('stateChanged', () => {});
         this.remoteParticipant.off('isSpeakingChanged', () => {});
         this.remoteParticipant.off('displayNameChanged', () => {});
+        if (this.props.onSelectionChanged) {
+            this.props.onSelectionChanged(this.remoteParticipant.identifier, false);
+        }
     }
 
     componentDidMount() {
@@ -51,11 +57,21 @@ export default class RemoteParticipantCard extends React.Component {
         this.call.removeParticipant(identifier).catch((e) => console.error(e))
     }
 
+    handleCheckboxChange(e) {
+        if (this.props.onSelectionChanged) {
+            this.props.onSelectionChanged(this.remoteParticipant.identifier, e.target.checked);
+        }
+    }
+
     render() {
         return (
             <li className={`participant-item`} key={utils.getIdentifierText(this.remoteParticipant.identifier)}>
                 <div className="ms-Grid-row">
                     <div className="ms-Grid-col ms-lg11 ms-sm10">
+                    {
+                        this.isCheckable &&
+                        <input type="checkbox" onChange={e => this.handleCheckboxChange(e)} />
+                    }
                     <Persona className={this.state.isSpeaking ? `speaking-border-for-initials` : ``}
                             size={PersonaSize.size40}
                             text={ this.state.displayName ? this.state.displayName : utils.getIdentifierText(this.remoteParticipant.identifier) }

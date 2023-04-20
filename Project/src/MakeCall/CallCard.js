@@ -55,6 +55,7 @@ export default class CallCard extends React.Component {
             remoteVolumeLevel: undefined,
             mediaCollector: undefined
         };
+        this.selectedRemoteParticipants = new Set();
     }
 
     componentWillUnmount() {
@@ -591,6 +592,23 @@ export default class CallCard extends React.Component {
         this.setState({ allRemoteParticipantStreams: [] });
         setTimeout(() => this.setState({allRemoteParticipantStreams: [...allStreamsBackup]}), 0);
     }
+
+    remoteParticipantSelectionChanged(identifier, isChecked) {
+        if (isChecked) {
+            this.selectedRemoteParticipants.set(identifier);
+        }
+        const selectedParticipants = [];
+        const allParticipants = new Set(this.call.remoteParticipants.map(rp => rp.identifier));
+        // TODO check sync, participant removed
+        this.selectedRemoteParticipants.forEach(identifier => {
+            if (allParticipants.has(identifier)) {
+                selectedParticipants.push(identifier);
+            }
+        });
+        //this.dataChannelRef.current.changeParticipants(selectedParticipants);
+        console.log('###', selectedParticipants);
+    }
+
     render() {
         return (
             <div className="ms-Grid mt-2">
@@ -653,7 +671,10 @@ export default class CallCard extends React.Component {
                                 <ul className="participants-panel-list">
                                     {
                                         this.state.remoteParticipants.map(remoteParticipant =>
-                                            <RemoteParticipantCard key={`${utils.getIdentifierText(remoteParticipant.identifier)}`} remoteParticipant={remoteParticipant} call={this.call} />
+                                            <RemoteParticipantCard key={`${utils.getIdentifierText(remoteParticipant.identifier)}`}
+                                                remoteParticipant={remoteParticipant} call={this.call}
+                                                onSelectionChanged={(identifier, isChecked) => this.remoteParticipantSelectionChanged(identifier, isChecked)}
+                                            />
                                         )
                                     }
                                 </ul>
