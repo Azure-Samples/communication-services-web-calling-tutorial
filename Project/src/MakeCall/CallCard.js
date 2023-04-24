@@ -17,6 +17,7 @@ import { Label } from '@fluentui/react/lib/Label';
 import { AzureLogger } from '@azure/logger';
 import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
+import DataChannelCard from './DataChannelCard';
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -917,7 +918,7 @@ export default class CallCard extends React.Component {
                 <div className="ms-Grid-row">
                 {
                     this.state.callState === 'Connected' &&  this.state.remoteParticipants.length > 0 &&
-                        <DataChannel call={this.call} ref={this.dataChannelRef} remoteParticipants={this.state.remoteParticipants} />
+                        <DataChannelCard call={this.call} ref={this.dataChannelRef} remoteParticipants={this.state.remoteParticipants} />
                 }
                 </div>
             </div>

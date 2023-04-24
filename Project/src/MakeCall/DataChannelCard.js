@@ -52,35 +52,36 @@ export default class DataChannelCard extends React.Component {
             const participantId = utils.getIdentifierText(receiver.senderParticipantIdentifier);
             const displayName = getDisplayName(participantId);
             const from = displayName ? `${participantId} (${displayName})` : participantId;
-            toast.success(`data channel id = ${receiver.id} from ${from} is opened`, toastOptions);
+            toast.success(`data channel id = ${receiver.channelId} from ${from} is opened`, toastOptions);
 
             receiver.on('close', () => {
-                toast.error(`data channel id = ${receiver.id} from ${from} is closed`, toastOptions);
+                toast.error(`data channel id = ${receiver.channelId} from ${from} is closed`, toastOptions);
             });
             receiver.on('messageReady', () => {
-                const message = receiver.receiveMessage();
+                const message = receiver.readMessage();
                 if (!message) return;
-                if (receiver.id === 10000) {
+                if (receiver.channelId === 10000) {
                     messageHandler(message, participantId);
                 }
             });
         });
         this.messageSender = dataChannel.createDataChannelSender({
-            id: 10000
+            channelId: 10000
         });
     }
 
-    changeParticipants(participants) {
-        this.messageSender.changeParticipants(participants);
+    setParticipants(participants) {
+        this.messageSender.setParticipants(participants);
     }
 
     sendMessage() {
         if (this.state.inputMessage) {
-            this.messageSender.sendMessage((new TextEncoder()).encode(this.state.inputMessage)).catch(e => {
+            this.messageSender.sendMessage((new TextEncoder()).encode(this.state.inputMessage)).then(() => {
+                this.setState({
+                    inputMessage: ''
+                });
+            }).catch(e => {
                 toast.error(`sendMessage: ${e.message}`, toastOptions);
-            });
-            this.setState({
-                inputMessage: ''
             });
         }
     }
