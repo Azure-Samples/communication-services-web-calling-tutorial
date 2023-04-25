@@ -226,7 +226,7 @@ export default class CustomVideoEffects extends React.Component {
     render() {
 
         return(
-            <div className="ms-Grid-row">
+            <div className="custom-video-effects-buttons">
                 {
                     this.renderElm()
                 }

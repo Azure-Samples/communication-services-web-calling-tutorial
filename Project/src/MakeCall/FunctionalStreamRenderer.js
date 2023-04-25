@@ -167,10 +167,6 @@ export const FunctionalStreamRenderer = forwardRef(({
     useImperativeHandle(ref, () => ({
         updateReceiveStats(videoStatsReceived) {
             if (videoStatsReceived) {
-                console.log('***** VIDEOSTATS RECEIVED', videoStatsReceived);
-                console.log('***** current videoStats', videoStats);
-                console.log('***** STREAM', stream.isAvailable);
-                console.log('***** RENDERER', renderer);
                 if (videoStatsReceived !== videoStats && stream.isAvailable) {
                     setVideoStats(videoStatsReceived);
                 }
@@ -179,11 +175,12 @@ export const FunctionalStreamRenderer = forwardRef(({
     }));
 
     return (
-        <div id={componentId} ref={componentContainer} className={`stream-container py-3 ms-Grid-col ms-sm-12 ms-lg12 ms-xl12 ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : `ms-xxl6`}`}>
+        <div id={componentId} ref={componentContainer} className={`stream-container ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``}`}>
             <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`} id={videoContainerId} ref={videoContainer}>
                 <h4 className="video-title">
                     {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
                 </h4>
+                <CustomVideoEffects call={call} videoContainerId={videoContainerId} remoteParticipantId={remoteParticipant.identifier} />
                 {
                     isLoading && <div className="remote-video-loading-spinner"></div>
                 }
@@ -194,7 +191,6 @@ export const FunctionalStreamRenderer = forwardRef(({
                     <VideoReceiveStats videoStats={videoStats} />
                 </h4>
             }
-            <CustomVideoEffects call={call} videoContainerId={videoContainerId} remoteParticipantId={remoteParticipant.identifier} />
         </div>
     );
 });
