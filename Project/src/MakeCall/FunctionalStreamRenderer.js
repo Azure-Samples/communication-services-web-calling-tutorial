@@ -173,24 +173,26 @@ export const FunctionalStreamRenderer = forwardRef(({
             }
         }
     }));
-
-    return (
-        <div id={componentId} ref={componentContainer} className={`stream-container ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``}`}>
-            <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`} id={videoContainerId} ref={videoContainer}>
-                <h4 className="video-title">
-                    {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
-                </h4>
-                <CustomVideoEffects call={call} videoContainerId={videoContainerId} remoteParticipantId={remoteParticipant.identifier} />
+    if (stream.isAvailable) {
+        return (
+            <div id={componentId} ref={componentContainer} className={`stream-container ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``} ${stream.isAvailable ? 'rendering' : ''}`}>
+                <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`} id={videoContainerId} ref={videoContainer}>
+                    <h4 className="video-title">
+                        {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
+                    </h4>
+                    <CustomVideoEffects call={call} videoContainerId={videoContainerId} remoteParticipantId={remoteParticipant.identifier} />
+                    {
+                        isLoading && <div className="remote-video-loading-spinner"></div>
+                    }
+                </div>
                 {
-                    isLoading && <div className="remote-video-loading-spinner"></div>
+                    videoStats && showMediaStats &&
+                    <h4 className="video-stats">
+                        <VideoReceiveStats videoStats={videoStats} />
+                    </h4>
                 }
             </div>
-            {
-                videoStats && showMediaStats &&
-                <h4 className="video-stats">
-                    <VideoReceiveStats videoStats={videoStats} />
-                </h4>
-            }
-        </div>
-    );
+        );
+    }
+    return <></>;
 });
