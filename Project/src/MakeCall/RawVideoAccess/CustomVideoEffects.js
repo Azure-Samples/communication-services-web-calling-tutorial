@@ -18,7 +18,7 @@ export default class CustomVideoEffects extends React.Component {
             },
             remove: {
                 label: "Remove effect on local video", 
-                disabled: false
+                disabled: true
             },
             sendDummy: {
                 label: "Send dummy local video", 
@@ -226,7 +226,7 @@ export default class CustomVideoEffects extends React.Component {
     render() {
 
         return(
-            <div className="custom-video-effects-buttons">
+            <div className={`custom-video-effects-buttons ${this.isOutgoingVideoComponent ? 'outgoing' : 'incoming'}`}>
                 {
                     this.renderElm()
                 }

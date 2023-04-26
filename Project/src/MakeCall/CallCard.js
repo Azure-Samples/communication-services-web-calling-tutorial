@@ -53,7 +53,8 @@ export default class CallCard extends React.Component {
             sentResolution: '',
             remoteVolumeIndicator: undefined,
             remoteVolumeLevel: undefined,
-            mediaCollector: undefined
+            mediaCollector: undefined,
+            showParticipantsCard: false
         };
     }
 
@@ -490,6 +491,13 @@ export default class CallCard extends React.Component {
         }));
     }
 
+    async toggleParticipantsCard() {
+        this.setState(prevState => ({
+            ...prevState,
+            showParticipantsCard: !prevState.showParticipantsCard
+        }));
+    }
+
     getDummyAudioStream() {
         const context = new AudioContext();
         const dest = context.createMediaStreamDestination();
@@ -644,21 +652,6 @@ export default class CallCard extends React.Component {
                         )
                     }
                 </div>
-                <div className="ms-Grid-row text-center">
-                    {
-                        this.state.videoOn &&
-                        <div className='ms-Grid-row video-features-container'>
-                            <div className='ms-Grid-col ms-sm12 ms-lg6 video-feature-sample'>
-                                <Label className='title'>Raw Video access</Label>
-                                <CustomVideoEffects call={this.call} deviceManager={this.deviceManager} />
-                            </div>
-                            <div className='ms-Grid-col ms-sm12 ms-lg6 video-feature-sample'>
-                                <Label className='title'>Video effects</Label>
-                                <VideoEffectsContainer call={this.call} />
-                            </div>
-                        </div>
-                    }
-                </div>
                 <div className="ms-Grid-row">
                     <div className={'ms-Grid'}>
                         <div className="mb-2">
@@ -775,6 +768,19 @@ export default class CallCard extends React.Component {
                                         <Icon iconName="NumberedListText" />
                                     }
                                 </span>
+                                <span className="in-call-button"
+                                    title={`${!this.state.showParticipantsCard ? `Show Participants` : `Hide Participants`}`}
+                                    variant="secondary"
+                                    onClick={() => this.toggleParticipantsCard()}>
+                                    {
+                                        this.state.showParticipantsCard &&
+                                        <Icon iconName="Hide3" />
+                                    }
+                                    {
+                                        !this.state.showParticipantsCard &&
+                                        <Icon iconName="People" />
+                                    }
+                                </span>
                                 <Panel type={PanelType.medium}
                                     isLightDismiss
                                     isOpen={this.state.showSettings}
@@ -845,8 +851,23 @@ export default class CallCard extends React.Component {
                         </div>
                     </div>
                 </div>
+                <div className="ms-Grid-row text-center">
+                    {
+                        this.state.videoOn &&
+                        <div className="text-center">
+                            <div className='video-feature-sample'>
+                                <Label className='title'>Raw Video access</Label>
+                                <CustomVideoEffects call={this.call} deviceManager={this.deviceManager} />
+                            </div>
+                            <div className='video-feature-sample'>
+                                <Label className='title'>Video effects</Label>
+                                <VideoEffectsContainer call={this.call} />
+                            </div>
+                        </div>
+                    }
+                </div>
                 {
-                    this.state.callState === 'Connected' &&
+                    this.state.callState === 'Connected' && this.state.showParticipantsCard &&
                     <div>
                         <div className="participants-panel mt-1 mb-3">
                             <Toggle label={
