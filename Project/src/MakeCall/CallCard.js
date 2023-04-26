@@ -2,7 +2,7 @@ import React from "react";
 import { MessageBar, MessageBarType, DefaultButton } from 'office-ui-fabric-react'
 import { Toggle } from '@fluentui/react/lib/Toggle';
 import { TooltipHost } from '@fluentui/react/lib/Tooltip';
-import { FunctionalStreamRenderer as StreamRenderer} from "./FunctionalStreamRenderer";
+import { FunctionalStreamRenderer as StreamRenderer } from "./FunctionalStreamRenderer";
 import AddParticipantPopover from "./AddParticipantPopover";
 import RemoteParticipantCard from "./RemoteParticipantCard";
 import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
@@ -53,25 +53,26 @@ export default class CallCard extends React.Component {
             sentResolution: '',
             remoteVolumeIndicator: undefined,
             remoteVolumeLevel: undefined,
-            mediaCollector: undefined
+            mediaCollector: undefined,
+            showParticipantsCard: false
         };
     }
 
     componentWillUnmount() {
-        this.call.off('stateChanged', () => {});
-        this.deviceManager.off('videoDevicesUpdated', () => {});
-        this.deviceManager.off('audioDevicesUpdated', () => {});
-        this.deviceManager.off('selectedSpeakerChanged', () => {});
-        this.deviceManager.off('selectedMicrophoneChanged', () => {});
-        this.call.off('localVideoStreamsUpdated', () => {});
-        this.call.off('idChanged', () => {});
-        this.call.off('isMutedChanged', () => {});
-        this.call.off('isIncomingAudioMutedChanged', () => {});
-        this.call.off('isScreenSharingOnChanged', () => {});
-        this.call.off('remoteParticipantsUpdated', () => {});
-        this.state.mediaCollector?.off('sampleReported', () => {});
-        this.state.mediaCollector?.off('summaryReported', () => {});
-        this.call.feature(Features.DominantSpeakers).off('dominantSpeakersChanged', () => {});
+        this.call.off('stateChanged', () => { });
+        this.deviceManager.off('videoDevicesUpdated', () => { });
+        this.deviceManager.off('audioDevicesUpdated', () => { });
+        this.deviceManager.off('selectedSpeakerChanged', () => { });
+        this.deviceManager.off('selectedMicrophoneChanged', () => { });
+        this.call.off('localVideoStreamsUpdated', () => { });
+        this.call.off('idChanged', () => { });
+        this.call.off('isMutedChanged', () => { });
+        this.call.off('isIncomingAudioMutedChanged', () => { });
+        this.call.off('isScreenSharingOnChanged', () => { });
+        this.call.off('remoteParticipantsUpdated', () => { });
+        this.state.mediaCollector?.off('sampleReported', () => { });
+        this.state.mediaCollector?.off('summaryReported', () => { });
+        this.call.feature(Features.DominantSpeakers).off('dominantSpeakersChanged', () => { });
     }
 
     componentDidMount() {
@@ -178,7 +179,7 @@ export default class CallCard extends React.Component {
             this.call.on('stateChanged', callStateChanged);
 
             this.call.localVideoStreams.forEach(lvs => {
-                this.setState({ videoOn: true});
+                this.setState({ videoOn: true });
             });
             this.call.on('localVideoStreamsUpdated', e => {
                 e.added.forEach(lvs => {
@@ -217,7 +218,7 @@ export default class CallCard extends React.Component {
                 });
                 e.removed.forEach(p => {
                     console.log('participantRemoved', p);
-                    if(p.callEndReason) {
+                    if (p.callEndReason) {
                         this.setState(prevState => ({
                             ...prevState,
                             callMessage: `${prevState.callMessage ? prevState.callMessage + `\n` : ``}
@@ -226,7 +227,7 @@ export default class CallCard extends React.Component {
                     }
                     this.setState({ remoteParticipants: this.state.remoteParticipants.filter(remoteParticipant => { return remoteParticipant !== p }) });
                     this.setState({ allRemoteParticipantStreams: this.state.allRemoteParticipantStreams.filter(s => { return s.participant !== p }) });
-                    p.off('videoStreamsUpdated', () => {});
+                    p.off('videoStreamsUpdated', () => { });
                 });
             });
             const mediaCollector = this.call.feature(Features.MediaStats).createCollector();
@@ -270,7 +271,7 @@ export default class CallCard extends React.Component {
 
             const dominantSpeakersChangedHandler = async () => {
                 try {
-                    if(this.state.dominantSpeakerMode) {
+                    if (this.state.dominantSpeakerMode) {
 
                         const newDominantSpeakerIdentifier = this.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
                         if (newDominantSpeakerIdentifier) {
@@ -284,7 +285,7 @@ export default class CallCard extends React.Component {
                             for (const streamTuple of this.state.allRemoteParticipantStreams) {
                                 if (streamTuple.participant === newDominantRemoteParticipant && streamTuple.stream.isAvailable) {
                                     streamsToRender.push(streamTuple);
-                                    if(!streamTuple.streamRendererComponentRef.current.getRenderer()) {
+                                    if (!streamTuple.streamRendererComponentRef.current.getRenderer()) {
                                         await streamTuple.streamRendererComponentRef.current.createRenderer();
                                     };
                                 }
@@ -293,7 +294,7 @@ export default class CallCard extends React.Component {
                             const previousDominantSpeaker = this.state.dominantRemoteParticipant;
                             this.setState({ dominantRemoteParticipant: newDominantRemoteParticipant });
 
-                            if(previousDominantSpeaker) {
+                            if (previousDominantSpeaker) {
                                 // Remove the old dominant remote participant's streams
                                 this.state.allRemoteParticipantStreams.forEach(streamTuple => {
                                     if (streamTuple.participant === previousDominantSpeaker) {
@@ -317,15 +318,15 @@ export default class CallCard extends React.Component {
             };
 
             const dominantSpeakerIdentifier = this.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
-            if(dominantSpeakerIdentifier) {
+            if (dominantSpeakerIdentifier) {
                 this.setState({ dominantRemoteParticipant: utils.getRemoteParticipantObjFromIdentifier(dominantSpeakerIdentifier) })
             }
             this.call.feature(Features.DominantSpeakers).on('dominantSpeakersChanged', dominantSpeakersChangedHandler);
 
-            const capabilitiesFeature =  this.call.feature(Features.Capabilities);
-            const capabilities =  this.call.feature(Features.Capabilities).capabilities;
+            const capabilitiesFeature = this.call.feature(Features.Capabilities);
+            const capabilities = this.call.feature(Features.Capabilities).capabilities;
             capabilitiesFeature.on('capabilitiesChanged', () => {
-                const updatedCapabilities  = capabilitiesFeature.capabilities;
+                const updatedCapabilities = capabilitiesFeature.capabilities;
             });
         }
     }
@@ -340,7 +341,7 @@ export default class CallCard extends React.Component {
 
         const addToListOfAllRemoteParticipantStreams = (participantStreams) => {
             if (participantStreams) {
-                let participantStreamTuples = participantStreams.map(stream => { return { stream, participant, streamRendererComponentRef: React.createRef() }});
+                let participantStreamTuples = participantStreams.map(stream => { return { stream, participant, streamRendererComponentRef: React.createRef() } });
                 participantStreamTuples.forEach(participantStreamTuple => {
                     if (!this.state.allRemoteParticipantStreams.find((v) => { return v === participantStreamTuple })) {
                         this.setState(prevState => ({
@@ -490,6 +491,13 @@ export default class CallCard extends React.Component {
         }));
     }
 
+    async toggleParticipantsCard() {
+        this.setState(prevState => ({
+            ...prevState,
+            showParticipantsCard: !prevState.showParticipantsCard
+        }));
+    }
+
     getDummyAudioStream() {
         const context = new AudioContext();
         const dest = context.createMediaStreamDestination();
@@ -528,7 +536,7 @@ export default class CallCard extends React.Component {
                 this.setState({ dominantSpeakerMode: false });
                 // Render all remote participants's streams
                 for (const streamTuple of this.state.allRemoteParticipantStreams) {
-                    if(streamTuple.stream.isAvailable && !streamTuple.streamRendererComponentRef.current.getRenderer()) {
+                    if (streamTuple.stream.isAvailable && !streamTuple.streamRendererComponentRef.current.getRenderer()) {
                         await streamTuple.streamRendererComponentRef.current.createRenderer();
                         streamTuple.streamRendererComponentRef.current.attachRenderer();
                     }
@@ -538,7 +546,7 @@ export default class CallCard extends React.Component {
                 this.setState({ dominantSpeakerMode: true });
                 // Dispose of all remote participants's stream renderers
                 const dominantSpeakerIdentifier = this.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
-                if(!dominantSpeakerIdentifier) {
+                if (!dominantSpeakerIdentifier) {
                     this.state.allRemoteParticipantStreams.forEach(v => {
                         v.streamRendererComponentRef.current.disposeRenderer();
                     });
@@ -552,7 +560,7 @@ export default class CallCard extends React.Component {
                 this.setState({ dominantRemoteParticipant: dominantRemoteParticipant });
                 // Dispose of all the remote participants's stream renderers except for the dominant speaker
                 this.state.allRemoteParticipantStreams.forEach(v => {
-                    if(v.participant !== dominantRemoteParticipant) {
+                    if (v.participant !== dominantRemoteParticipant) {
                         v.streamRendererComponentRef.current.disposeRenderer();
                     }
                 });
@@ -589,7 +597,7 @@ export default class CallCard extends React.Component {
     updateStreamList() {
         const allStreamsBackup = [...this.state.allRemoteParticipantStreams];
         this.setState({ allRemoteParticipantStreams: [] });
-        setTimeout(() => this.setState({allRemoteParticipantStreams: [...allStreamsBackup]}), 0);
+        setTimeout(() => this.setState({ allRemoteParticipantStreams: [...allStreamsBackup] }), 0);
     }
     render() {
         return (
@@ -615,52 +623,37 @@ export default class CallCard extends React.Component {
                         <CurrentCallInformation sentResolution={this.state.sentResolution} call={this.call} />
                     }
                 </div>
-                <div className="ms-Grid-row">
+                <div>
                     {
-                        this.state.callState === 'Connected' &&
-                        <div className="ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl3">
-                            <div className="participants-panel mt-1 mb-3">
-                                <Toggle label={
-                                        <div>
-                                            Dominant Speaker mode{' '}
-                                            <TooltipHost content={`Render the most dominant speaker's video streams only or render all remote participant video streams`}>
-                                                <Icon iconName="Info" aria-label="Info tooltip" />
-                                            </TooltipHost>
-                                        </div>
-                                    }
-                                    styles={{
-                                        text : { color: '#edebe9' },
-                                        label: { color: '#edebe9' },
-                                    }}
-                                    inlineLabel
-                                    onText="On"
-                                    offText="Off"
-                                    onChange={() => { this.toggleDominantSpeakerMode()}}
-                                />
-                                {
-                                    this.state.dominantSpeakerMode &&
-                                    <div>
-                                        Current dominant speaker: {this.state.dominantRemoteParticipant ? utils.getIdentifierText(this.state.dominantRemoteParticipant.identifier) : `None`}
-                                    </div>
-                                }
-                                <div className="participants-panel-title custom-row text-center">
-                                    <AddParticipantPopover call={this.call} />
-                                </div>
-                                {
-                                    this.state.remoteParticipants.length === 0 &&
-                                    <p className="text-center">No other participants currently in the call</p>
-                                }
-                                <ul className="participants-panel-list">
-                                    {
-                                        this.state.remoteParticipants.map(remoteParticipant =>
-                                            <RemoteParticipantCard key={`${utils.getIdentifierText(remoteParticipant.identifier)}`} remoteParticipant={remoteParticipant} call={this.call} />
-                                        )
-                                    }
-                                </ul>
-                            </div>
+                        this.state.showLocalVideo &&
+                        <div className="mb-3">
+                            <LocalVideoPreviewCard selectedCameraDeviceId={this.state.selectedCameraDeviceId} deviceManager={this.deviceManager} />
                         </div>
                     }
-                    <div className={this.state.callState === 'Connected' ? `ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl9` : 'ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl12'}>
+                </div>
+                <div className="video-grid-row">
+                    {
+                        (this.state.callState === 'Connected' ||
+                            this.state.callState === 'LocalHold' ||
+                            this.state.callState === 'RemoteHold') &&
+                        this.state.allRemoteParticipantStreams.map(v =>
+                            <StreamRenderer
+                                key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`}
+                                ref={v.streamRendererComponentRef}
+                                stream={v.stream}
+                                remoteParticipant={v.participant}
+                                dominantSpeakerMode={this.state.dominantSpeakerMode}
+                                dominantRemoteParticipant={this.state.dominantRemoteParticipant}
+                                call={this.call}
+                                maximumNumberOfRenderers={this.maximumNumberOfRenderers}
+                                updateStreamList={() => this.updateStreamList()}
+                                showMediaStats={this.state.logMediaStats}
+                            />
+                        )
+                    }
+                </div>
+                <div className="ms-Grid-row">
+                    <div className={'ms-Grid'}>
                         <div className="mb-2">
                             {
                                 this.state.callState !== 'Connected' &&
@@ -723,8 +716,8 @@ export default class CallCard extends React.Component {
                                 </span>
                                 {
                                     (this.state.callState === 'Connected' ||
-                                    this.state.callState === 'LocalHold' ||
-                                    this.state.callState === 'RemoteHold') &&
+                                        this.state.callState === 'LocalHold' ||
+                                        this.state.callState === 'RemoteHold') &&
                                     <span className="in-call-button"
                                         title={`${this.state.callState === 'LocalHold' ? 'Unhold' : 'Hold'} call`}
                                         variant="secondary"
@@ -763,7 +756,7 @@ export default class CallCard extends React.Component {
                                     }
                                 </span>
                                 <span className="in-call-button"
-                                    title={`${this.state.logMediaStats? 'Stop' : 'Start'} logging MediaStats`}
+                                    title={`${this.state.logMediaStats ? 'Stop' : 'Start'} logging MediaStats`}
                                     variant="secondary"
                                     onClick={() => this.handleMediaStatsLogState()}>
                                     {
@@ -773,6 +766,19 @@ export default class CallCard extends React.Component {
                                     {
                                         !this.state.logMediaStats &&
                                         <Icon iconName="NumberedListText" />
+                                    }
+                                </span>
+                                <span className="in-call-button"
+                                    title={`${!this.state.showParticipantsCard ? `Show Participants` : `Hide Participants`}`}
+                                    variant="secondary"
+                                    onClick={() => this.toggleParticipantsCard()}>
+                                    {
+                                        this.state.showParticipantsCard &&
+                                        <Icon iconName="Hide3" />
+                                    }
+                                    {
+                                        !this.state.showParticipantsCard &&
+                                        <Icon iconName="People" />
                                     }
                                 </span>
                                 <Panel type={PanelType.medium}
@@ -797,7 +803,7 @@ export default class CallCard extends React.Component {
                                                     onChange={this.cameraDeviceSelectionChanged}
                                                     label={'Camera'}
                                                     options={this.state.cameraDeviceOptions}
-                                                    placeHolder={this.state.cameraDeviceOptions.length === 0 ? 'No camera devices found' : this.state.selectedCameraDeviceId }
+                                                    placeHolder={this.state.cameraDeviceOptions.length === 0 ? 'No camera devices found' : this.state.selectedCameraDeviceId}
                                                     styles={{ dropdown: { width: 400 } }}
                                                 />
                                             }
@@ -829,68 +835,81 @@ export default class CallCard extends React.Component {
                                                 />
                                             }
                                             <div>
-                                            {
-                                                (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
-                                                <h3>Volume Visualizer</h3>
-                                            }
-                                            {
-                                                (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
-                                                <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} remoteVolumeLevel={this.state.remoteVolumeLevel} />
-                                            }
+                                                {
+                                                    (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
+                                                    <h3>Volume Visualizer</h3>
+                                                }
+                                                {
+                                                    (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
+                                                    <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} remoteVolumeLevel={this.state.remoteVolumeLevel} />
+                                                }
                                             </div>
                                         </div>
                                     </div>
                                 </Panel>
                             </div>
                         </div>
-                        <div className="ms-Grid-row text-center">
-                            {
-                                this.state.videoOn &&
-                                <div className='ms-Grid-row video-features-container'>
-                                    <div className='ms-Grid-col ms-sm12 ms-lg6 video-feature-sample'>
-                                        <Label className='title'>Raw Video access</Label>
-                                        <CustomVideoEffects call={this.call} deviceManager={this.deviceManager} />
-                                    </div>
-                                    <div className='ms-Grid-col ms-sm12 ms-lg6 video-feature-sample'>
-                                        <Label className='title'>Video effects</Label>
-                                        <VideoEffectsContainer call={ this.call } />
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                        <div>
-                            {
-                                this.state.showLocalVideo &&
-                                <div className="mb-3">
-                                    <LocalVideoPreviewCard selectedCameraDeviceId={this.state.selectedCameraDeviceId} deviceManager={this.deviceManager} />
-                                </div>
-                            }
-                        </div>
-                        {
-                            <div className="video-grid-row">
-                                {
-                                    (this.state.callState === 'Connected' ||
-                                    this.state.callState === 'LocalHold' ||
-                                    this.state.callState === 'RemoteHold') &&
-                                    this.state.allRemoteParticipantStreams.map(v =>
-                                        <StreamRenderer
-                                                        key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`}
-                                                        ref ={v.streamRendererComponentRef}
-                                                        stream={v.stream}
-                                                        remoteParticipant={v.participant}
-                                                        dominantSpeakerMode={this.state.dominantSpeakerMode}
-                                                        dominantRemoteParticipant={this.state.dominantRemoteParticipant}
-                                                        call={this.call}
-                                                        maximumNumberOfRenderers={this.maximumNumberOfRenderers}
-                                                        updateStreamList={() => this.updateStreamList()}
-                                                        showMediaStats={this.state.logMediaStats}
-                                                        />
-                                    )
-                                }
-                            </div>
-                        }
                     </div>
                 </div>
+                <div className="ms-Grid-row text-center">
+                    {
+                        this.state.videoOn &&
+                        <div className="text-center">
+                            <div className='video-feature-sample'>
+                                <Label className='title'>Raw Video access</Label>
+                                <CustomVideoEffects call={this.call} deviceManager={this.deviceManager} />
+                            </div>
+                            <div className='video-feature-sample'>
+                                <Label className='title'>Video effects</Label>
+                                <VideoEffectsContainer call={this.call} />
+                            </div>
+                        </div>
+                    }
+                </div>
+                {
+                    this.state.callState === 'Connected' && this.state.showParticipantsCard &&
+                    <div>
+                        <div className="participants-panel mt-1 mb-3">
+                            <Toggle label={
+                                <div>
+                                    Dominant Speaker mode{' '}
+                                    <TooltipHost content={`Render the most dominant speaker's video streams only or render all remote participant video streams`}>
+                                        <Icon iconName="Info" aria-label="Info tooltip" />
+                                    </TooltipHost>
+                                </div>
+                            }
+                                styles={{
+                                    text: { color: '#edebe9' },
+                                    label: { color: '#edebe9' },
+                                }}
+                                inlineLabel
+                                onText="On"
+                                offText="Off"
+                                onChange={() => { this.toggleDominantSpeakerMode() }}
+                            />
+                            {
+                                this.state.dominantSpeakerMode &&
+                                <div>
+                                    Current dominant speaker: {this.state.dominantRemoteParticipant ? utils.getIdentifierText(this.state.dominantRemoteParticipant.identifier) : `None`}
+                                </div>
+                            }
+                            <div className="participants-panel-title custom-row text-center">
+                                <AddParticipantPopover call={this.call} />
+                            </div>
+                            {
+                                this.state.remoteParticipants.length === 0 &&
+                                <p className="text-center">No other participants currently in the call</p>
+                            }
+                            <ul className="participants-panel-list">
+                                {
+                                    this.state.remoteParticipants.map(remoteParticipant =>
+                                        <RemoteParticipantCard key={`${utils.getIdentifierText(remoteParticipant.identifier)}`} remoteParticipant={remoteParticipant} call={this.call} />
+                                    )
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                }
             </div>
         );
     }

@@ -167,34 +167,32 @@ export const FunctionalStreamRenderer = forwardRef(({
     useImperativeHandle(ref, () => ({
         updateReceiveStats(videoStatsReceived) {
             if (videoStatsReceived) {
-                console.log('***** VIDEOSTATS RECEIVED', videoStatsReceived);
-                console.log('***** current videoStats', videoStats);
-                console.log('***** STREAM', stream.isAvailable);
-                console.log('***** RENDERER', renderer);
                 if (videoStatsReceived !== videoStats && stream.isAvailable) {
                     setVideoStats(videoStatsReceived);
                 }
             }
         }
     }));
-
-    return (
-        <div id={componentId} ref={componentContainer} className={`stream-container py-3 ms-Grid-col ms-sm-12 ms-lg12 ms-xl12 ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : `ms-xxl6`}`}>
-            <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`} id={videoContainerId} ref={videoContainer}>
-                <h4 className="video-title">
-                    {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
-                </h4>
+    if (stream.isAvailable) {
+        return (
+            <div id={componentId} ref={componentContainer} className={`stream-container ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``} ${stream.isAvailable ? 'rendering' : ''}`}>
+                <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`} id={videoContainerId} ref={videoContainer}>
+                    <h4 className="video-title">
+                        {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
+                    </h4>
+                    <CustomVideoEffects call={call} videoContainerId={videoContainerId} remoteParticipantId={remoteParticipant.identifier} />
+                    {
+                        isLoading && <div className="remote-video-loading-spinner"></div>
+                    }
+                </div>
                 {
-                    isLoading && <div className="remote-video-loading-spinner"></div>
+                    videoStats && showMediaStats &&
+                    <h4 className="video-stats">
+                        <VideoReceiveStats videoStats={videoStats} />
+                    </h4>
                 }
             </div>
-            {
-                videoStats && showMediaStats &&
-                <h4 className="video-stats">
-                    <VideoReceiveStats videoStats={videoStats} />
-                </h4>
-            }
-            <CustomVideoEffects call={call} videoContainerId={videoContainerId} remoteParticipantId={remoteParticipant.identifier} />
-        </div>
-    );
+        );
+    }
+    return <></>;
 });
