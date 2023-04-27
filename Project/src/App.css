@@ -1150,7 +1150,7 @@ h3 {
 
 .stream-container[id*="ScreenSharing"] {
   order: 0;
-  flex-basis: 100%;
+  grid-column: span 3 !important;
 }
 
 .pre-init-option {
