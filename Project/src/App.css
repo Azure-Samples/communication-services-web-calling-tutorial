@@ -134,6 +134,7 @@ ul {
 .participants-panel {
   padding: 1em;
   border: 1px solid #605e5c;
+  width: fit-content;
 }
 
 .pre-call-grid-container {
@@ -1196,4 +1197,34 @@ h3 {
 .video-feature-sample .primary-button.is-disabled {
   border: 1px solid grey;
   color: grey;
+}
+
+.spotlightEnabled {
+  border: 1px solid  #ca5010;
+}
+
+.lobby-action{
+  margin-top: 2px;
+}
+
+.lobby-action a{
+  display: inline-block;
+  color: #ca5010;
+  text-decoration: none;
+}
+
+.participantMenu, .participantMenu:hover{
+  background-color: inherit;
+  width: fit-content;
+  color: white;
+  border: none;
+  margin-right: 5px;
+}
+.participantMenu .ms-Icon {
+  font-size: 30px;
+  border: none;
+}
+
+.callFeatureEnabled, .callFeatureEnabled:hover {
+  color: #ca5010;
 }

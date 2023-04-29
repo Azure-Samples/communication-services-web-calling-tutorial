@@ -17,7 +17,7 @@ import { Label } from '@fluentui/react/lib/Label';
 import { AzureLogger } from '@azure/logger';
 import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
-
+import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 export default class CallCard extends React.Component {
     constructor(props) {
         super(props);
@@ -27,6 +27,9 @@ export default class CallCard extends React.Component {
         this.remoteVolumeLevelSubscription = undefined;
         this.handleRemoteVolumeSubscription = undefined;
         this.maximumNumberOfRenderers = 4;
+        this.identifier = props.identityMri;
+        this.spotlightFeature = this.call.feature(Features.Spotlight);
+        this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.state = {
             callState: this.call.state,
             callId: this.call.id,
@@ -54,7 +57,9 @@ export default class CallCard extends React.Component {
             remoteVolumeIndicator: undefined,
             remoteVolumeLevel: undefined,
             mediaCollector: undefined,
-            showParticipantsCard: false
+            showParticipantsCard: false,
+            isSpotlighted: false,
+            isHandRaised: false,
         };
     }
 
@@ -73,6 +78,9 @@ export default class CallCard extends React.Component {
         this.state.mediaCollector?.off('sampleReported', () => { });
         this.state.mediaCollector?.off('summaryReported', () => { });
         this.call.feature(Features.DominantSpeakers).off('dominantSpeakersChanged', () => { });
+        this.call.feature(Features.Spotlight).off('spotlightChanged', () => {});
+        this.call.feature(Features.RaiseHand).off('raisedHandEvent', () => {});
+        this.call.feature(Features.RaiseHand).off('loweredHandEvent', () => {});
     }
 
     componentDidMount() {
@@ -328,6 +336,19 @@ export default class CallCard extends React.Component {
             capabilitiesFeature.on('capabilitiesChanged', () => {
                 const updatedCapabilities = capabilitiesFeature.capabilities;
             });
+            
+            const spotlightStateChangedHandler = (event) => {
+                this.setState({isSpotlighted: utils.isParticipantSpotlighted(
+                    this.identifier, this.spotlightFeature.getSpotlightedParticipants())})
+            };
+            this.spotlightFeature.on("spotlightChanged", spotlightStateChangedHandler);
+
+            const isRaiseHandChangedHandler = (event) => {
+                this.setState({isHandRaised: utils.isParticipantHandRaised(this.identifier, this.raiseHandFeature.getRaisedHands())})
+            }
+
+            this.raiseHandFeature.on("loweredHandEvent", isRaiseHandChangedHandler);
+            this.raiseHandFeature.on("raisedHandEvent", isRaiseHandChangedHandler);
         }
     }
 
@@ -444,6 +465,16 @@ export default class CallCard extends React.Component {
         }
     }
 
+    async handleRaiseHand() {
+        try {
+            this.state.isHandRaised ?
+                this.raiseHandFeature.lowerHand():
+                this.raiseHandFeature.raiseHand();
+                this.setState({isHandRaised: utils.isParticipantHandRaised(this.identifier, this.raiseHandFeature.getRaisedHands())})
+        } catch(e) {
+            console.error(e);
+        }
+    }
 
 
     async handleIncomingAudioOnOff() {
@@ -598,6 +629,58 @@ export default class CallCard extends React.Component {
         const allStreamsBackup = [...this.state.allRemoteParticipantStreams];
         this.setState({ allRemoteParticipantStreams: [] });
         setTimeout(() => this.setState({ allRemoteParticipantStreams: [...allStreamsBackup] }), 0);
+    }
+
+    getParticipantMenuCallBacks() {
+        return {
+            startSpotlight: async (identifier) => {
+                try {
+                    await this.spotlightFeature.startSpotlight([identifier]);
+                } catch(error) {
+                    console.error(error)
+                }
+            },
+            stopSpotlight: async (identifier) => {
+                try {
+                    await this.spotlightFeature.stopSpotlight([identifier]);
+                } catch(error) {
+                    console.error(error)
+                }
+            },
+            stopAllSpotlight: async () => {
+                try {
+                    await this.spotlightFeature.stopAllSpotlight();
+                } catch(error) {
+                    console.error(error)
+                }
+            },
+            lowerAllHands: async () => {
+                try {
+                    await this.raiseHandFeature.lowerAllHands();
+                } catch(error) {
+                    console.error(error)
+                }
+            },
+        }
+    }
+
+    getMenuItems() {
+        let menuCallBacks = this.getParticipantMenuCallBacks();
+        let menuItems = [
+            this.spotlightFeature.getSpotlightedParticipants().length && {
+                key: 'Stop All Spotlight',
+                iconProps: { iconName: 'Focus'},
+                text: 'Stop All Spotlight',
+                onClick: (e) => menuCallBacks.stopAllSpotlight(e)
+            }, 
+            this.raiseHandFeature.getRaisedHands().length && {
+                key: 'Lower All Hands',
+                iconProps: { iconName: 'HandsFree'},
+                text: 'Lower All Hands',
+                onClick: (e) => menuCallBacks.lowerAllHands(e)
+            },
+        ]
+        return menuItems.filter(item => item != 0)
     }
     render() {
         return (
@@ -781,6 +864,21 @@ export default class CallCard extends React.Component {
                                         <Icon iconName="People" />
                                     }
                                 </span>
+                                <span className="in-call-button "
+                                    title={`${this.state.isHandRaised  ? 'LowerHand' : 'RaiseHand'}`}
+                                    variant="secondary"
+                                    onClick={() => this.handleRaiseHand()}>
+                                    {
+                                        <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
+                                    }
+                                </span>
+                                <ParticipantMenuOptions
+                                    id={this.identifier}
+                                    appendMenuitems={this.getMenuItems()}
+                                    menuOptionsHandler={this.getParticipantMenuCallBacks()}
+                                    menuOptionsState={{isSpotlighted: this.state.isSpotlighted}}
+                                    />
+
                                 <Panel type={PanelType.medium}
                                     isLightDismiss
                                     isOpen={this.state.showSettings}
@@ -903,7 +1001,12 @@ export default class CallCard extends React.Component {
                             <ul className="participants-panel-list">
                                 {
                                     this.state.remoteParticipants.map(remoteParticipant =>
-                                        <RemoteParticipantCard key={`${utils.getIdentifierText(remoteParticipant.identifier)}`} remoteParticipant={remoteParticipant} call={this.call} />
+                                        <RemoteParticipantCard 
+                                            key={`${utils.getIdentifierText(remoteParticipant.identifier)}`} 
+                                            remoteParticipant={remoteParticipant} 
+                                            call={this.call} 
+                                            menuOptionsHandler={this.getParticipantMenuCallBacks()} 
+                                            />
                                     )
                                 }
                             </ul>
