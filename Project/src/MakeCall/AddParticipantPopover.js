@@ -1,17 +1,22 @@
 import React, { useState, useRef } from "react";
 import { TextField } from 'office-ui-fabric-react';
 import { Button } from 'office-ui-fabric-react'
-
+import { CallKind } from "@azure/communication-calling";
+import { utils } from '../Utils/Utils';
 
 export default function AddParticipantPopover(props) {
     const [userId, setUserId] = useState('');
+    const [threadId, setThreadId] = useState('');
     const [alternateCallerId, setAlternateCallerId] = useState('');
     const [showAddParticipantPanel, setShowAddParticipantPanel] = useState(false);
 
     function handleAddCommunicationUser() {
         console.log('handleAddCommunicationUser', userId);
         try {
-            props.call.addParticipant({ communicationUserId: userId });
+            let participantId = utils.constructIdentifierFromStringMri(userId);
+            props.call._kind === CallKind.TeamsCall ? 
+                props.call.addParticipant(participantId, {threadId}) :
+                props.call.addParticipant(participantId);
         } catch (e) {
             console.error(e);
         }
@@ -43,8 +48,9 @@ export default function AddParticipantPopover(props) {
                             <h3 className="add-participant-panel-header">Add a participant</h3>
                             <div className="add-participant-panel-header">
                                 <TextField className="text-left" label="Identifier" onChange={e => setUserId(e.target.value)} />
+                                <TextField className="text-left" label="Thread Id (Needed if SDK is initialized for Teams User )" onChange={e => setThreadId(e.target.value)} />
                                 <TextField className="text-left" label="Alternate Caller Id (For adding phone number only)" onChange={e => setAlternateCallerId(e.target.value)} />
-                                <Button className="mt-3" onClick={handleAddCommunicationUser}>Add CommunicationUser</Button>
+                                <Button className="mt-3" onClick={handleAddCommunicationUser}>Add Participant</Button>
                                 <Button className="mt-1" onClick={handleAddPhoneNumber}>Add Phone Number</Button>
                             </div>
                         </div>

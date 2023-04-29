@@ -4,6 +4,8 @@ import {
     isMicrosoftTeamsUserIdentifier,
     isUnknownIdentifier
 } from '@azure/communication-common';
+import { PublicClientApplication } from "@azure/msal-browser";
+import { authConfig, authScopes } from "../../oAuthConfig"
 import axios from 'axios';
 
 export const utils = {
@@ -51,6 +53,41 @@ export const utils = {
         }
         throw new Error('Failed to get ACS User Acccess token for the given OneSignal Registration Token');
     },
+    teamsPopupLogin: async () => {
+        const oAuthObj = new PublicClientApplication(authConfig);
+        const popupLoginRespoonse = await oAuthObj.loginPopup({scopes: authScopes.popUpLogin});
+        const response = await axios({
+            url: 'teamsPopupLogin',
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json, text/plain, */*',
+                'Content-type': 'application/json'
+            },
+            data: JSON.stringify({
+                aadToken: popupLoginRespoonse.accessToken,
+                userObjectId: popupLoginRespoonse.uniqueId
+            })
+        });
+        if (response.status === 200) {
+            return response.data;
+        }
+        throw new Error('Failed to get Teams User Acccess token');
+    },
+    teamsM365Login: async (email, password) => {
+        const response = await axios({
+            url: 'teamsM365Login',
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json, text/plain, */*',
+                'Content-type': 'application/json'
+            },
+            data: JSON.stringify({email, password })
+        })
+        if (response.status === 200) {
+            return response.data;
+        }
+        throw new Error('Failed to get Teams User Acccess token');
+    },
     getIdentifierText: (identifier) => {
         if (isCommunicationUserIdentifier(identifier)) {
             return identifier.communicationUserId;
@@ -64,6 +101,24 @@ export const utils = {
             return 'Unknown Identifier';
         }
     },
+    constructIdentifierFromStringMri: (mri) => {
+        if (mri.startsWith("8:orgid")) {
+            return { kind: "microsoftTeamsUser", rawId: mri, microsoftTeamsUserId: mri.substring(8)};
+        } else if (mri.startsWith("8:dod")) {
+            return { kind: "microsoftTeamsUser", rawId: mri, microsoftTeamsUserId: mri.substring(6)};
+        } else if (mri.startsWith("8:gcch")) {
+            return { kind: "microsoftTeamsUser", rawId: mri, microsoftTeamsUserId: mri.substring(7)};
+        } else if (mri.startsWith("8:teamsvisitor")) {
+            return { kind: "microsoftTeamsUser", rawId: mri, microsoftTeamsUserId: mri.substring(15)};
+        } else if (mri.startsWith("4:")) {
+            return { kind: "phoneNumber", rawId: mri, phoneNumber: mri.substring(2) };
+        } else if (mri.startsWith("8:acs") || mri.startsWith("8:spool") || mri.startsWith("8:gcch-acs") || mri.startsWith("8:dod-acs")) {
+            return { kind: "communicationUser", communicationUserId: mri };
+        } else {
+            return { kind: "unknown", id: mri };
+        }
+    },
+
     getSizeInBytes(str) {
         return new Blob([str]).size;
     },
@@ -90,5 +145,22 @@ export const utils = {
                 });
             }
         }
+    },
+    isParticipantSpotlighted(participantId, spotlightState) {
+        if (!participantId || !spotlightState) { return false }
+        let rtn = spotlightState.find(element => this.getIdentifierText(element.identifier) === this.getIdentifierText(participantId));
+        return rtn ? true : false
+        
+    },
+    isParticipantHandRaised(participantId, raisedHandState) {
+        if (!participantId || !raisedHandState) { return false }
+        let rtn = raisedHandState.find(element => this.getIdentifierText(element.identifier) === this.getIdentifierText(participantId));
+        return rtn ? true : false
+    },
+    getParticipantPublishStates(participantId, publishedStates) {
+        let states = {isSpotlighted: false, isHandRaised: false}
+        states.isSpotlighted = this.isParticipantSpotlighted(participantId, publishedStates.spotlight)
+        states.isHandRaised = this.isParticipantHandRaised(participantId, publishedStates.raiseHand)
+        return states
     }
 }
