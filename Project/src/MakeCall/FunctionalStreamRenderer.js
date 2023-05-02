@@ -10,8 +10,6 @@ export const FunctionalStreamRenderer = forwardRef(({
     dominantRemoteParticipant,
     dominantSpeakerMode,
     call,
-    updateStreamList,
-    maximumNumberOfRenderers,
     showMediaStats
 }, ref) => {
     const componentId = `${utils.getIdentifierText(remoteParticipant.identifier)}-${stream.mediaStreamType}-${stream.id}`;
@@ -30,7 +28,6 @@ export const FunctionalStreamRenderer = forwardRef(({
         initializeComponent();
         return () => {
             stream.off('isReceivingChanged', isReceivingChanged);
-            stream.off('isAvailableChanged', isAvailableChanged);
             remoteParticipant.off('isSpeakingChanged', isSpeakingChanged);
             remoteParticipant.off('isMutedChanged', isMutedChanged);
             remoteParticipant.off('displayNameChanged', isDisplayNameChanged);
@@ -102,32 +99,6 @@ export const FunctionalStreamRenderer = forwardRef(({
         }
     };
 
-    const isAvailableChanged = async () => {
-        try {
-            if (dominantSpeakerMode && dominantRemoteParticipant !== remoteParticipant) {
-                return;
-            }
-            if (call.activeRemoteVideoStreamViews?.size >= maximumNumberOfRenderers && !stream.isAvailable) {
-                updateStreamList();
-            }
-            if (stream.isAvailable && !renderer) {
-                if (call.activeRemoteVideoStreamViews?.size >= maximumNumberOfRenderers) {
-                    console.error(`[App][StreamMedia][id=${stream.id}][createRenderer] reached maximum number of renderers`);
-                    return;
-                }
-                console.log(`[App][StreamMedia][id=${stream.id}][isAvailableChanged] isAvailable=${stream.isAvailable}`);
-                createRenderer();
-            } else if (!stream.isAvailable) {
-                disposeRenderer();
-                if (videoStats) {
-                    setVideoStats(null);
-                }
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
     const isMutedChanged = () => {
         setIsMuted(remoteParticipant && remoteParticipant?.isMuted);
     };
@@ -144,13 +115,8 @@ export const FunctionalStreamRenderer = forwardRef(({
      */
     const initializeComponent = async () => {
         stream.on('isReceivingChanged', isReceivingChanged);
-
-        stream.on('isAvailableChanged', isAvailableChanged);
-
         remoteParticipant.on('isMutedChanged', isMutedChanged);
-
         remoteParticipant.on('isSpeakingChanged', isSpeakingChanged);
-
         if (dominantSpeakerMode && dominantRemoteParticipant !== remoteParticipant) {
             return;
         }
