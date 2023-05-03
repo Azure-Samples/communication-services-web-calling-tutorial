@@ -16,8 +16,10 @@ export const FunctionalStreamRenderer = forwardRef(({
     const videoContainerId = componentId + '-videoContainer';
     const componentContainer = useRef(null);
     const videoContainer = useRef(null);
-    const [renderer, setRenderer] = useState();
-    const [view, setView] = useState();
+    // const [renderer, setRenderer] = useState();
+    // const [view, setView] = useState();
+    let renderer;
+    let view;
     const [isLoading, setIsLoading] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(!!remoteParticipant?.isSpeaking);
     const [isMuted, setIsMuted] = useState(!!remoteParticipant?.isMuted);
@@ -37,26 +39,27 @@ export const FunctionalStreamRenderer = forwardRef(({
         }
     }, []);
 
-    useEffect(() => {
-        const createView = async () => {
-            if (renderer) {
-                const createdView = await renderer.createView();
-                setView(createdView);
-            }
-        };
-        createView();
-    }, [renderer]);
+    // useEffect(() => {
+    //     const createView = async () => {
+    //         if (renderer) {
+    //             const createdView = await renderer.createView();
+    //             setView(createdView);
+    //         }
+    //     };
+    //     createView();
+    // }, [renderer]);
 
-    useEffect(() => {
-        if (view) {
-            attachRenderer();
-        }
-    }, [view]);
+    // useEffect(() => {
+    //     if (view) {
+    //         attachRenderer();
+    //     }
+    // }, [view]);
 
-    const createRenderer = () => {
+    const createRenderer = async () => {
         if (!renderer) {
-            const videoRenderer = new VideoStreamRenderer(stream);
-            setRenderer(videoRenderer);
+            renderer = new VideoStreamRenderer(stream);
+            view = await renderer.createView();
+            // setRenderer(videoRenderer);
         } else {
             throw new Error(`[App][StreamMedia][id=${stream.id}][createRenderer] stream already has a renderer`);
         }
@@ -75,13 +78,13 @@ export const FunctionalStreamRenderer = forwardRef(({
         }
     }
 
-    const disposeRenderer = async () => {
+    const disposeRenderer = () => {
         if (videoContainer.current && componentContainer.current) {
             videoContainer.current.innerHTML = '';
             componentContainer.current.style.display = 'none';
         }
         if (renderer) {
-            await renderer.dispose();
+            renderer.dispose();
         } else {
             console.warn(`[App][StreamMedia][id=${stream.id}][disposeRender] no renderer to dispose`);
         }
@@ -123,7 +126,8 @@ export const FunctionalStreamRenderer = forwardRef(({
 
         try {
             if (stream.isAvailable && !renderer) {
-                createRenderer();
+                await createRenderer();
+                attachRenderer();
             }
         } catch (e) {
             console.error(e);
