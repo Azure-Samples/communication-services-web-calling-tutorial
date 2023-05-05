@@ -6,8 +6,10 @@ export default class VideoReceiveStats extends React.Component {
     }
 
     render() {
+        if (!this.props.videoStats) {
+            return null;
+        }
         return (
-            this.props.videoStats &&
             <table>
                 <tbody>
                     <tr>

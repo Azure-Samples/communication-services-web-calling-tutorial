@@ -4,26 +4,52 @@ import {
     isMicrosoftTeamsUserIdentifier,
     isUnknownIdentifier
 } from '@azure/communication-common';
+import axios from 'axios';
 
 export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    provisionNewUser: async (userId) => {
-        let response = await fetch('/tokens/provisionUser', {
+    getCommunicationUserToken: async () => {
+        let response = await axios({
+            url: 'getCommunicationUserToken',
             method: 'POST',
-            body: { userId },
             headers: {
-                'Accept': 'application/json, text/plain, */*',
+                'Content-Type': 'application/json'
+            }
+        })
+        if (response.status === 200) {
+            return response.data;
+        }
+        throw new Error('Failed to get ACS User Access token');
+    },
+    getCommunicationUserTokenForOneSignalRegistrationToken: async (oneSignalRegistrationToken) => {
+        let response = await axios({
+            url: 'getCommunicationUserTokenForOneSignalRegistrationToken',
+            method: 'POST',
+            headers: {
                 'Content-Type': 'application/json'
             },
+            data: JSON.stringify({oneSignalRegistrationToken})
         });
-
-        if (response.ok) {
-            return response.json();
+        if (response.status === 200) {
+            return response.data;
         }
-
-        throw new Error('Invalid token response');
+        throw new Error('Failed to get ACS User Acccess token for the given OneSignal Registration Token');
+    },
+    getOneSignalRegistrationTokenForCommunicationUserToken: async (token, communicationUserId) => {
+        let response = await axios({
+            url: 'getOneSignalRegistrationTokenForCommunicationUserToken',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify({token, communicationUserId})
+        });
+        if (response.status === 200) {
+            return response.data;
+        }
+        throw new Error('Failed to get ACS User Acccess token for the given OneSignal Registration Token');
     },
     getIdentifierText: (identifier) => {
         if (isCommunicationUserIdentifier(identifier)) {

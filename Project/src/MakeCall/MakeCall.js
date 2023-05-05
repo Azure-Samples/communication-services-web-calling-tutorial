@@ -1,6 +1,5 @@
 import React from "react";
 import { CallClient, LocalVideoStream, Features } from '@azure/communication-calling';
-import { utils } from "../Utils/Utils";
 import { AzureCommunicationTokenCredential } from '@azure/communication-common';
 import {
     PrimaryButton,
@@ -10,8 +9,10 @@ import {
 } from 'office-ui-fabric-react'
 import { Icon } from '@fluentui/react/lib/Icon';
 import IncomingCallCard from './IncomingCallCard';
-import CallCard from '../MakeCall/CallCard'
+import CallCard from '../MakeCall/CallCard';
+import CallSurvey from '../MakeCall/CallSurvey';
 import Login from './Login';
+import MediaConstraint from './MediaConstraint';
 import { setLogLevel, AzureLogger } from '@azure/logger';
 
 export default class MakeCall extends React.Component {
@@ -27,19 +28,23 @@ export default class MakeCall extends React.Component {
         this.destinationGroup = null;
         this.meetingLink = null;
         this.meetingId = null;
+        this.roomsId = null;
         this.threadId = null;
         this.messageId = null;
         this.organizerId = null;
         this.tenantId = null;
         this.callError = null;
         this.logBuffer = [];
+        this.videoConstraints = null;
         this.tokenCredential = null;
+        this.logInComponentRef = React.createRef();
 
         this.state = {
             id: undefined,
             loggedIn: false,
             isCallClientActiveInAnotherTab: false,
             call: undefined,
+            callSurvey: undefined,
             incomingCall: undefined,
             showCallSampleCode: false,
             showEnvironmentInfoCode: false,
@@ -66,6 +71,28 @@ export default class MakeCall extends React.Component {
                 this.setState({ ufdMessages: this.state.ufdMessages.slice(1) });
             }
         }, 10000);
+
+        // override logger to be able to dowload logs locally
+        AzureLogger.log = (...args) => {
+            this.logBuffer.push(...args);
+            if (args[0].startsWith('azure:ACS-calling:info')) {
+                console.info(...args);
+            } else if (args[0].startsWith('azure:ACS-calling:verbose')) {
+                console.debug(...args);
+            } else if (args[0].startsWith('azure:ACS-calling:warning')) {
+                console.warn(...args);
+            } else if (args[0].startsWith('azure:ACS-calling:error')) {
+                console.error(...args);
+            } else {
+                console.log(...args);
+            }
+        };
+    }
+
+    handleMediaConstraint = (constraints) => {
+        if (constraints.video) {
+            this.videoConstraints = constraints.video;
+        }
     }
 
     handleLogIn = async (userDetails) => {
@@ -73,30 +100,25 @@ export default class MakeCall extends React.Component {
             try {
                 const tokenCredential = new AzureCommunicationTokenCredential(userDetails.token);
                 this.tokenCredential = tokenCredential;
-                setLogLevel('error');
-                this.callClient = new CallClient({ diagnostics: { appName: 'azure-communication-services', appVersion: '1.3.1-beta.1', tags: ["javascript_calling_sdk", `#clientTag:${userDetails.clientTag}`] } });
+                setLogLevel('verbose');
+
+                const proxyConfiguration = userDetails.proxy.useProxy ? { url: userDetails.proxy.url } : undefined;
+                const turnConfiguration = userDetails.customTurn.useCustomTurn && !userDetails.customTurn.isLoading ? userDetails.customTurn.turn : undefined;
+                this.callClient = new CallClient({ 
+                    diagnostics: { 
+                        appName: 'azure-communication-services', 
+                        appVersion: '1.3.1-beta.1', 
+                        tags: ["javascript_calling_sdk", 
+                        `#clientTag:${userDetails.clientTag}`] 
+                    },
+                    networkConfiguration: {
+                        proxy: proxyConfiguration,
+                        turn: turnConfiguration
+                    }
+                });
                 this.environmentInfo = await this.callClient.getEnvironmentInfoInternal();
                 this.debugInfoFeature = await this.callClient.feature(Features.DebugInfo);
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
-                // override logger to be able to dowload logs locally
-                AzureLogger.log = (...args) => {
-                    this.logBuffer.push(...args);
-                    if (args[0].startsWith('azure:ACS:info')) {
-                        console.info(...args);
-                    } else if (args[0].startsWith('azure:ACS:verbose')) {
-                        console.debug(...args);
-                    } else if (args[0].startsWith('azure:ACS:warning')) {
-                        console.warn(...args);
-                    } else if (args[0].startsWith('azure:ACS:error')) {
-                        console.error(...args);
-                    } else {
-                        console.log(...args);
-                    }
-                };
-                this.deviceManager = await this.callClient.getDeviceManager();
-                const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
-                this.setState({permissions: permissions});
-
                 this.callAgent.on('callsUpdated', e => {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
 
@@ -143,10 +165,14 @@ export default class MakeCall extends React.Component {
                 });
                 this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
                 this.debugInfoFeature.on('isCallClientActiveInAnotherTabChanged', () => {
-                    this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab }); 
+                    this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
                 });
-
                 this.setState({ loggedIn: true });
+                this.logInComponentRef.current.setCallAgent(this.callAgent);
+
+                this.deviceManager = await this.callClient.getDeviceManager();
+                const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
+                this.setState({permissions: permissions});
             } catch (e) {
                 console.error(e);
             }
@@ -155,10 +181,10 @@ export default class MakeCall extends React.Component {
 
     displayCallEndReason = (callEndReason) => {
         if (callEndReason.code !== 0 || callEndReason.subCode !== 0) {
-            this.setState({ callError: `Call end reason: code: ${callEndReason.code}, subcode: ${callEndReason.subCode}` });
+            this.setState({ callSurvey: this.state.call, callError: `Call end reason: code: ${callEndReason.code}, subcode: ${callEndReason.subCode}` });
         }
 
-        this.setState({ call: null, incomingCall: null });
+        this.setState({ call: null, callSurvey: this.state.call, incomingCall: null });
     }
 
     placeCall = async (withVideo) => {
@@ -230,6 +256,16 @@ export default class MakeCall extends React.Component {
         }
     };
 
+    joinRooms = async (withVideo) => {
+        try {
+            const callOptions = await this.getCallOptions(withVideo);
+            this.callAgent.join({ meetingId: this.roomsId.value }, callOptions);
+        } catch (e) {
+            console.error('Failed to join a call', e);
+            this.setState({ callError: 'Failed to join a call: ' + e });
+        }
+    };
+
     joinTeamsMeeting = async (withVideo) => {
         try {
             const callOptions = await this.getCallOptions(withVideo);
@@ -286,6 +322,9 @@ export default class MakeCall extends React.Component {
                     throw new Error('No camera devices found.');
                 } else if (cameraDevice) {
                     callOptions.videoOptions = { localVideoStreams: [new LocalVideoStream(cameraDevice)] };
+                    if (this.videoConstraints) {
+                        callOptions.videoOptions.constraints = this.videoConstraints;
+                    }
                 }
             } catch (e) {
                 cameraWarning = e.message;
@@ -336,11 +375,15 @@ export default class MakeCall extends React.Component {
         return callOptions;
     }
 
+    handleCallSurveySubmitted() {
+        this.setState({ callSurvey: null, call: null });
+    }
+
     async runPreCallDiagnostics() {
         try {
             this.setState({
-                showPreCallDiagnostcisResults: false, 
-                isPreCallDiagnosticsCall: true, 
+                showPreCallDiagnostcisResults: false,
+                isPreCallDiagnosticsCall: true,
                 preCallDiagnosticsResults: {}
             });
             const preCallDiagnosticsResult = await this.callClient.feature(Features.PreCallDiagnostics).startTest(this.tokenCredential);
@@ -474,11 +517,11 @@ const isSupportedBrowser = this.environmentInfo.isSupportedBrowser;
 const isSupportedBrowserVersion = this.environmentInfo.isSupportedBrowserVersion;
 const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
 
-        `;   
-        
+        `;
+
         const preCallDiagnosticsSampleCode = `
 //Get new token or use existing token.
-const response = (await fetch('/tokens/provisionUser')).json();
+const response = (await fetch('getAcsUserAccessToken')).json();
 const token = response.token;
 const tokenCredential = new AzureCommunicationTokenCredential(token);
 
@@ -726,7 +769,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
 
         return (
             <div>
-                <Login onLoggedIn={this.handleLogIn} />
+                <Login onLoggedIn={this.handleLogIn} ref={this.logInComponentRef}/>
                 <div className="card">
                     <div className="ms-Grid">
                         <div className="ms-Grid-row">
@@ -761,6 +804,13 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                         <div>{`Current environment supported:  ${this.environmentInfo?.isSupportedEnvironment}.`}</div>
                     </div>
                 </div>
+                {
+                    this.state?.callSurvey &&
+                    <CallSurvey
+                        onSubmitted={() => this.handleCallSurveySubmitted()}
+                        call={this.state.callSurvey}
+                    />
+                }
                 <div className="card">
                     <div className="ms-Grid">
                         <div className="ms-Grid-row">
@@ -793,14 +843,17 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </pre>
                         }
                         {
-                            this.state.callError &&
-                            <MessageBar
-                                messageBarType={MessageBarType.error}
-                                isMultiline={false}
-                                onDismiss={() => { this.setState({ callError: undefined }) }}
-                                dismissButtonAriaLabel="Close">
-                                <b>{this.state.callError}</b>
-                            </MessageBar>
+                            this.state.callError && 
+                            <div>
+                                <MessageBar
+                                    messageBarType={MessageBarType.error}
+                                    isMultiline={false}
+                                    onDismiss={() => { this.setState({ callError: undefined }) }}
+                                    dismissButtonAriaLabel="Close">
+                                    <b>{this.state.callError}</b>
+                                </MessageBar>
+
+                            </div>
                         }
                         {
                             this.state.deviceManagerWarning &&
@@ -823,120 +876,152 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </MessageBar>
                         }
                         {
-                            !this.state.incomingCall && !this.state.call &&
-                            <div className="ms-Grid-row mt-3">
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
-                                    <h3 className="mb-1">Place a call</h3>
-                                    <div>Enter an Identity to make a call to.</div>
-                                    <div>You can specify multiple Identities to call by using "," separated values.</div>
-                                    <div>If calling a Phone Identity, your Alternate Caller Id must be specified. </div>
-                                    <TextField
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        label="Destination Identity or Identities"
-                                        componentRef={(val) => this.destinationUserIds = val} />
-                                    <div className="ms-Grid-row mb-3 mt-3">
-                                        <div className="ms-Grid-col ms-lg6 ms-sm12">
-                                            <TextField
-                                                disabled={this.state.call || !this.state.loggedIn}
-                                                label="Destination Phone Identity or Phone Identities"
-                                                componentRef={(val) => this.destinationPhoneIds = val} />
+                            !this.state.incomingCall && !this.state.call && !this.state.callSurvey &&
+                            <div>
+                                <div className="ms-Grid-row mt-3">
+                                    <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                        <h3 className="mb-1">Place a call</h3>
+                                        <div>Enter an Identity to make a call to.</div>
+                                        <div>You can specify multiple Identities to call by using "," separated values.</div>
+                                        <div>If calling a Phone Identity, your Alternate Caller Id must be specified. </div>
+                                        <TextField
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            label="Destination Identity or Identities"
+                                            componentRef={(val) => this.destinationUserIds = val} />
+                                        <div className="ms-Grid-row mb-3 mt-3">
+                                            <div className="ms-Grid-col ms-lg6 ms-sm12">
+                                                <TextField
+                                                    disabled={this.state.call || !this.state.loggedIn}
+                                                    label="Destination Phone Identity or Phone Identities"
+                                                    componentRef={(val) => this.destinationPhoneIds = val} />
+                                            </div>
+                                            <div className="ms-Grid-col ms-lg6 ms-sm12">
+                                                <TextField
+                                                    disabled={this.state.call || !this.state.loggedIn}
+                                                    label="Alternate Caller Id (For calling phone numbers only)"
+                                                    componentRef={(val) => this.alternateCallerId = val} />
+                                            </div>
                                         </div>
-                                        <div className="ms-Grid-col ms-lg6 ms-sm12">
-                                            <TextField
-                                                disabled={this.state.call || !this.state.loggedIn}
-                                                label="Alternate Caller Id (For calling phone numbers only)"
-                                                componentRef={(val) => this.alternateCallerId = val} />
-                                        </div>
+                                        <PrimaryButton
+                                            className="primary-button"
+                                            iconProps={{ iconName: 'Phone', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Place call"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.placeCall(false)}>
+                                        </PrimaryButton>
+                                        <PrimaryButton
+                                            className="primary-button"
+                                            iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Place call with video"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.placeCall(true)}>
+                                        </PrimaryButton>
                                     </div>
-                                    <PrimaryButton
-                                        className="primary-button"
-                                        iconProps={{ iconName: 'Phone', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Place call"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.placeCall(false)}>
-                                    </PrimaryButton>
-                                    <PrimaryButton
-                                        className="primary-button"
-                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Place call with video"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.placeCall(true)}>
-                                    </PrimaryButton>
+                                    <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                        <h3 className="mb-1">Join a group call</h3>
+                                        <div>Group Id must be in GUID format.</div>
+                                        <TextField
+                                            className="mb-3"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            label="Group Id"
+                                            placeholder="29228d3e-040e-4656-a70e-890ab4e173e5"
+                                            defaultValue="29228d3e-040e-4656-a70e-890ab4e173e5"
+                                            componentRef={(val) => this.destinationGroup = val} />
+                                        <PrimaryButton
+                                            className="primary-button"
+                                            iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Join group call"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.joinGroup(false)}>
+                                        </PrimaryButton>
+                                        <PrimaryButton
+                                            className="primary-button"
+                                            iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Join group call with video"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.joinGroup(true)}>
+                                        </PrimaryButton>
+                                    </div>
+                                    <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                        <h3 className="mb-1">Join a Rooms call</h3>
+                                        <div>Enter Rooms ID</div>
+                                        <TextField className="mb-3"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            label="Rooms id"
+                                            componentRef={(val) => this.roomsId = val} />
+
+                                        <PrimaryButton className="primary-button"
+                                            iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Join Rooms call"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.joinRooms(false)}>
+                                        </PrimaryButton>
+                                        <PrimaryButton className="primary-button"
+                                            iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Join Rooms call with video"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.joinRooms(true)}>
+                                        </PrimaryButton>
+                                    </div>
+                                    <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                        <h3 className="mb-1">Join a Teams meeting</h3>
+                                        <div>Enter meeting link</div>
+                                        <TextField className="mb-3"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            label="Meeting link"
+                                            componentRef={(val) => this.meetingLink = val} />
+                                        <div>Or enter meeting id</div>
+                                        <TextField className="mb-3"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            label="Meeting id"
+                                            componentRef={(val) => this.meetingId = val} />
+                                        <div> Or enter meeting coordinates (Thread Id, Message Id, Organizer Id, and Tenant Id)</div>
+                                        <TextField disabled={this.state.call || !this.state.loggedIn}
+                                            label="Thread Id"
+                                            componentRef={(val) => this.threadId = val} />
+                                        <TextField disabled={this.state.call || !this.state.loggedIn}
+                                            label="Message Id"
+                                            componentRef={(val) => this.messageId = val} />
+                                        <TextField disabled={this.state.call || !this.state.loggedIn}
+                                            label="Organizer Id"
+                                            componentRef={(val) => this.organizerId = val} />
+                                        <TextField className="mb-3"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            label="Tenant Id"
+                                            componentRef={(val) => this.tenantId = val} />
+                                        <PrimaryButton className="primary-button"
+                                            iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Join Teams meeting"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.joinTeamsMeeting(false)}>
+                                        </PrimaryButton>
+                                        <PrimaryButton className="primary-button"
+                                            iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Join Teams meeting with video"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            onClick={() => this.joinTeamsMeeting(true)}>
+                                        </PrimaryButton>
+                                    </div>
                                 </div>
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
-                                    <h3 className="mb-1">Join a group call</h3>
-                                    <div>Group Id must be in GUID format.</div>
-                                    <TextField
-                                        className="mb-3"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        label="Group Id"
-                                        placeholder="29228d3e-040e-4656-a70e-890ab4e173e5"
-                                        defaultValue="29228d3e-040e-4656-a70e-890ab4e173e5"
-                                        componentRef={(val) => this.destinationGroup = val} />
-                                    <PrimaryButton
-                                        className="primary-button"
-                                        iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join group call"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.joinGroup(false)}>
-                                    </PrimaryButton>
-                                    <PrimaryButton
-                                        className="primary-button"
-                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join group call with video"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.joinGroup(true)}>
-                                    </PrimaryButton>
-                                </div>
-                                <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
-                                    <h3 className="mb-1">Join a Teams meeting</h3>
-                                    <div>Enter meeting link</div>
-                                    <TextField className="mb-3"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        label="Meeting link"
-                                        componentRef={(val) => this.meetingLink = val} />
-                                    <div>Or enter meeting id</div>
-                                    <TextField className="mb-3"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        label="Meeting id"
-                                        componentRef={(val) => this.meetingId = val} />
-                                    <div> Or enter meeting coordinates (Thread Id, Message Id, Organizer Id, and Tenant Id)</div>
-                                    <TextField disabled={this.state.call || !this.state.loggedIn}
-                                        label="Thread Id"
-                                        componentRef={(val) => this.threadId = val} />
-                                    <TextField disabled={this.state.call || !this.state.loggedIn}
-                                        label="Message Id"
-                                        componentRef={(val) => this.messageId = val} />
-                                    <TextField disabled={this.state.call || !this.state.loggedIn}
-                                        label="Organizer Id"
-                                        componentRef={(val) => this.organizerId = val} />
-                                    <TextField className="mb-3"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        label="Tenant Id"
-                                        componentRef={(val) => this.tenantId = val} />
-                                    <PrimaryButton className="primary-button"
-                                        iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join Teams meeting"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.joinTeamsMeeting(false)}>
-                                    </PrimaryButton>
-                                    <PrimaryButton className="primary-button"
-                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Join Teams meeting with video"
-                                        disabled={this.state.call || !this.state.loggedIn}
-                                        onClick={() => this.joinTeamsMeeting(true)}>
-                                    </PrimaryButton>
+                                <div className="ms-Grid-row mt-3">
+                                    <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                        <MediaConstraint
+                                            onChange={this.handleMediaConstraint}
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                        />
+                                    </div>
                                 </div>
                             </div>
+
                         }
                         {
-                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress && 
+                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress &&
                             <div>
                                 Pre Call Diagnostics call in progress...
                             </div>
                         }
                         {
-                            this.state.call && !this.state.isPreCallDiagnosticsCallInProgress &&
+                            this.state.call && !this.state.callSurvey && !this.state.isPreCallDiagnosticsCallInProgress &&
                             <CallCard
                                 call={this.state.call}
                                 deviceManager={this.deviceManager}
@@ -979,7 +1064,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </div>
                         </div>
                         {
-                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress && 
+                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress &&
                             <div>
                                 Pre Call Diagnostics call in progress...
                                 <div className="custom-row">
@@ -993,7 +1078,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                 {
                                     <div className="pre-call-grid-container">
                                         {
-                                            this.state.preCallDiagnosticsResults.deviceAccess && 
+                                            this.state.preCallDiagnosticsResults.deviceAccess &&
                                             <div className="pre-call-grid">
                                                 <span>Device Permission: </span>
                                                 <div  >
@@ -1007,7 +1092,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                             </div>
                                         }
                                         {
-                                            this.state.preCallDiagnosticsResults.deviceEnumeration && 
+                                            this.state.preCallDiagnosticsResults.deviceEnumeration &&
                                             <div className="pre-call-grid">
                                                 <span>Device Access: </span>
                                                 <div >
@@ -1025,7 +1110,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                             </div>
                                         }
                                         {
-                                            this.state.preCallDiagnosticsResults.browserSupport && 
+                                            this.state.preCallDiagnosticsResults.browserSupport &&
                                             <div className="pre-call-grid">
                                                 <span>Browser Support: </span>
                                                 <div >
@@ -1039,7 +1124,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                             </div>
                                         }
                                         {
-                                            this.state.preCallDiagnosticsResults.inCallDiagnostics && 
+                                            this.state.preCallDiagnosticsResults.inCallDiagnostics &&
                                             <div className="pre-call-grid">
                                                 <span>Call Diagnostics: </span>
                                                 <div className="pre-call-grid">

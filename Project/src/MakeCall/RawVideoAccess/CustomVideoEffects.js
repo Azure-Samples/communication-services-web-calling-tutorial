@@ -18,7 +18,7 @@ export default class CustomVideoEffects extends React.Component {
             },
             remove: {
                 label: "Remove effect on local video", 
-                disabled: false
+                disabled: true
             },
             sendDummy: {
                 label: "Send dummy local video", 
@@ -77,8 +77,12 @@ export default class CustomVideoEffects extends React.Component {
         const target = document.getElementById(videoContainerId)
         const video = target.querySelector("video");
         if(video) {
-            video.srcObject = mediaStream;
-            video.play();
+            try {
+                video.srcObject = mediaStream;
+                video.load();
+            } catch(err) {
+                console.error('There was an issue setting the source', err);
+            }   
         }
     }
 
@@ -141,9 +145,8 @@ export default class CustomVideoEffects extends React.Component {
                 //remove filters from outgoing video
                 const cameras = await this.deviceManager.getCameras();
                 const localVideoStream = new LocalVideoStream(cameras[0]);
-                const _removeLocalVideoStream = this.call.localVideoStreams[0];
-                await this.call.stopVideo(_removeLocalVideoStream);
-                await this.call.startVideo(localVideoStream);
+                const mediaStream = await localVideoStream.getMediaStream();
+                this.call.localVideoStreams[0].setMediaStream(mediaStream);
                 this.outgoingVideoBtns.add.disabled = false;
                 this.outgoingVideoBtns.remove.disabled = true;
                 break;
@@ -152,6 +155,7 @@ export default class CustomVideoEffects extends React.Component {
                 const _dummyStream = this.dummyStream();
                 if(_dummyStream) {
                     this.call.localVideoStreams[0].setMediaStream(_dummyStream);
+                    this.outgoingVideoBtns.remove.disabled = false;
                 }
                 break;
             case this.incomingVideoBtns.add.label:
@@ -222,7 +226,7 @@ export default class CustomVideoEffects extends React.Component {
     render() {
 
         return(
-            <div className="ms-Grid-row">
+            <div className={`custom-video-effects-buttons ${this.isOutgoingVideoComponent ? 'outgoing' : 'incoming'}`}>
                 {
                     this.renderElm()
                 }

@@ -1,34 +1,339 @@
 import React from "react";
-import { TextField, PrimaryButton } from 'office-ui-fabric-react'
+import {
+    TextField, PrimaryButton, Checkbox,
+    MessageBar, MessageBarType
+} from 'office-ui-fabric-react'
 import { utils } from "../Utils/Utils";
 import { v4 as uuid } from 'uuid';
+import OneSignal from "react-onesignal";
+import * as config from '../../clientConfig.json';
+import { TurnConfiguration } from './NetworkConfiguration/TurnConfiguration';
+import { ProxyConfiguration } from './NetworkConfiguration/ProxyConfiguration';
 
 export default class Login extends React.Component {
     constructor(props) {
         super(props);
+
         this.userDetailsResponse = undefined;
         this.displayName = undefined;
         this.clientTag = uuid();
+        this.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        this._callAgentInitPromise = undefined;
+        this._callAgentInitPromiseResolve = undefined;
+        this.currentCustomTurnConfig = undefined;
         this.state = {
+            initializedOneSignal: false,
+            subscribedForPushNotifications: false,
+            initializeCallAgentAfterPushRegistration: true,
             showUserProvisioningAndSdkInitializationCode: false,
             showSpinner: false,
-            disableInitializeButton: false,
-            loggedIn: false
+            loginWarningMessage: undefined,
+            loginErrorMessage: undefined,
+            proxy: {
+                useProxy: false,
+                url: ''
+            },
+            customTurn: {
+                useCustomTurn: false,
+                isLoading: false,
+                turn: null
+            }
         }
     }
 
-    provisionNewUser = async () => {
+    async componentDidMount() {
         try {
-            this.setState({ showSpinner: true, disableInitializeButton: true });
-            this.userDetailsResponse = await utils.provisionNewUser();
-            this.setState({ id: utils.getIdentifierText(this.userDetailsResponse.user) });
-            await this.props.onLoggedIn({ id: this.state.id, token: this.userDetailsResponse.token, displayName: this.displayName, clientTag: this.clientTag });
+            if (config.oneSignalAppId) {
+                if (location.protocol !== 'https:') {
+                    throw new Error('Web push notifications can only be tested on trusted HTTPS.');
+                }
+
+                await OneSignal.init({
+                    appId: config.oneSignalAppId,
+                    safari_web_id: config.oneSignalSafariWebId,
+                    notifyButton: {
+                        enable: true,
+                        colors: {
+                            'circle.background': '#ca5010'
+                        }
+                    },
+                });
+
+                OneSignal.addListenerForNotificationOpened(async function (event) {
+                    console.log('Push notification clicked and app will open if it is currently closed');
+                    await this.handlePushNotification(event);
+                }.bind(this));
+
+                OneSignal.on('notificationDisplay', async function (event) {
+                    console.log('Push notification displayed');
+                    await this.handlePushNotification(event);
+                }.bind(this));
+
+                OneSignal.on('subscriptionChange', async function(isSubscribed) {
+                    console.log("Push notification subscription state is now: ", isSubscribed);
+                    this.setState({ subscribedForPushNotifications:
+                        (await OneSignal.isPushNotificationsEnabled()) && (await OneSignal.getSubscription())
+                    });
+                }.bind(this));
+
+                this.setState({ initializedOneSignal: true});
+                this.setState({ subscribedForPushNotifications:
+                    (await OneSignal.isPushNotificationsEnabled()) && (await OneSignal.getSubscription())
+                });
+
+                await OneSignal.registerForPushNotifications();
+            }
+        } catch (error) {
+            this.setState({
+                loginWarningMessage: error.message
+            });
+            console.warn(error);
+        }
+    }
+
+    async logIn() {
+        try {
+            this.setState({ showSpinner: true });
+            if (!this.state.token && !this.state.communicationUserId) {
+                this.userDetailsResponse = await utils.getCommunicationUserToken();
+            } else if (this.state.token && this.state.communicationUserId) {
+                this.userDetailsResponse = await utils.getOneSignalRegistrationTokenForCommunicationUserToken(
+                    this.state.token, this.state.communicationUserId
+                );
+            } else if (this.state.token && !this.state.communicationUserId) {
+                throw new Error('You must specify the associated ACS identity for the provided ACS communication user token');
+            } else if (!this.state.token && this.state.communicationUserId) {
+                throw new Error('You must specify the ACS communication user token for the provided ACS identity');
+            }
+            this.setState({
+                token: this.userDetailsResponse.communicationUserToken.token
+            });
+            this.setState({
+                communicationUserId: utils.getIdentifierText(this.userDetailsResponse.communicationUserToken.user)
+            });
+            if (this.state.initializedOneSignal) {
+                OneSignal.setExternalUserId(this.userDetailsResponse.oneSignalRegistrationToken);
+            }
+            if (!this.state.subscribedForPushNotifications ||
+                (this.state.subscribedForPushNotifications && this.state.initializeCallAgentAfterPushRegistration)) {
+                await this.props.onLoggedIn({ 
+                    communicationUserId: this.userDetailsResponse.communicationUserToken.user.communicationUserId,
+                    token: this.userDetailsResponse.communicationUserToken.token,
+                    displayName: this.displayName,
+                    clientTag:this.clientTag,
+                    proxy: this.state.proxy,
+                    customTurn: this.state.customTurn
+                });
+            }
+            console.log('Login response: ', this.userDetailsResponse);
             this.setState({ loggedIn: true });
         } catch (error) {
+            this.setState({
+                loginErrorMessage: error.message
+            });
             console.log(error);
         } finally {
-            this.setState({ disableInitializeButton: false, showSpinner: false });
+            this.setState({ showSpinner: false });
         }
+    }
+
+    async handlePushNotification(event) {
+        try {
+            if (!this.callAgent && !!event.data.incomingCallContext) {
+                if (!this.state.token) {
+                    const oneSignalRegistrationToken = await OneSignal.getExternalUserId();
+                    this.userDetailsResponse = await utils.getCommunicationUserTokenForOneSignalRegistrationToken(oneSignalRegistrationToken);
+                    this.setState({
+                        token: this.userDetailsResponse.communicationUserToken.token
+                    });
+                    this.setState({
+                        communicationUserId: utils.getIdentifierText(this.userDetailsResponse.communicationUserToken.user)
+                    });
+                }
+                this.props.onLoggedIn({ 
+                    communicationUserId: this.userDetailsResponse.communicationUserToken.user.communicationUserId,
+                    token: this.userDetailsResponse.communicationUserToken.token,
+                    displayName: this.displayName,
+                    clientTag:this.clientTag,
+                    proxy: this.state.proxy,
+                    customTurn: this.state.customTurn
+                });
+                this._callAgentInitPromise = new Promise((resolve) => { this._callAgentInitPromiseResolve = resolve });
+                await this._callAgentInitPromise;
+                console.log('Login response: ', this.userDetailsResponse);
+                this.setState({ loggedIn: true })
+                if (!this.callAgent.handlePushNotification) {
+                    throw new Error('Handle push notification feature is not implemented in ACS Web Calling SDK yet.');
+                }
+                await this.callAgent.handlePushNotification(event.data);
+            }
+        } catch (error) {
+            this.setState({
+                loginErrorMessage: error.message
+            });
+            console.log(error);
+        }
+    }
+
+    setCallAgent(callAgent) {
+        this.callAgent = callAgent;
+        if (!!this._callAgentInitPromiseResolve) {
+            this._callAgentInitPromiseResolve();
+        }
+    }
+
+    handleProxyChecked = (e, isChecked) => {
+        this.setState({
+            ...this.state,
+            proxy: {
+                ...this.state.proxy,
+                useProxy: isChecked
+            }
+        });
+    };
+
+    handleAddProxyUrl = (input) => {
+        if (input) {
+            this.setState({
+                ...this.state,
+                proxy: {
+                    ...this.state.proxy,
+                    url: input
+                }
+            });
+        }
+    };
+
+    handleProxyUrlReset = () => {
+        this.setState({
+            ...this.state,
+            proxy: {
+                ...this.state.proxy,
+                url: ''
+            }
+        });
+    };
+
+    handleAddTurnConfig = (iceServer) => {
+        const turnConfig = this.state.customTurn.turn ?? {
+            iceServers: []
+        };
+        turnConfig.iceServers.push(iceServer);
+
+        this.setState({
+            ...this.state,
+            customTurn: {
+                ...this.state.customTurn,
+                turn: turnConfig
+            }
+        });
+    }
+
+    handleCustomTurnChecked = (e, isChecked) => {
+        if (isChecked) {
+            this.setState({
+                ...this.state,
+                customTurn: {
+                    ...this.state.customTurn,
+                    useCustomTurn: true,
+                    isLoading: true
+                }
+            });
+    
+            this.getOrCreateCustomTurnConfiguration().then(res => {
+                this.setState({
+                    ...this.state,
+                    customTurn: {
+                        ...this.state.customTurn,
+                        useCustomTurn: !!res ?? false,
+                        isLoading: false,
+                        turn: res
+                    }
+                });
+            }).catch(error => {
+                console.error(`Not able to fetch custom TURN: ${error}`);
+                this.setState({
+                    ...this.state,
+                    customTurn: {
+                        ...this.state.customTurn,
+                        useCustomTurn: false,
+                        isLoading: false,
+                        turn: null
+                    }
+                });
+            });
+        } else {
+            this.setState({
+                ...this.state,
+                customTurn: {
+                    ...this.state.customTurn,
+                    useCustomTurn: false,
+                    isLoading: false,
+                    turn: null
+                }
+            });
+        }
+    }
+
+    getOrCreateCustomTurnConfiguration = async () => {
+        if (!this.currentCustomTurnConfig || Date.now() > new Date(this.currentCustomTurnConfig.expiresOn).getTime()) {
+            // Credentials expired. Try to get new ones.
+            const response = await fetch(`${window.location.protocol}//${window.location.host}/customRelayConfig`);
+            const relayConfig = (await response.json()).relayConfig;
+            this.currentCustomTurnConfig = relayConfig;
+        }
+
+        const iceServers = this.currentCustomTurnConfig.iceServers.map(iceServer => {
+            return {
+                urls: [...iceServer.urls],
+                username: iceServer.username,
+                credential: iceServer.credential
+            };
+        });
+
+        return { iceServers };
+    }
+
+    handleTurnUrlResetToDefault = () => {
+        this.setState({
+            ...this.state,
+            customTurn: {
+                ...this.state.customTurn,
+                isLoading: true
+            }
+        });
+
+        this.getOrCreateCustomTurnConfiguration().then(res => {
+            this.setState({
+                ...this.state,
+                customTurn: {
+                    ...this.state.customTurn,
+                    isLoading: false,
+                    turn: res
+                }
+            });
+        }).catch(error => {
+            console.error(`Not able to fetch custom TURN: ${error}`);
+            this.setState({
+                ...this.state,
+                customTurn: {
+                    ...this.state.customTurn,
+                    useCustomTurn: false,
+                    isLoading: false,
+                    turn: null
+                }
+            });
+        });
+    }
+
+    handleTurnUrlReset = () => {
+        this.setState({
+            ...this.state,
+            customTurn: {
+                ...this.state.customTurn,
+                turn: null
+            }
+        });
     }
 
     render() {
@@ -39,7 +344,7 @@ export default class Login extends React.Component {
  **************************************************************************************/
 import  { CommunicationIdentityClient } from @azure/communication-administration;
 const communicationIdentityClient = new CommunicationIdentityClient(<RESOURCE CONNECTION STRING>);
-app.get('/tokens/provisionUser', async (request, response) => {
+app.get('/getAcsUserAccessToken', async (request, response) => {
     try {
         const communicationUserId = await communicationIdentityClient.createUser();
         const tokenResponse = await communicationIdentityClient.issueToken({ communicationUserId }, ['voip']);
@@ -65,7 +370,7 @@ export class MyCallingApp {
     }
 
     public async initCallClient() {
-        const response = (await fetch('/tokens/provisionUser')).json();
+        const response = (await fetch('/getAcsUserAccessToken')).json();
         const token = response.token;
         const tokenCredential = new AzureCommunicationTokenCredential(token);
 
@@ -178,6 +483,32 @@ export class MyCallingApp {
                             </PrimaryButton>
                         </div>
                     </div>
+                    <div className="ms-Grid-row">
+                    {
+                        this.state.loginWarningMessage &&
+                        <MessageBar
+                            className="mb-2"
+                            messageBarType={MessageBarType.warning}
+                            isMultiline={true}
+                            onDismiss={() => { this.setState({ loginWarningMessage: undefined })}}
+                            dismissButtonAriaLabel="Close">
+                            <b>{this.state.loginWarningMessage}</b>
+                        </MessageBar>
+                    }
+                    </div>
+                    <div className="ms-Grid-row">
+                    {
+                        this.state.loginErrorMessage &&
+                        <MessageBar
+                            className="mb-2"
+                            messageBarType={MessageBarType.error}
+                            isMultiline={true}
+                            onDismiss={() => { this.setState({ loginErrorMessage: undefined })}}
+                            dismissButtonAriaLabel="Close">
+                            <b>{this.state.loginErrorMessage}</b>
+                        </MessageBar>
+                    }
+                    </div>
                     {
                         this.state.showUserProvisioningAndSdkInitializationCode &&
                         <pre>
@@ -186,45 +517,86 @@ export class MyCallingApp {
                             </code>
                         </pre>
                     }
-                    <div>The ACS Administration SDK can be used to create a user access token which authenticates the calling clients. </div>
-                    <div>The example code shows how to use the ACS Administration SDK from a backend service. A walkthrough of integrating the ACS Administration SDK can be found on <a className="sdk-docs-link" target="_blank" href="https://docs.microsoft.com/en-us/azure/communication-services/quickstarts/access-tokens?pivots=programming-language-javascript">Microsoft Docs</a></div>
+                    <div>The ACS Identity SDK can be used to create a user access token which authenticates the calling clients. </div>
+                    <div>The example code shows how to use the ACS Identity SDK from a backend service. A walkthrough of integrating the ACS Identity SDK can be found on <a className="sdk-docs-link" target="_blank" href="https://docs.microsoft.com/en-us/azure/communication-services/quickstarts/access-tokens?pivots=programming-language-javascript">Microsoft Docs</a></div>
                     {
-                        this.state.loggedIn && 
+                        this.state.showSpinner &&
+                        <div className="justify-content-left mt-4">
+                            <div className="loader inline-block"> </div>
+                            <div className="ml-2 inline-block">Fetching token from service and initializing SDK...</div>
+                        </div>
+                    }
+                    {
+                        this.state.loggedIn &&
                         <div>
                             <br></br>
                             <div>Congrats! You've provisioned an ACS user identity and initialized the ACS Calling Client Web SDK. You are ready to start making calls!</div>
-                            <div>The Identity you've provisioned is: <span className="identity"><b>{this.state.id}</b></span></div>
+                            <div>The Identity you've provisioned is: <span className="identity"><b>{this.state.communicationUserId}</b></span></div>
                             <div>Usage is tagged with: <span className="identity"><b>{this.clientTag}</b></span></div>
                         </div>
                     }
                     {
-                        this.state.showSpinner &&
-                        <div className="custom-row justify-content-left align-items-center mt-4">
-                            <div className="loader"> </div>
-                            <div className="ml-2">Fetching token from service and initializing SDK...</div>
-                        </div>
-                    }
-                    {
-                        !this.state.loggedIn &&
+                        (!this.state.showSpinner && !this.state.loggedIn) &&
                         <div>
                             <div className="ms-Grid-row">
-                                <div className="ms-Grid-col ms-sm12 ms-lg6 ms-xl6 ms-xxl3">
+                                    <div className="ms-Grid-col ms-sm12 ms-lg6 ms-xl6 ms-xxl6">
                                     <TextField className="mt-3"
-                                                defaultValue={undefined}
-                                                label="Optional display name"
-                                                onChange={(e) => { this.displayName = e.target.value }} />
+                                                    defaultValue={undefined}
+                                                    label="Optional - Display name"
+                                                    onChange={(e) => { this.displayName = e.target.value }} />
                                     <TextField className="mt-3"
                                                 defaultValue={this.clientTag}
-                                                label="Optional: Tag this usage session"
+                                                label="Optinal - Usage tag for this session"
                                                 onChange={(e) => { this.clientTag = e.target.value }} />
                                 </div>
+                                <div className="ms-Grid-col ms-sm12 ms-lg6 ms-xl6 ms-xxl6">
+                                     <TextField className="mt-3"
+                                                placeholder="JWT Token"
+                                                label="Optional - ACS communication user token. If no token is provided, then a random one will be generated"
+                                                onChange={(e) => { this.state.token = e.target.value }} />
+                                    <TextField className="mt-3"
+                                                placeholder="8:acs:<ACS Resource ID>_<guid>"
+                                                label="Optional - ACS Identity associated with the token above"
+                                                onChange={(e) => { this.state.communicationUserId = e.target.value }} />
+                                </div>
                             </div>
-                            <div className="mt-1">
+                            <div className="ms-Grid-row">
+                                <div className="pre-init-option push-notification-options ms-Grid-col ms-lg4 ms-sm12"
+                                    disabled={
+                                        !this.state.initializedOneSignal ||
+                                        !this.state.subscribedForPushNotifications ||
+                                        this.isSafari
+                                    }>
+                                    Push Notifications options
+                                    <Checkbox className="mt-2 ml-3"
+                                                label="Initialize Call Agent"
+                                                disabled={
+                                                    !this.state.initializedOneSignal ||
+                                                    !this.state.subscribedForPushNotifications ||
+                                                    this.isSafari
+                                                }
+                                                checked={this.state.initializeCallAgentAfterPushRegistration}
+                                                onChange={(e, isChecked) => { this.setState({ initializeCallAgentAfterPushRegistration: isChecked })}}/>
+                                </div>
+                                <TurnConfiguration
+                                    customTurn={this.state.customTurn}
+                                    handleCustomTurnChecked={this.handleCustomTurnChecked}
+                                    handleAddTurnConfig={this.handleAddTurnConfig}
+                                    handleTurnUrlResetToDefault={this.handleTurnUrlResetToDefault}
+                                    handleTurnUrlReset={this.handleTurnUrlReset}
+                                />
+                                <ProxyConfiguration 
+                                    proxy={this.state.proxy}
+                                    handleProxyChecked={this.handleProxyChecked}
+                                    handleAddProxyUrl={this.handleAddProxyUrl}
+                                    handleProxyUrlReset={this.handleProxyUrlReset}
+                                />
+                            </div>
+                            <div className="mt-3">
                                 <PrimaryButton className="primary-button mt-3"
                                     iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
                                     label="Provision an user" 
-                                    disabled={this.state.disableInitializeButton}
-                                    onClick={() => this.provisionNewUser()}>
+                                    onClick={() => this.logIn()}>
                                         Provision user and initialize SDK
                                 </PrimaryButton>
                             </div>
