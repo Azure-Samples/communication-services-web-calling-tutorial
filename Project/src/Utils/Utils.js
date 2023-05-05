@@ -149,13 +149,13 @@ export const utils = {
     isParticipantSpotlighted(participantId, spotlightState) {
         if (!participantId || !spotlightState) { return false }
         let rtn = spotlightState.find(element => this.getIdentifierText(element.identifier) === this.getIdentifierText(participantId));
-        return rtn ? true : false
+        return !!rtn
         
     },
     isParticipantHandRaised(participantId, raisedHandState) {
         if (!participantId || !raisedHandState) { return false }
         let rtn = raisedHandState.find(element => this.getIdentifierText(element.identifier) === this.getIdentifierText(participantId));
-        return rtn ? true : false
+        return !!rtn
     },
     getParticipantPublishStates(participantId, publishedStates) {
         let states = {isSpotlighted: false, isHandRaised: false}
