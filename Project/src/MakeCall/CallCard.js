@@ -26,15 +26,19 @@ export default class CallCard extends React.Component {
         this.deviceManager = props.deviceManager;
         this.remoteVolumeLevelSubscription = undefined;
         this.handleRemoteVolumeSubscription = undefined;
-        this.maximumNumberOfRenderers = 4;
+        this.streamIsAvailableListeners = new Map();
+        this.videoStreamsUpdatedListeners = new Map();
         this.identifier = props.identityMri;
         this.spotlightFeature = this.call.feature(Features.Spotlight);
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
+
         this.state = {
+            ovc: 4,
             callState: this.call.state,
             callId: this.call.id,
             remoteParticipants: this.call.remoteParticipants,
             allRemoteParticipantStreams: [],
+            remoteScreenShareStream: undefined,
             videoOn: !!this.call.localVideoStreams[0],
             micMuted: false,
             incomingAudioMuted: false,
@@ -217,25 +221,71 @@ export default class CallCard extends React.Component {
                 this.setState({ screenShareOn: this.call.isScreenShareOn });
             });
 
-            this.call.remoteParticipants.forEach(rp => this.subscribeToRemoteParticipant(rp));
+            const handleParticipant = (participant) => {
+                if (!this.state.remoteParticipants.find((p) => { return p === participant })) {
+                    this.setState(prevState => ({
+                        ...prevState,
+                        remoteParticipants: [...prevState.remoteParticipants, participant]
+                    }));
+                }
+
+                const handleVideoStreamAdded = (vs) => {
+                    if (vs.isAvailable) this.updateListOfParticipantsToRender('streamIsAvailable');
+                    const isAvailableChangedListener = () => {
+                        this.updateListOfParticipantsToRender('streamIsAvailableChanged');
+                    }
+                    this.streamIsAvailableListeners.set(vs, isAvailableChangedListener);
+                    vs.on('isAvailableChanged', isAvailableChangedListener)
+                }
+
+                participant.videoStreams.forEach(handleVideoStreamAdded);
+
+                const videoStreamsUpdatedListener = (e) => {
+                    e.added.forEach(handleVideoStreamAdded);
+                    e.removed.forEach((vs) => {
+                        this.updateListOfParticipantsToRender('videoStreamsRemoved');
+                        const streamIsAvailableListener = this.streamIsAvailableListeners.get(vs);
+                        if (streamIsAvailableListener) {
+                            vs.off('isAvailableChanged', streamIsAvailableListener);
+                            this.streamIsAvailableListeners.delete(vs);
+                        }
+                    }); 
+                }
+                this.videoStreamsUpdatedListeners.set(participant, videoStreamsUpdatedListener);
+                participant.on('videoStreamsUpdated', videoStreamsUpdatedListener);
+            }
+
+            this.call.remoteParticipants.forEach(rp => handleParticipant(rp));
+
             this.call.on('remoteParticipantsUpdated', e => {
                 console.log(`Call=${this.call.callId}, remoteParticipantsUpdated, added=${e.added}, removed=${e.removed}`);
-                e.added.forEach(p => {
-                    console.log('participantAdded', p);
-                    this.subscribeToRemoteParticipant(p);
+                e.added.forEach(participant => {
+                    console.log('participantAdded', participant);
+                    handleParticipant(participant)
                 });
-                e.removed.forEach(p => {
-                    console.log('participantRemoved', p);
-                    if (p.callEndReason) {
+                e.removed.forEach(participant => {
+                    console.log('participantRemoved', participant);
+                    if (participant.callEndReason) {
                         this.setState(prevState => ({
                             ...prevState,
                             callMessage: `${prevState.callMessage ? prevState.callMessage + `\n` : ``}
-                                        Remote participant ${utils.getIdentifierText(p.identifier)} disconnected: code: ${p.callEndReason.code}, subCode: ${p.callEndReason.subCode}.`
+                                        Remote participant ${utils.getIdentifierText(participant.identifier)} disconnected: code: ${participant.callEndReason.code}, subCode: ${participant.callEndReason.subCode}.`
                         }));
                     }
-                    this.setState({ remoteParticipants: this.state.remoteParticipants.filter(remoteParticipant => { return remoteParticipant !== p }) });
-                    this.setState({ allRemoteParticipantStreams: this.state.allRemoteParticipantStreams.filter(s => { return s.participant !== p }) });
-                    p.off('videoStreamsUpdated', () => { });
+                    this.setState({ remoteParticipants: this.state.remoteParticipants.filter(p => { return p !== participant }) });
+                    this.updateListOfParticipantsToRender('participantRemoved');
+                    const videoStreamUpdatedListener = this.videoStreamsUpdatedListeners.get(participant);
+                    if (videoStreamUpdatedListener) {
+                        participant.off('videoStreamsUpdated', videoStreamUpdatedListener);
+                        this.videoStreamsUpdatedListeners.delete(participant);
+                    }
+                    participant.videoStreams.forEach(vs => {
+                        const streamIsAvailableListener = this.streamIsAvailableListeners.get(vs);
+                        if (streamIsAvailableListener) {
+                            vs.off('isAvailableChanged', streamIsAvailableListener);
+                            this.streamIsAvailableListeners.delete(vs);
+                        }
+                    });
                 });
             });
             const mediaCollector = this.call.feature(Features.MediaStats).createCollector();
@@ -336,55 +386,74 @@ export default class CallCard extends React.Component {
             capabilitiesFeature.on('capabilitiesChanged', () => {
                 const updatedCapabilities = capabilitiesFeature.capabilities;
             });
-            
-            
+
+            const ovcFeature = this.call.feature(Features.OptimalVideoCount);
+            const ovcChangedHandler = () => {
+                if (this.state.ovc !== ovcFeature.optimalVideoCount) {
+                    this.setState({ ovc: ovcFeature.optimalVideoCount });
+                    this.updateListOfParticipantsToRender('optimalVideoCountChanged');
+                }
+            }
+            ovcFeature?.on('optimalVideoCountChanged', () => ovcChangedHandler());
+
             this.spotlightFeature.on("spotlightChanged", this.spotlightStateChangedHandler);
             this.raiseHandFeature.on("loweredHandEvent", this.raiseHandChangedHandler);
             this.raiseHandFeature.on("raisedHandEvent", this.raiseHandChangedHandler);
         }
     }
+    
+    updateListOfParticipantsToRender(reason) {
 
-    subscribeToRemoteParticipant(participant) {
-        if (!this.state.remoteParticipants.find((p) => { return p === participant })) {
-            this.setState(prevState => ({
-                ...prevState,
-                remoteParticipants: [...prevState.remoteParticipants, participant]
-            }));
+        const ovcFeature = this.call.feature(Features.OptimalVideoCount);
+        const optimalVideoCount = ovcFeature.optimalVideoCount;
+        console.log(`updateListOfParticipantsToRender because ${reason}, ovc is ${optimalVideoCount}`);        
+        console.log(`updateListOfParticipantsToRender currently rendering ${this.state.allRemoteParticipantStreams.length} streams`);
+        console.log(`updateListOfParticipantsToRender checking participants that were removed`);
+        let streamsToKeep = this.state.allRemoteParticipantStreams.filter(streamTuple => {
+            return this.state.remoteParticipants.find(participant => participant.videoStreams.find(stream => stream === streamTuple.stream && stream.isAvailable));
+        });
+        
+        let screenShareStream = this.state.remoteScreenShareStream;
+        console.log(`updateListOfParticipantsToRender current screen share ${!!screenShareStream}`);
+        screenShareStream = this.state.remoteParticipants
+            .filter(participant => participant.videoStreams.find(stream => stream.mediaStreamType === 'ScreenSharing' && stream.isAvailable))
+            .map(participant => {
+            return { 
+                stream: participant.videoStreams.filter(stream => stream.mediaStreamType === 'ScreenSharing')[0],
+                participant,
+                streamRendererComponentRef: React.createRef() }
+            })[0];
+
+        console.log(`updateListOfParticipantsToRender streams to keep=${streamsToKeep.length}, including screen share ${!!screenShareStream}`);
+
+        if (streamsToKeep.length > optimalVideoCount) {
+            console.log('updateListOfParticipantsToRender reducing number of videos to ovc=', optimalVideoCount);
+            streamsToKeep = streamsToKeep.slice(0, optimalVideoCount);
         }
 
-        const addToListOfAllRemoteParticipantStreams = (participantStreams) => {
-            if (participantStreams) {
-                let participantStreamTuples = participantStreams.map(stream => { return { stream, participant, streamRendererComponentRef: React.createRef() } });
-                participantStreamTuples.forEach(participantStreamTuple => {
-                    if (!this.state.allRemoteParticipantStreams.find((v) => { return v === participantStreamTuple })) {
-                        this.setState(prevState => ({
-                            ...prevState,
-                            allRemoteParticipantStreams: [...prevState.allRemoteParticipantStreams, participantStreamTuple]
-                        }));
-                    }
-                })
-            }
-        }
-
-        const removeFromListOfAllRemoteParticipantStreams = (participantStreams) => {
-            participantStreams.forEach(streamToRemove => {
-                const tupleToRemove = this.state.allRemoteParticipantStreams.find((v) => { return v.stream === streamToRemove })
-                if (tupleToRemove) {
-                    this.setState({
-                        ...prevState,
-                        allRemoteParticipantStreams: this.state.allRemoteParticipantStreams.filter(streamTuple => { return streamTuple !== tupleToRemove })
-                    });
-                }
+        // we can add more streams if we have less than optimalVideoCount
+        if (streamsToKeep.length < optimalVideoCount) {
+            console.log(`    stack is capable of rendering ${optimalVideoCount - streamsToKeep.length} more streams, adding...`);
+            let streamsToAdd = [];            
+            this.state.remoteParticipants.forEach(participant => {
+                const newStreams = participant.videoStreams
+                    .flat()
+                    .filter(stream => stream.mediaStreamType === 'Video' && stream.isAvailable)
+                    .filter(stream => !streamsToKeep.find(streamTuple => streamTuple.stream === stream))
+                    .map(stream => { return { stream, participant, streamRendererComponentRef: React.createRef() } });
+                streamsToAdd.push(...newStreams);
             });
+            streamsToAdd = streamsToAdd.slice(0, optimalVideoCount - streamsToKeep.length);
+            console.log(`updateListOfParticipantsToRender identified ${streamsToAdd.length} streams to add`);
+            streamsToKeep = streamsToKeep.concat(streamsToAdd.filter(e => !!e));
         }
+        console.log(`updateListOfParticipantsToRender final number of streams to render ${streamsToKeep.length}}`);
+        this.setState(prevState => ({
+            ...prevState,
+            remoteScreenShareStream: screenShareStream,
+            allRemoteParticipantStreams: streamsToKeep
+        }));
 
-        const handleVideoStreamsUpdated = (e) => {
-            addToListOfAllRemoteParticipantStreams(e.added);
-            removeFromListOfAllRemoteParticipantStreams(e.removed);
-        }
-
-        addToListOfAllRemoteParticipantStreams(participant.videoStreams);
-        participant.on('videoStreamsUpdated', handleVideoStreamsUpdated);
     }
 
     spotlightStateChangedHandler = (event) => {
@@ -683,6 +752,7 @@ export default class CallCard extends React.Component {
         ]
         return menuItems.filter(item => item != 0)
     }
+    
     render() {
         return (
             <div className="ms-Grid mt-2">
@@ -729,10 +799,23 @@ export default class CallCard extends React.Component {
                                 dominantSpeakerMode={this.state.dominantSpeakerMode}
                                 dominantRemoteParticipant={this.state.dominantRemoteParticipant}
                                 call={this.call}
-                                maximumNumberOfRenderers={this.maximumNumberOfRenderers}
-                                updateStreamList={() => this.updateStreamList()}
                                 showMediaStats={this.state.logMediaStats}
                             />
+                        )
+                    }
+                    {
+                        (
+                            this.state.remoteScreenShareStream &&
+                                <StreamRenderer
+                                    key={`${utils.getIdentifierText(this.state.remoteScreenShareStream.participant.identifier)}-${this.state.remoteScreenShareStream.stream.mediaStreamType}-${this.state.remoteScreenShareStream.stream.id}`}
+                                    ref={this.state.remoteScreenShareStream.streamRendererComponentRef}
+                                    stream={this.state.remoteScreenShareStream.stream}
+                                    remoteParticipant={this.state.remoteScreenShareStream.participant}
+                                    dominantSpeakerMode={this.state.dominantSpeakerMode}
+                                    dominantRemoteParticipant={this.state.dominantRemoteParticipant}
+                                    call={this.call}
+                                    showMediaStats={this.state.logMediaStats}
+                                />
                         )
                     }
                 </div>
