@@ -17,6 +17,7 @@ import { Label } from '@fluentui/react/lib/Label';
 import { AzureLogger } from '@azure/logger';
 import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
+import CallCaption from "./CallCaption";
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -52,6 +53,7 @@ export default class CallCard extends React.Component {
             showLocalVideo: false,
             callMessage: undefined,
             dominantSpeakerMode: false,
+            captionOn: false,
             dominantRemoteParticipant: undefined,
             logMediaStats: false,
             sentResolution: '',
@@ -847,7 +849,7 @@ export default class CallCard extends React.Component {
                                     }
                                 </span>
                                 <span className="in-call-button"
-                                    title={`${!this.state.showParticipantsCard ? `Show Participants` : `Hide Participants`}`}
+                                    title={`${!this.state.showParticipantsCard ? `Show Participants and Caption Panel` : `Hide Participants and Caption Panel`}`}
                                     variant="secondary"
                                     onClick={() => this.toggleParticipantsCard()}>
                                     {
@@ -986,6 +988,31 @@ export default class CallCard extends React.Component {
                                 }
                             </ul>
                         </div>
+                        <div className="participants-panel mt-1 mb-3">
+                                <Toggle label={
+                                        <div>
+                                            Caption{' '}
+                                            <TooltipHost content={`Turn on Captions to see the conversation script`}>
+                                                <Icon iconName="Info" aria-label="Info tooltip" />
+                                            </TooltipHost>
+                                        </div>
+                                    }
+                                    styles={{
+                                        text : { color: '#edebe9' },
+                                        label: { color: '#edebe9' },
+                                    }}
+                                    inlineLabel
+                                    onText="On"
+                                    offText="Off"
+                                    defaultChecked={this.state.captionOn}
+                                    onChange={() => { this.setState({ captionOn: !this.state.captionOn })}}
+                                />
+                                
+                                {
+                                    this.state.captionOn &&
+                                    <CallCaption call={this.call} />
+                                }
+                            </div>
                     </div>
                 }
             </div>

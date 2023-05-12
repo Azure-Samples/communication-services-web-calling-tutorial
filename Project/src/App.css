@@ -1173,6 +1173,10 @@ h3 {
   width: 100%;
   max-width: 150px;
 }
+.caption-area {
+  max-height: 300px;
+  overflow: auto;
+}
 
 .custom-video-effects-buttons:not(.outgoing) {
   position: absolute;
