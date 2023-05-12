@@ -18,6 +18,7 @@ import { AzureLogger } from '@azure/logger';
 import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
 import CallCaption from "./CallCaption";
+import CommunicationAI from "./CommunicationAI/CommunicationAI"
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -54,6 +55,7 @@ export default class CallCard extends React.Component {
             callMessage: undefined,
             dominantSpeakerMode: false,
             captionOn: false,
+            communicationAI: false,
             dominantRemoteParticipant: undefined,
             logMediaStats: false,
             sentResolution: '',
@@ -1012,7 +1014,32 @@ export default class CallCard extends React.Component {
                                     this.state.captionOn &&
                                     <CallCaption call={this.call} />
                                 }
-                            </div>
+                        </div>
+                        <div className="participants-panel mt-1 mb-3">
+                                <Toggle label={
+                                        <div>
+                                            Communication AI{' '}
+                                            <TooltipHost content={`Turn on Communication AI`}>
+                                                <Icon iconName="Info" aria-label="Info tooltip" />
+                                            </TooltipHost>
+                                        </div>
+                                    }
+                                    styles={{
+                                        text : { color: '#edebe9' },
+                                        label: { color: '#edebe9' },
+                                    }}
+                                    inlineLabel
+                                    onText="On"
+                                    offText="Off"
+                                    defaultChecked={this.state.communicationAI}
+                                    onChange={() => { this.setState({ communicationAI: !this.state.communicationAI })}}
+                                />
+                                
+                                {
+                                    this.state.communicationAI &&
+                                    <CommunicationAI call={this.call} />
+                                }
+                        </div>
                     </div>
                 }
             </div>
