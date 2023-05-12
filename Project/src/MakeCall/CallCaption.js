@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Features, ResultType } from '@azure/communication-calling';
+import { Features, ResultType, CallKind } from '@azure/communication-calling';
 
 // CallCaption react function component
 const CallCaption = ({ call }) => {
