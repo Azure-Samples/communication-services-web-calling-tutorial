@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { Features, ResultType } from '@azure/communication-calling';
 import { Dropdown } from '@fluentui/react/lib/Dropdown';
+import { utils, acsOpenAiPromptsApi } from "../../Utils/Utils";
 
 
 const CommunicationAI = ({ call }) => {
     const [captionsStarted, setCaptionsStarted] = useState(false)
     const [captionHistory, setCaptionHistory] = useState([]);
     const [lastSummary, setlastSummary] = useState("");
-    const [lastfeedBack, setlastfeedBack] = useState("");
+    const [captionsSummaryIndex, setCaptionsSummaryIndex] = useState(0);
+    const [lastFeedBack, setLastFeedBack] = useState("");
+    const [captionsFeedbackIndex, setCaptionsFeedbackIndex] = useState(0);
     const [promptResponse, setPromptResponse] = useState("")
+    const [dropDownLabel, setDropDownLabel] = useState("")
     const options = [
         { key: 'getSummary', text: 'Get Summary'},
         { key: 'getPersonalFeedBack', text: 'Get Personal Feedback' },
     ]
-
+    let displayName = "Testusera";
     let captions;
-
     useEffect(() => {
         captions = call.feature(Features.Captions);
         startCaptions(captions);
@@ -58,19 +61,27 @@ const CommunicationAI = ({ call }) => {
     };
 
     
-    const getSummary = () => {
-        // placeholder until we get server response
-        setPromptResponse("FHL <=> Get summary")
+    const getSummary = async () => {    
+        const currentCaptionsData =  captionHistory.slice(captionsSummaryIndex);
+        let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.summary, displayName, lastSummary, currentCaptionsData);
+        const content = response.choices[0].message.content;
+        setlastSummary(content)
+        setCaptionsSummaryIndex(captionHistory.length);
+        setPromptResponse(content)
     }
 
-    const getPersonalFeedback = () => {
-        // placeholder until we get server response
-        setPromptResponse("FHL <=> Get Personal FeedBack")
-
+    const getPersonalFeedback = async () => {
+        const currentCaptionsData =  captionHistory.slice(captionsFeedbackIndex);
+        let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.feedback, displayName, lastFeedBack, currentCaptionsData)
+        const content = response.choices[0].message.content;
+        setLastFeedBack(content)
+        setCaptionsFeedbackIndex(captionHistory.length);
+        setPromptResponse(content)
     }
 
     const onChangeHandler = (e, item) => {
         let communicationAiOption = item.key;
+        setDropDownLabel(item.text);
         switch (communicationAiOption) {
             case "getSummary":
                 getSummary()
@@ -84,26 +95,18 @@ const CommunicationAI = ({ call }) => {
 
     return (
         <>
-        <div id="" className="">
-            <Dropdown
-                placeholder="Select an option"
-                label="Basic uncontrolled example"
-                options={options}
-                styles={{dropdown: { width: 300 },}}
-                onChange={onChangeHandler}
-            />
-        </div>
-        <div id="communicationResponse" className="">           
-            <h1>{promptResponse}</h1>
-            <h2>{"Place holder of captions data (will be removed)"}</h2>
-            <div id="captionArea" className="caption-area">
-                {
-                    captionHistory.map((caption, index) => (
-                        <div key={index}>{caption}</div>
-                    ))
-                }
-            </div>  
-        </div>
+            <div id="" className="">
+                <Dropdown
+                    placeholder="Select an option"
+                    label= {dropDownLabel}
+                    options={options}
+                    styles={{dropdown: { width: 300 },}}
+                    onChange={onChangeHandler}
+                />
+            </div>
+            <div id="communicationResponse" className="">           
+                <p>{promptResponse}</p>
+            </div>
         </>
     );
 };
