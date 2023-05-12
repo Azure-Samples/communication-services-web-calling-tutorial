@@ -118,6 +118,9 @@ export default class MakeCall extends React.Component {
                 });
                 this.environmentInfo = await this.callClient.getEnvironmentInfoInternal();
                 this.debugInfoFeature = await this.callClient.feature(Features.DebugInfo);
+                // Current user name
+                window.displayName = userDetails.displayName;
+
                 this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
                 this.callAgent.on('callsUpdated', e => {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);

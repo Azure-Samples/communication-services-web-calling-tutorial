@@ -7,7 +7,7 @@ import { utils, acsOpenAiPromptsApi } from "../../Utils/Utils";
 const CommunicationAI = ({ call }) => {
     const [captionsStarted, setCaptionsStarted] = useState(false)
     const [captionHistory, setCaptionHistory] = useState([]);
-    const [lastSummary, setlastSummary] = useState("");
+    const [lastSummary, setLastSummary] = useState("");
     const [captionsSummaryIndex, setCaptionsSummaryIndex] = useState(0);
     const [lastFeedBack, setLastFeedBack] = useState("");
     const [captionsFeedbackIndex, setCaptionsFeedbackIndex] = useState(0);
@@ -17,7 +17,7 @@ const CommunicationAI = ({ call }) => {
         { key: 'getSummary', text: 'Get Summary'},
         { key: 'getPersonalFeedBack', text: 'Get Personal Feedback' },
     ]
-    let displayName = "Testusera";
+    let displayName = window.displayName;
     let captions;
     useEffect(() => {
         captions = call.feature(Features.Captions);
@@ -53,7 +53,6 @@ const CommunicationAI = ({ call }) => {
 
         const captionText = `${captionData.speaker.displayName}: ${captionData.text}`;
 
-        console.log(mri, captionText);
         if (captionData.resultType === ResultType.Final) {
             setCaptionHistory(oldCaptions => [...oldCaptions, captionText]);
         }
@@ -65,7 +64,7 @@ const CommunicationAI = ({ call }) => {
         const currentCaptionsData =  captionHistory.slice(captionsSummaryIndex);
         let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.summary, displayName, lastSummary, currentCaptionsData);
         const content = response.choices[0].message.content;
-        setlastSummary(content)
+        setLastSummary(content)
         setCaptionsSummaryIndex(captionHistory.length);
         setPromptResponse(content)
     }
