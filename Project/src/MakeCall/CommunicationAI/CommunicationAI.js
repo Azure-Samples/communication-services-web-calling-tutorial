@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Features, ResultType } from '@azure/communication-calling';
+import { Features, ResultTyp, CallKind } from '@azure/communication-calling';
 import { Dropdown } from '@fluentui/react/lib/Dropdown';
 import { utils, acsOpenAiPromptsApi } from "../../Utils/Utils";
 
@@ -21,7 +21,7 @@ const CommunicationAI = ({ call }) => {
     let displayName = window.displayName;
     let captions;
     useEffect(() => {
-        captions = call.feature(Features.Captions);
+        captions = call.kind === CallKind.TeamsCall || call.info?.context === 'teamsMeetingJoin' ? call.feature(Features.TeamsCaptions) : call.feature(Features.Captions);
         startCaptions(captions);
 
         return () => {
