@@ -68,8 +68,8 @@ export const utils = {
             },
             data: {
                 "CurrentParticipant": participantName,
-                "Captions": lastResponse,
-                "LastSummary": newCaptionsData
+                "Captions": newCaptionsData,
+                "LastSummary": lastResponse
 
             }
         });
