@@ -5,7 +5,8 @@ import { utils, acsOpenAiPromptsApi } from "../../Utils/Utils";
 
 
 const CommunicationAI = ({ call }) => {
-    const [captionsStarted, setCaptionsStarted] = useState(false)
+    const [captionsStarted, setCaptionsStarted] = useState(false);
+    const [showSpinner, setShowSpinner] = useState(false);
     const [captionHistory, setCaptionHistory] = useState([]);
     const [lastSummary, setLastSummary] = useState("");
     const [captionsSummaryIndex, setCaptionsSummaryIndex] = useState(0);
@@ -14,7 +15,7 @@ const CommunicationAI = ({ call }) => {
     const [promptResponse, setPromptResponse] = useState("")
     const [dropDownLabel, setDropDownLabel] = useState("")
     const options = [
-        { key: 'getSummary', text: 'Get Summary'},
+        { key: 'getSummary', text: 'Get Summary' },
         { key: 'getPersonalFeedBack', text: 'Get Personal Feedback' },
     ]
     let displayName = window.displayName;
@@ -22,7 +23,7 @@ const CommunicationAI = ({ call }) => {
     useEffect(() => {
         captions = call.feature(Features.Captions);
         startCaptions(captions);
-        
+
         return () => {
             // cleanup
             captions.off('captionsReceived', captionHandler);
@@ -59,35 +60,36 @@ const CommunicationAI = ({ call }) => {
 
     };
 
-    
-    const getSummary = async () => {    
-        const currentCaptionsData =  captionHistory.slice(captionsSummaryIndex);
+
+    const getSummary = async () => {
+        const currentCaptionsData = captionHistory.slice(captionsSummaryIndex);
         let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.summary, displayName, lastSummary, currentCaptionsData);
         const content = response.choices[0].message.content;
-        setLastSummary(content)
+        setLastSummary(content);
         setCaptionsSummaryIndex(captionHistory.length);
-        setPromptResponse(content)
+        setPromptResponse(content);
     }
 
     const getPersonalFeedback = async () => {
-        const currentCaptionsData =  captionHistory.slice(captionsFeedbackIndex);
+        const currentCaptionsData = captionHistory.slice(captionsFeedbackIndex);
         let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.feedback, displayName, lastFeedBack, currentCaptionsData)
         const content = response.choices[0].message.content;
-        setLastFeedBack(content)
+        setLastFeedBack(content);
         setCaptionsFeedbackIndex(captionHistory.length);
-        setPromptResponse(content)
+        setPromptResponse(content);
     }
 
     const onChangeHandler = (e, item) => {
         let communicationAiOption = item.key;
         setDropDownLabel(item.text);
+        setShowSpinner(true);
         switch (communicationAiOption) {
             case "getSummary":
-                getSummary()
-                break
+                getSummary().finally(() => setShowSpinner(false));
+                break;
             case "getPersonalFeedBack":
-                getPersonalFeedback()
-                break
+                getPersonalFeedback().finally(() => setShowSpinner(false));
+                break;
         }
 
     }
@@ -97,14 +99,22 @@ const CommunicationAI = ({ call }) => {
             <div id="" className="">
                 <Dropdown
                     placeholder="Select an option"
-                    label= {dropDownLabel}
+                    label={dropDownLabel}
                     options={options}
-                    styles={{dropdown: { width: 300 },}}
+                    styles={{ dropdown: { width: 300 }, }}
                     onChange={onChangeHandler}
                 />
             </div>
-            <div id="communicationResponse" className="">           
-                <p>{promptResponse}</p>
+
+            <div id="communicationResponse">
+                {
+                    showSpinner &&
+                    <div>
+                        <div className="loader inline-block"> </div>
+                        <div className="ml-2 inline-block">Waiting for the AI response...</div>
+                    </div>
+                }
+                <p>{showSpinner ? '' : promptResponse}</p>
             </div>
         </>
     );
