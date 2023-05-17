@@ -38,7 +38,7 @@ export default class CallCard extends React.Component {
             allRemoteParticipantStreams: [],
             remoteScreenShareStream: undefined,
             videoOn: !!this.call.localVideoStreams[0],
-            micMuted: false,
+            micMuted: this.call.isMuted,
             incomingAudioMuted: false,
             onHold: this.call.state === 'LocalHold' || this.call.state === 'RemoteHold',
             screenShareOn: this.call.isScreenShareOn,
