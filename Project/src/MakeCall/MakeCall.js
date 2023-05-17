@@ -217,7 +217,7 @@ export default class MakeCall extends React.Component {
                 }
             });
 
-            const callOptions = await this.getCallOptions(withVideo);
+            const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
 
             if (this.alternateCallerId.value !== '') {
                 callOptions.alternateCallerId = { phoneNumber: this.alternateCallerId.value.trim() };
@@ -248,7 +248,7 @@ export default class MakeCall extends React.Component {
 
     joinGroup = async (withVideo) => {
         try {
-            const callOptions = await this.getCallOptions(withVideo);
+            const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
             this.callAgent.join({ groupId: this.destinationGroup.value }, callOptions);
         } catch (e) {
             console.error('Failed to join a call', e);
@@ -258,7 +258,7 @@ export default class MakeCall extends React.Component {
 
     joinRooms = async (withVideo) => {
         try {
-            const callOptions = await this.getCallOptions(withVideo);
+            const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
             this.callAgent.join({ meetingId: this.roomsId.value }, callOptions);
         } catch (e) {
             console.error('Failed to join a call', e);
@@ -268,7 +268,7 @@ export default class MakeCall extends React.Component {
 
     joinTeamsMeeting = async (withVideo) => {
         try {
-            const callOptions = await this.getCallOptions(withVideo);
+            const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
             if (this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({ meetingLink: this.meetingLink.value }, callOptions);
 
@@ -290,13 +290,13 @@ export default class MakeCall extends React.Component {
         }
     }
 
-    async getCallOptions(withVideo) {
+    async getCallOptions(options) {
         let callOptions = {
             videoOptions: {
                 localVideoStreams: undefined
             },
             audioOptions: {
-                muted: false
+                muted: !!options.micMuted
             }
         };
 
@@ -316,7 +316,7 @@ export default class MakeCall extends React.Component {
                 cameraDeviceOptions: cameras.map(camera => { return { key: camera.id, text: camera.name } })
             });
         }
-        if (withVideo) {
+        if (!!options.video) {
             try {
                 if (!cameraDevice || cameraDevice?.id === 'camera:') {
                     throw new Error('No camera devices found.');
@@ -1037,8 +1037,10 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             this.state.incomingCall && !this.state.call &&
                             <IncomingCallCard
                                 incomingCall={this.state.incomingCall}
-                                acceptCallOptions={async () => await this.getCallOptions()}
-                                acceptCallWithVideoOptions={async () => await this.getCallOptions(true)}
+                                acceptCallMicrophoneUnmutedVideoOff={async () => await this.getCallOptions({ video: false, micMuted: false })}
+                                acceptCallMicrophoneUnmutedVideoOn={async () => await this.getCallOptions({ video: true, micMuted: false })}
+                                acceptCallMicrophoneMutedVideoOn={async () => await this.getCallOptions({ video: true, micMuted: true })}
+                                acceptCallMicrophoneMutedVideoOff={async () => await this.getCallOptions({ video: false, micMuted: true })}
                                 onReject={() => { this.setState({ incomingCall: undefined }) }} />
                         }
                     </div>
