@@ -8,7 +8,7 @@ const CallCaption = ({ call, isTeamsUser }) => {
     let captions;
 
     useEffect(() => {
-        captions = isTeamsUser ? call.feature(Features.TeamsCaptions) : call.feature(Features.Captions);
+        captions = isTeamsUser ? call.feature(Features.TeamsCaptions):call.feature(Features.Captions);
         startCaptions(captions);
         
         return () => {

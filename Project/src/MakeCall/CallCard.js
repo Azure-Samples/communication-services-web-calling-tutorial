@@ -30,6 +30,9 @@ export default class CallCard extends React.Component {
         this.handleRemoteVolumeSubscription = undefined;
         this.streamIsAvailableListeners = new Map();
         this.videoStreamsUpdatedListeners = new Map();
+        this.identifier = props.identityMri;
+        this.spotlightFeature = this.call.feature(Features.Spotlight);
+        this.raiseHandFeature = this.call.feature(Features.RaiseHand);
 
         this.identifier = props.identityMri;
         this.isTeamsUser = props.isTeamsUser;
@@ -399,8 +402,6 @@ export default class CallCard extends React.Component {
                 }
             }
             ovcFeature?.on('optimalVideoCountChanged', () => ovcChangedHandler());
-            
-            
             this.spotlightFeature.on("spotlightChanged", this.spotlightStateChangedHandler);
             this.raiseHandFeature.on("loweredHandEvent", this.raiseHandChangedHandler);
             this.raiseHandFeature.on("raisedHandEvent", this.raiseHandChangedHandler);
