@@ -86,9 +86,9 @@ export default class CallCard extends React.Component {
         this.state.mediaCollector?.off('sampleReported', () => { });
         this.state.mediaCollector?.off('summaryReported', () => { });
         this.call.feature(Features.DominantSpeakers).off('dominantSpeakersChanged', () => { });
-        this.call.feature(Features.Spotlight).off('spotlightChanged', () => {});
-        this.call.feature(Features.RaiseHand).off('raisedHandEvent', () => {});
-        this.call.feature(Features.RaiseHand).off('loweredHandEvent', () => {});
+        this.call.feature(Features.Spotlight).off('spotlightChanged', this.spotlightStateChangedHandler);
+        this.call.feature(Features.RaiseHand).off('raisedHandEvent', this.raiseHandChangedHandler);
+        this.call.feature(Features.RaiseHand).off('loweredHandEvent', this.raiseHandChangedHandler);
     }
 
     componentDidMount() {
@@ -400,18 +400,10 @@ export default class CallCard extends React.Component {
             }
             ovcFeature?.on('optimalVideoCountChanged', () => ovcChangedHandler());
             
-            const spotlightStateChangedHandler = (event) => {
-                this.setState({isSpotlighted: utils.isParticipantSpotlighted(
-                    this.identifier, this.spotlightFeature.getSpotlightedParticipants())})
-            };
-            this.spotlightFeature.on("spotlightChanged", spotlightStateChangedHandler);
-
-            const isRaiseHandChangedHandler = (event) => {
-                this.setState({isHandRaised: utils.isParticipantHandRaised(this.identifier, this.raiseHandFeature.getRaisedHands())})
-            }
-
-            this.raiseHandFeature.on("loweredHandEvent", isRaiseHandChangedHandler);
-            this.raiseHandFeature.on("raisedHandEvent", isRaiseHandChangedHandler);
+            
+            this.spotlightFeature.on("spotlightChanged", this.spotlightStateChangedHandler);
+            this.raiseHandFeature.on("loweredHandEvent", this.raiseHandChangedHandler);
+            this.raiseHandFeature.on("raisedHandEvent", this.raiseHandChangedHandler);
         }
     }
     
@@ -467,6 +459,15 @@ export default class CallCard extends React.Component {
             allRemoteParticipantStreams: streamsToKeep
         }));
 
+    }
+
+    spotlightStateChangedHandler = (event) => {
+        this.setState({isSpotlighted: utils.isParticipantSpotlighted(
+            this.identifier, this.spotlightFeature.getSpotlightedParticipants())})
+    }
+    
+    raiseHandChangedHandler = (event) => {
+        this.setState({isHandRaised: utils.isParticipantHandRaised(this.identifier, this.raiseHandFeature.getRaisedHands())})
     }
 
     async handleVideoOnOff() {
