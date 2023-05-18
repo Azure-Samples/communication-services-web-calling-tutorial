@@ -34,7 +34,7 @@ export default class CallCard extends React.Component {
             ovc: 4,
             callState: this.call.state,
             callId: this.call.id,
-            remoteParticipants: this.call.remoteParticipants,
+            remoteParticipants: [],
             allRemoteParticipantStreams: [],
             remoteScreenShareStream: undefined,
             videoOn: !!this.call.localVideoStreams[0],
@@ -60,7 +60,7 @@ export default class CallCard extends React.Component {
             remoteVolumeIndicator: undefined,
             remoteVolumeLevel: undefined,
             mediaCollector: undefined,
-            showParticipantsCard: false
+            showParticipantsCard: true
         };
     }
 
