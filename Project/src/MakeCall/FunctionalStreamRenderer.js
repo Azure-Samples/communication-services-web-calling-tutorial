@@ -16,8 +16,6 @@ export const FunctionalStreamRenderer = forwardRef(({
     const videoContainerId = componentId + '-videoContainer';
     const componentContainer = useRef(null);
     const videoContainer = useRef(null);
-    // const [renderer, setRenderer] = useState();
-    // const [view, setView] = useState();
     let renderer;
     let view;
     const [isLoading, setIsLoading] = useState(false);
@@ -39,27 +37,10 @@ export const FunctionalStreamRenderer = forwardRef(({
         }
     }, []);
 
-    // useEffect(() => {
-    //     const createView = async () => {
-    //         if (renderer) {
-    //             const createdView = await renderer.createView();
-    //             setView(createdView);
-    //         }
-    //     };
-    //     createView();
-    // }, [renderer]);
-
-    // useEffect(() => {
-    //     if (view) {
-    //         attachRenderer();
-    //     }
-    // }, [view]);
-
     const createRenderer = async () => {
         if (!renderer) {
             renderer = new VideoStreamRenderer(stream);
             view = await renderer.createView();
-            // setRenderer(videoRenderer);
         } else {
             throw new Error(`[App][StreamMedia][id=${stream.id}][createRenderer] stream already has a renderer`);
         }
@@ -143,6 +124,7 @@ export const FunctionalStreamRenderer = forwardRef(({
             }
         }
     }));
+
     if (stream.isAvailable) {
         return (
             <div id={componentId} ref={componentContainer} className={`stream-container ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``} ${stream.isAvailable ? 'rendering' : ''}`}>
