@@ -6,6 +6,12 @@ import {
 } from '@azure/communication-common';
 import axios from 'axios';
 
+export const acsOpenAiPromptsApi = {
+    base: 'https://acsopenaigateway.azurewebsites.net/api/',
+    summary: 'getSummary',
+    feedback: 'getPersonalFeedback'
+}
+
 export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
@@ -50,6 +56,26 @@ export const utils = {
             return response.data;
         }
         throw new Error('Failed to get ACS User Acccess token for the given OneSignal Registration Token');
+    },
+    sendCaptionsDataToAcsOpenAI: async (apiEndpoint, participantName, lastResponse, newCaptionsData) => {
+        let response = await axios({
+            url: acsOpenAiPromptsApi.base + apiEndpoint,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': "*",
+                'x-functions-key': 'PUT_FUNCTION_KEY'
+            },
+            data: {
+                "CurrentParticipant": participantName,
+                "Captions": newCaptionsData,
+                "LastSummary": lastResponse
+
+            }
+        });
+        if (response.status === 200) {
+            return response.data;
+        }
     },
     getIdentifierText: (identifier) => {
         if (isCommunicationUserIdentifier(identifier)) {
