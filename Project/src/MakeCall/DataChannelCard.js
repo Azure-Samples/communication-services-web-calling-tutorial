@@ -5,6 +5,17 @@ import 'react-toastify/dist/ReactToastify.css';
 import { PrimaryButton, TextField } from 'office-ui-fabric-react';
 import { utils } from '../Utils/Utils';
 
+const toastOptions = {
+    position: "top-right",
+    autoClose: 5000,
+    hideProgressBar: true,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    theme: "colored",
+};
+
 export default class DataChannelCard extends React.Component {
     constructor(props) {
         super(props);
@@ -36,18 +47,6 @@ export default class DataChannelCard extends React.Component {
                 theme: "colored",
             });
         };
-
-        window.dataChannel = dataChannel; //TOFIX, only for debugging
-        const toastOptions = {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: true,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-            theme: "colored",
-        };
         dataChannel.on('dataChannelReceiverCreated', receiver => {
             const participantId = utils.getIdentifierText(receiver.senderParticipantIdentifier);
             const displayName = getDisplayName(participantId);
@@ -57,32 +56,44 @@ export default class DataChannelCard extends React.Component {
             receiver.on('close', () => {
                 toast.error(`data channel id = ${receiver.channelId} from ${from} is closed`, toastOptions);
             });
-            receiver.on('messageReady', () => {
-                const message = receiver.readMessage();
-                if (!message) return;
-                if (receiver.channelId === 10000) {
+            if (receiver.channelId === 1000) {
+                receiver.on('messageReady', () => {
+                    const message = receiver.readMessage();
                     messageHandler(message, participantId);
-                }
+                });
+            }
+        });
+
+        try {
+            this.messageSender = dataChannel.createDataChannelSender({
+                channelId: 1000
             });
-        });
-        this.messageSender = dataChannel.createDataChannelSender({
-            channelId: 10000
-        });
+        } catch(e) {
+            toast.error(`createDataChannelSender: ${e.message}`, toastOptions);
+        }
     }
 
     setParticipants(participants) {
-        this.messageSender.setParticipants(participants);
+        try {
+            this.messageSender.setParticipants(participants);
+        } catch(e) {
+            toast.error(`setParticipants: ${e.message}`, toastOptions);
+        }
     }
 
     sendMessage() {
         if (this.state.inputMessage) {
-            this.messageSender.sendMessage((new TextEncoder()).encode(this.state.inputMessage)).then(() => {
-                this.setState({
-                    inputMessage: ''
+            try {
+                this.messageSender.sendMessage((new TextEncoder()).encode(this.state.inputMessage)).then(() => {
+                    this.setState({
+                        inputMessage: ''
+                    });
+                }).catch(e => {
+                    toast.error(`sendMessage: ${e.message}`, toastOptions);
                 });
-            }).catch(e => {
+            } catch(e) {
                 toast.error(`sendMessage: ${e.message}`, toastOptions);
-            });
+            }
         }
     }
 

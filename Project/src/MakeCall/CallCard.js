@@ -917,7 +917,7 @@ export default class CallCard extends React.Component {
                 </div>
                 <div className="ms-Grid-row">
                 {
-                    this.state.callState === 'Connected' &&  this.state.remoteParticipants.length > 0 &&
+                    this.state.callState === 'Connected' &&
                         <DataChannelCard call={this.call} ref={this.dataChannelRef} remoteParticipants={this.state.remoteParticipants} />
                 }
                 </div>
