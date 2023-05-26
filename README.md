@@ -50,4 +50,5 @@ Note: If you want to deploy this application with a different deployment environ
 
 1. Documentation on how to use the ACS Calling SDK for Javascript can be found on https://docs.microsoft.com/en-gb/azure/communication-services/quickstarts/voice-video-calling/calling-client-samples?pivots=platform-web
 2. ACS Calling SDK for Javascript API reference documentation can be found on https://docs.microsoft.com/en-us/javascript/api/azure-communication-services/@azure/communication-calling/?view=azure-communication-services-js
-3. Documentation on how to setup and get access tokens for teams User can be found on https://learn.microsoft.com/en-us/azure/communication-services/quickstarts/manage-teams-identity?pivots=programming-language-javascript
+3. Documentation on Communications Calling SDK with Teams identity can be found on https://learn.microsoft.com/en-us/azure/communication-services/concepts/teams-interop
+4. Documentation on how to setup and get access tokens for teams User can be found on https://learn.microsoft.com/en-us/azure/communication-services/quickstarts/manage-teams-identity?pivots=programming-language-javascript
