@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Features, ResultType } from '@azure/communication-calling';
+import { Features } from '@azure/communication-calling';
 
 // CallCaption react function component
-const CallCaption = ({ call }) => {
+const CallCaption = ({ call, isTeamsUser }) => {
     // caption history state
     const [captionHistory, setCaptionHistory] = useState([]);
     let captions;
 
     useEffect(() => {
-        captions = call.feature(Features.Captions);
+        captions = isTeamsUser ? call.feature(Features.TeamsCaptions):call.feature(Features.Captions);
         startCaptions(captions);
         
         return () => {
@@ -20,7 +20,7 @@ const CallCaption = ({ call }) => {
 
     const startCaptions = async () => {
         try {
-            if (!captions.isCaptionsActive) {
+            if (!captions.isCaptionsActive || !captions.isCaptionsFeatureActive) {
                 await captions.startCaptions({ spokenLanguage: 'en-us' });
             }
             captions.on('isCaptionsActiveChanged', isCaptionsActiveHandler);
@@ -48,7 +48,7 @@ const CallCaption = ({ call }) => {
                 ${captionData.speaker.displayName}: ${captionData.text}`;
 
         console.log(mri, captionText);
-        if (captionData.resultType === ResultType.Final) {
+        if (captionData.resultType === 'Final') {
             setCaptionHistory(oldCaptions => [...oldCaptions, captionText]);
         }
 

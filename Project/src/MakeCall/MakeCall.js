@@ -1,6 +1,6 @@
 import React from "react";
-import { CallClient, LocalVideoStream, Features } from '@azure/communication-calling';
-import { AzureCommunicationTokenCredential } from '@azure/communication-common';
+import { CallClient, LocalVideoStream, Features, CallAgentKind } from '@azure/communication-calling';
+import { AzureCommunicationTokenCredential, createIdentifierFromRawId} from '@azure/communication-common';
 import {
     PrimaryButton,
     TextField,
@@ -14,7 +14,7 @@ import CallSurvey from '../MakeCall/CallSurvey';
 import Login from './Login';
 import MediaConstraint from './MediaConstraint';
 import { setLogLevel, AzureLogger } from '@azure/logger';
-
+import  { utils } from '../Utils/Utils';
 export default class MakeCall extends React.Component {
     constructor(props) {
         super(props);
@@ -63,7 +63,9 @@ export default class MakeCall extends React.Component {
                 audio: null,
                 video: null
             },
-            preCallDiagnosticsResults: {}
+            preCallDiagnosticsResults: {},
+            isTeamsUser: false,
+            identityMri: undefined
         };
 
         setInterval(() => {
@@ -118,7 +120,13 @@ export default class MakeCall extends React.Component {
                 });
                 this.environmentInfo = await this.callClient.getEnvironmentInfoInternal();
                 this.debugInfoFeature = await this.callClient.feature(Features.DebugInfo);
-                this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
+
+                this.setState({ isTeamsUser: userDetails.isTeamsUser});
+                this.setState({ identityMri: createIdentifierFromRawId(userDetails.communicationUserId)})
+                this.callAgent =  this.state.isTeamsUser ? 
+                    await this.callClient.createTeamsCallAgent(tokenCredential) :
+                    await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
+
                 this.callAgent.on('callsUpdated', e => {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
 
@@ -198,8 +206,9 @@ export default class MakeCall extends React.Component {
                     userId = userId.trim();
                     if (userId === '8:echo123') {
                         userId = { id: userId };
-                    } else {
-                        userId = { communicationUserId: userId };
+                    }
+                    else {
+                        userId = createIdentifierFromRawId(userId);
                     }
                     if (!identitiesToCall.find(id => { return id === userId })) {
                         identitiesToCall.push(userId);
@@ -210,7 +219,7 @@ export default class MakeCall extends React.Component {
             phoneIdsArray.forEach((phoneNumberId, index) => {
                 if (phoneNumberId) {
                     phoneNumberId = phoneNumberId.trim();
-                    phoneNumberId = { phoneNumber: phoneNumberId };
+                    phoneNumberId = createIdentifierFromRawId(phoneNumberId);
                     if (!identitiesToCall.find(id => { return id === phoneNumberId })) {
                         identitiesToCall.push(phoneNumberId);
                     }
@@ -219,10 +228,18 @@ export default class MakeCall extends React.Component {
 
             const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
 
-            if (this.alternateCallerId.value !== '') {
+            if (this.callAgent.kind === CallAgentKind.CallAgent && this.alternateCallerId.value !== '') {
                 callOptions.alternateCallerId = { phoneNumber: this.alternateCallerId.value.trim() };
             }
-
+            
+            if (identitiesToCall.length > 1) {
+                if (this.callAgent.kind === CallAgentKind.TeamsCallAgent && this.threadId === '') {
+                    throw new Error('Thread ID is needed to make Teams Group Call');
+                } else {
+                    callOptions.threadId = this.threadId.value;
+                }
+            }
+            
             this.callAgent.startCall(identitiesToCall, callOptions);
 
         } catch (e) {
@@ -1029,6 +1046,8 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                 cameraDeviceOptions={this.state.cameraDeviceOptions}
                                 speakerDeviceOptions={this.state.speakerDeviceOptions}
                                 microphoneDeviceOptions={this.state.microphoneDeviceOptions}
+                                identityMri={this.state.identityMri}
+                                isTeamsUser={this.state.isTeamsUser}
                                 onShowCameraNotFoundWarning={(show) => { this.setState({ showCameraNotFoundWarning: show }) }}
                                 onShowSpeakerNotFoundWarning={(show) => { this.setState({ showSpeakerNotFoundWarning: show }) }}
                                 onShowMicrophoneNotFoundWarning={(show) => { this.setState({ showMicrophoneNotFoundWarning: show }) }} />

@@ -18,7 +18,7 @@ import { AzureLogger } from '@azure/logger';
 import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
 import CallCaption from "./CallCaption";
-
+import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 export default class CallCard extends React.Component {
     constructor(props) {
         super(props);
@@ -29,7 +29,12 @@ export default class CallCard extends React.Component {
         this.handleRemoteVolumeSubscription = undefined;
         this.streamIsAvailableListeners = new Map();
         this.videoStreamsUpdatedListeners = new Map();
+        this.identifier = props.identityMri;
+        this.spotlightFeature = this.call.feature(Features.Spotlight);
+        this.raiseHandFeature = this.call.feature(Features.RaiseHand);
 
+        this.identifier = props.identityMri;
+        this.isTeamsUser = props.isTeamsUser;
         this.state = {
             ovc: 4,
             callState: this.call.state,
@@ -60,6 +65,8 @@ export default class CallCard extends React.Component {
             remoteVolumeIndicator: undefined,
             remoteVolumeLevel: undefined,
             mediaCollector: undefined,
+            isSpotlighted: false,
+            isHandRaised: false,
             showParticipantsCard: true
         };
     }
@@ -79,6 +86,9 @@ export default class CallCard extends React.Component {
         this.state.mediaCollector?.off('sampleReported', () => { });
         this.state.mediaCollector?.off('summaryReported', () => { });
         this.call.feature(Features.DominantSpeakers).off('dominantSpeakersChanged', () => { });
+        this.call.feature(Features.Spotlight).off('spotlightChanged', this.spotlightStateChangedHandler);
+        this.call.feature(Features.RaiseHand).off('raisedHandEvent', this.raiseHandChangedHandler);
+        this.call.feature(Features.RaiseHand).off('loweredHandEvent', this.raiseHandChangedHandler);
     }
 
     componentDidMount() {
@@ -389,6 +399,9 @@ export default class CallCard extends React.Component {
                 }
             }
             ovcFeature?.on('optimalVideoCountChanged', () => ovcChangedHandler());
+            this.spotlightFeature.on("spotlightChanged", this.spotlightStateChangedHandler);
+            this.raiseHandFeature.on("loweredHandEvent", this.raiseHandChangedHandler);
+            this.raiseHandFeature.on("raisedHandEvent", this.raiseHandChangedHandler);
         }
     }
     
@@ -444,6 +457,15 @@ export default class CallCard extends React.Component {
             allRemoteParticipantStreams: streamsToKeep
         }));
 
+    }
+
+    spotlightStateChangedHandler = (event) => {
+        this.setState({isSpotlighted: utils.isParticipantSpotlighted(
+            this.identifier, this.spotlightFeature.getSpotlightedParticipants())})
+    }
+    
+    raiseHandChangedHandler = (event) => {
+        this.setState({isHandRaised: utils.isParticipantHandRaised(this.identifier, this.raiseHandFeature.getRaisedHands())})
     }
 
     async handleVideoOnOff() {
@@ -516,6 +538,15 @@ export default class CallCard extends React.Component {
         }
     }
 
+    async handleRaiseHand() {
+        try {
+            this.state.isHandRaised ?
+                this.raiseHandFeature.lowerHand():
+                this.raiseHandFeature.raiseHand();
+        } catch(e) {
+            console.error(e);
+        }
+    }
 
 
     async handleIncomingAudioOnOff() {
@@ -666,6 +697,57 @@ export default class CallCard extends React.Component {
         this.setState({ selectedMicrophoneDeviceId: microphoneDeviceInfo.id });
     };
 
+    getParticipantMenuCallBacks() {
+        return {
+            startSpotlight: async (identifier) => {
+                try {
+                    await this.spotlightFeature.startSpotlight([identifier]);
+                } catch(error) {
+                    console.error(error)
+                }
+            },
+            stopSpotlight: async (identifier) => {
+                try {
+                    await this.spotlightFeature.stopSpotlight([identifier]);
+                } catch(error) {
+                    console.error(error)
+                }
+            },
+            stopAllSpotlight: async () => {
+                try {
+                    await this.spotlightFeature.stopAllSpotlight();
+                } catch(error) {
+                    console.error(error)
+                }
+            },
+            lowerAllHands: async () => {
+                try {
+                    await this.raiseHandFeature.lowerAllHands();
+                } catch(error) {
+                    console.error(error)
+                }
+            },
+        }
+    }
+
+    getMenuItems() {
+        let menuCallBacks = this.getParticipantMenuCallBacks();
+        let menuItems = [
+            this.spotlightFeature.getSpotlightedParticipants().length && {
+                key: 'Stop All Spotlight',
+                iconProps: { iconName: 'Focus'},
+                text: 'Stop All Spotlight',
+                onClick: (e) => menuCallBacks.stopAllSpotlight(e)
+            }, 
+            this.raiseHandFeature.getRaisedHands().length && {
+                key: 'Lower All Hands',
+                iconProps: { iconName: 'HandsFree'},
+                text: 'Lower All Hands',
+                onClick: (e) => menuCallBacks.lowerAllHands(e)
+            },
+        ]
+        return menuItems.filter(item => item != 0)
+    }
     render() {
         return (
             <div className="ms-Grid mt-2">
@@ -861,6 +943,19 @@ export default class CallCard extends React.Component {
                                         <Icon iconName="People" />
                                     }
                                 </span>
+                                <span className="in-call-button "
+                                    title={`${this.state.isHandRaised  ? 'LowerHand' : 'RaiseHand'}`}
+                                    variant="secondary"
+                                    onClick={() => this.handleRaiseHand()}>
+                                    <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
+                                </span>
+                                <ParticipantMenuOptions
+                                    id={this.identifier}
+                                    appendMenuitems={this.getMenuItems()}
+                                    menuOptionsHandler={this.getParticipantMenuCallBacks()}
+                                    menuOptionsState={{isSpotlighted: this.state.isSpotlighted}}
+                                    />
+
                                 <Panel type={PanelType.medium}
                                     isLightDismiss
                                     isOpen={this.state.showSettings}
@@ -983,7 +1078,12 @@ export default class CallCard extends React.Component {
                             <ul className="participants-panel-list">
                                 {
                                     this.state.remoteParticipants.map(remoteParticipant =>
-                                        <RemoteParticipantCard key={`${utils.getIdentifierText(remoteParticipant.identifier)}`} remoteParticipant={remoteParticipant} call={this.call} />
+                                        <RemoteParticipantCard 
+                                            key={`${utils.getIdentifierText(remoteParticipant.identifier)}`} 
+                                            remoteParticipant={remoteParticipant} 
+                                            call={this.call} 
+                                            menuOptionsHandler={this.getParticipantMenuCallBacks()} 
+                                            />
                                     )
                                 }
                             </ul>
@@ -1010,7 +1110,7 @@ export default class CallCard extends React.Component {
                                 
                                 {
                                     this.state.captionOn &&
-                                    <CallCaption call={this.call} />
+                                    <CallCaption call={this.call} isTeamsUser={this.isTeamsUser}/>
                                 }
                             </div>
                     </div>
