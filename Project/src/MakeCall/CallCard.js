@@ -18,7 +18,6 @@ import { AzureLogger } from '@azure/logger';
 import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
 import CallCaption from "./CallCaption";
-
 import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -66,11 +65,8 @@ export default class CallCard extends React.Component {
             remoteVolumeIndicator: undefined,
             remoteVolumeLevel: undefined,
             mediaCollector: undefined,
-
-            showParticipantsCard: false,
             isSpotlighted: false,
             isHandRaised: false,
-
             showParticipantsCard: true
         };
     }
@@ -547,7 +543,6 @@ export default class CallCard extends React.Component {
             this.state.isHandRaised ?
                 this.raiseHandFeature.lowerHand():
                 this.raiseHandFeature.raiseHand();
-            // this.setState({isHandRaised: utils.isParticipantHandRaised(this.identifier, this.raiseHandFeature.getRaisedHands())});
         } catch(e) {
             console.error(e);
         }
