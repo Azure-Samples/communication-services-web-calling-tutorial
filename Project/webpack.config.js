@@ -21,7 +21,7 @@ const PORT = process.env.port || 8080;
 
 
 const oneSignalRegistrationTokenToAcsUserAccesTokenMap = new Map();
-const registerCommunicationUserForOneSignal = async (communicationUserToken, userId) => {
+const registerCommunicationUserForOneSignal = async (communicationAccessToken, communicationUserIdentifier) => {
     const oneSignalRegistrationToken = generateGuid();
     await axios({
         url: config.functionAppOneSignalTokenRegistrationUrl,
@@ -31,11 +31,11 @@ const registerCommunicationUserForOneSignal = async (communicationUserToken, use
             'Content-Type': 'application/json'
         },
         data: JSON.stringify({
-            communicationUserId: userId.communicationUserId,
+            communicationUserId: communicationUserIdentifier.communicationUserId,
             oneSignalRegistrationToken
         })
     }).then((response) => { return response.data });
-    oneSignalRegistrationTokenToAcsUserAccesTokenMap.set(oneSignalRegistrationToken, communicationUserToken);
+    oneSignalRegistrationTokenToAcsUserAccesTokenMap.set(oneSignalRegistrationToken, communicationAccessToken);
     return oneSignalRegistrationToken;
 }
 
@@ -131,14 +131,14 @@ module.exports = {
             app.use(bodyParser.json());
             app.post('/getCommunicationUserToken', async (req, res) => {
                 try {
-                    const userId = await communicationIdentityClient.createUser();
-                    const communicationUserToken = await communicationIdentityClient.getToken(userId, ["voip"]);
+                    const CommunicationUserIdentifier = await communicationIdentityClient.createUser();
+                    const communicationUserToken = await communicationIdentityClient.getToken(CommunicationUserIdentifier, ["voip"]);
                     let oneSignalRegistrationToken;
                     if (config.functionAppOneSignalTokenRegistrationUrl && config.functionAppOneSignalTokenRegistrationApiKey) {
-                        oneSignalRegistrationToken = await registerCommunicationUserForOneSignal(communicationUserToken, userId);
+                        oneSignalRegistrationToken = await registerCommunicationUserForOneSignal(communicationUserToken, CommunicationUserIdentifier);
                     }
                     res.setHeader('Content-Type', 'application/json');
-                    res.status(200).json({communicationUserToken, oneSignalRegistrationToken, userId });
+                    res.status(200).json({communicationUserToken, oneSignalRegistrationToken, userId: CommunicationUserIdentifier });
                 } catch (e) {
                     console.log('Error setting registration token', e);
                     res.sendStatus(500);
