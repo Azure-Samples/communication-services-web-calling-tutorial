@@ -1,6 +1,6 @@
 import React from "react";
 import { CallClient, LocalVideoStream, Features, CallAgentKind } from '@azure/communication-calling';
-import { AzureCommunicationTokenCredential } from '@azure/communication-common';
+import { AzureCommunicationTokenCredential, createIdentifierFromRawId} from '@azure/communication-common';
 import {
     PrimaryButton,
     TextField,
@@ -122,7 +122,7 @@ export default class MakeCall extends React.Component {
                 this.debugInfoFeature = await this.callClient.feature(Features.DebugInfo);
 
                 this.setState({ isTeamsUser: userDetails.isTeamsUser});
-                this.setState({ identityMri: utils.constructIdentifierFromStringMri(userDetails.communicationUserId)})
+                this.setState({ identityMri: createIdentifierFromRawId(userDetails.communicationUserId)})
                 this.callAgent =  this.state.isTeamsUser ? 
                     await this.callClient.createTeamsCallAgent(tokenCredential) :
                     await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
@@ -208,7 +208,7 @@ export default class MakeCall extends React.Component {
                         userId = { id: userId };
                     }
                     else {
-                        userId = utils.constructIdentifierFromStringMri(userId);
+                        userId = createIdentifierFromRawId(userId);
                     }
                     if (!identitiesToCall.find(id => { return id === userId })) {
                         identitiesToCall.push(userId);
@@ -219,7 +219,7 @@ export default class MakeCall extends React.Component {
             phoneIdsArray.forEach((phoneNumberId, index) => {
                 if (phoneNumberId) {
                     phoneNumberId = phoneNumberId.trim();
-                    phoneNumberId = utils.constructIdentifierFromStringMri(phoneNumberId);
+                    phoneNumberId = createIdentifierFromRawId(phoneNumberId);
                     if (!identitiesToCall.find(id => { return id === phoneNumberId })) {
                         identitiesToCall.push(phoneNumberId);
                     }

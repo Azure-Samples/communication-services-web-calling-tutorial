@@ -55,6 +55,8 @@ const parseJWT = (token) => {
     return '';
 }
 
+// Exchanging Azure AD access token of a Teams User for a Communication access token
+// https://learn.microsoft.com/en-us/azure/communication-services/quickstarts/manage-teams-identity?pivots=programming-language-javascript
 const getACSAccessTokenInfo = async (aadToken, userObjectId) => {
     let acsToken;
     try{

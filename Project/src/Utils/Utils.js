@@ -2,7 +2,8 @@ import {
     isCommunicationUserIdentifier,
     isPhoneNumberIdentifier,
     isMicrosoftTeamsUserIdentifier,
-    isUnknownIdentifier
+    isUnknownIdentifier,
+    createIdentifierFromRawId
 } from '@azure/communication-common';
 import { PublicClientApplication } from "@azure/msal-browser";
 import { authConfig, authScopes } from "../../oAuthConfig"
@@ -101,24 +102,6 @@ export const utils = {
             return 'Unknown Identifier';
         }
     },
-    constructIdentifierFromStringMri: (mri) => {
-        if (mri.startsWith("8:orgid")) {
-            return { kind: "microsoftTeamsUser", rawId: mri, microsoftTeamsUserId: mri.substring(8)};
-        } else if (mri.startsWith("8:dod")) {
-            return { kind: "microsoftTeamsUser", rawId: mri, microsoftTeamsUserId: mri.substring(6)};
-        } else if (mri.startsWith("8:gcch")) {
-            return { kind: "microsoftTeamsUser", rawId: mri, microsoftTeamsUserId: mri.substring(7)};
-        } else if (mri.startsWith("8:teamsvisitor")) {
-            return { kind: "microsoftTeamsUser", rawId: mri, microsoftTeamsUserId: mri.substring(15)};
-        } else if (mri.startsWith("4:")) {
-            return { kind: "phoneNumber", rawId: mri, phoneNumber: mri.substring(2) };
-        } else if (mri.startsWith("8:acs") || mri.startsWith("8:spool") || mri.startsWith("8:gcch-acs") || mri.startsWith("8:dod-acs")) {
-            return { kind: "communicationUser", communicationUserId: mri };
-        } else {
-            return { kind: "unknown", id: mri };
-        }
-    },
-
     getSizeInBytes(str) {
         return new Blob([str]).size;
     },

@@ -1,8 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { TextField } from 'office-ui-fabric-react';
 import { Button } from 'office-ui-fabric-react'
 import { CallKind } from "@azure/communication-calling";
-import { utils } from '../Utils/Utils';
+import { createIdentifierFromRawId } from '@azure/communication-common';
 
 export default function AddParticipantPopover({call}) {
     const [userId, setUserId] = useState('');
@@ -13,7 +13,7 @@ export default function AddParticipantPopover({call}) {
     function handleAddParticipant() {
         console.log('handleAddParticipant', userId);
         try {
-            let participantId = utils.constructIdentifierFromStringMri(userId);
+            let participantId = createIdentifierFromRawId(userId);
             call._kind === CallKind.TeamsCall ? 
                 call.addParticipant(participantId, {threadId}) :
                 call.addParticipant(participantId);
@@ -56,10 +56,10 @@ export default function AddParticipantPopover({call}) {
                                     call._kind === CallKind.Call && 
                                     <TextField className="text-left" label="Alternate Caller Id (For adding phone number only)" onChange={e => setAlternateCallerId(e.target.value)} />
                                 }
-                                <Button className="mt-3" onClick={handleAddParticipant}>Add Participant</Button>
+                                    <Button className="mt-3" onClick={handleAddParticipant}>Add Participant</Button>
                                 {
                                     call._kind === CallKind.Call && 
-                                <Button className="mt-1" onClick={handleAddPhoneNumber}>Add Phone Number</Button>
+                                <   Button className="mt-1" onClick={handleAddPhoneNumber}>Add Phone Number</Button>
                                 }
                             </div>
                         </div>

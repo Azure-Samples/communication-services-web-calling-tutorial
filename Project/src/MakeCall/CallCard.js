@@ -36,8 +36,6 @@ export default class CallCard extends React.Component {
 
         this.identifier = props.identityMri;
         this.isTeamsUser = props.isTeamsUser;
-        this.spotlightFeature = this.call.feature(Features.Spotlight);
-        this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.state = {
             ovc: 4,
             callState: this.call.state,
@@ -546,7 +544,7 @@ export default class CallCard extends React.Component {
             this.state.isHandRaised ?
                 this.raiseHandFeature.lowerHand():
                 this.raiseHandFeature.raiseHand();
-                this.setState({isHandRaised: utils.isParticipantHandRaised(this.identifier, this.raiseHandFeature.getRaisedHands())})
+            // this.setState({isHandRaised: utils.isParticipantHandRaised(this.identifier, this.raiseHandFeature.getRaisedHands())});
         } catch(e) {
             console.error(e);
         }
@@ -951,9 +949,7 @@ export default class CallCard extends React.Component {
                                     title={`${this.state.isHandRaised  ? 'LowerHand' : 'RaiseHand'}`}
                                     variant="secondary"
                                     onClick={() => this.handleRaiseHand()}>
-                                    {
-                                        <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
-                                    }
+                                    <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
                                 </span>
                                 <ParticipantMenuOptions
                                     id={this.identifier}
