@@ -230,33 +230,33 @@ export default class CallCard extends React.Component {
                     this.setState(prevState => ({
                         ...prevState,
                         remoteParticipants: [...prevState.remoteParticipants, participant]
-                    }));
-                }
-
-                const handleVideoStreamAdded = (vs) => {
-                    if (vs.isAvailable) this.updateListOfParticipantsToRender('streamIsAvailable');
-                    const isAvailableChangedListener = () => {
-                        this.updateListOfParticipantsToRender('streamIsAvailableChanged');
-                    }
-                    this.streamIsAvailableListeners.set(vs, isAvailableChangedListener);
-                    vs.on('isAvailableChanged', isAvailableChangedListener)
-                }
-
-                participant.videoStreams.forEach(handleVideoStreamAdded);
-
-                const videoStreamsUpdatedListener = (e) => {
-                    e.added.forEach(handleVideoStreamAdded);
-                    e.removed.forEach((vs) => {
-                        this.updateListOfParticipantsToRender('videoStreamsRemoved');
-                        const streamIsAvailableListener = this.streamIsAvailableListeners.get(vs);
-                        if (streamIsAvailableListener) {
-                            vs.off('isAvailableChanged', streamIsAvailableListener);
-                            this.streamIsAvailableListeners.delete(vs);
+                    }), () => {
+                        const handleVideoStreamAdded = (vs) => {
+                            if (vs.isAvailable) this.updateListOfParticipantsToRender('streamIsAvailable');
+                            const isAvailableChangedListener = () => {
+                                this.updateListOfParticipantsToRender('streamIsAvailableChanged');
+                            }
+                            this.streamIsAvailableListeners.set(vs, isAvailableChangedListener);
+                            vs.on('isAvailableChanged', isAvailableChangedListener)
                         }
-                    }); 
+        
+                        participant.videoStreams.forEach(handleVideoStreamAdded);
+        
+                        const videoStreamsUpdatedListener = (e) => {
+                            e.added.forEach(handleVideoStreamAdded);
+                            e.removed.forEach((vs) => {
+                                this.updateListOfParticipantsToRender('videoStreamsRemoved');
+                                const streamIsAvailableListener = this.streamIsAvailableListeners.get(vs);
+                                if (streamIsAvailableListener) {
+                                    vs.off('isAvailableChanged', streamIsAvailableListener);
+                                    this.streamIsAvailableListeners.delete(vs);
+                                }
+                            }); 
+                        }
+                        this.videoStreamsUpdatedListeners.set(participant, videoStreamsUpdatedListener);
+                        participant.on('videoStreamsUpdated', videoStreamsUpdatedListener);
+                    });
                 }
-                this.videoStreamsUpdatedListeners.set(participant, videoStreamsUpdatedListener);
-                participant.on('videoStreamsUpdated', videoStreamsUpdatedListener);
             }
 
             this.call.remoteParticipants.forEach(rp => handleParticipant(rp));
@@ -409,13 +409,13 @@ export default class CallCard extends React.Component {
 
         const ovcFeature = this.call.feature(Features.OptimalVideoCount);
         const optimalVideoCount = ovcFeature.optimalVideoCount;
-        console.log(`updateListOfParticipantsToRender because ${reason}, ovc is ${optimalVideoCount}`);        
+        console.log(`updateListOfParticipantsToRender because ${reason}, ovc is ${optimalVideoCount}`);
         console.log(`updateListOfParticipantsToRender currently rendering ${this.state.allRemoteParticipantStreams.length} streams`);
         console.log(`updateListOfParticipantsToRender checking participants that were removed`);
         let streamsToKeep = this.state.allRemoteParticipantStreams.filter(streamTuple => {
             return this.state.remoteParticipants.find(participant => participant.videoStreams.find(stream => stream === streamTuple.stream && stream.isAvailable));
         });
-        
+
         let screenShareStream = this.state.remoteScreenShareStream;
         console.log(`updateListOfParticipantsToRender current screen share ${!!screenShareStream}`);
         screenShareStream = this.state.remoteParticipants
@@ -436,8 +436,8 @@ export default class CallCard extends React.Component {
 
         // we can add more streams if we have less than optimalVideoCount
         if (streamsToKeep.length < optimalVideoCount) {
-            console.log(`    stack is capable of rendering ${optimalVideoCount - streamsToKeep.length} more streams, adding...`);
-            let streamsToAdd = [];            
+            console.log(`stack is capable of rendering ${optimalVideoCount - streamsToKeep.length} more streams, adding...`);
+            let streamsToAdd = [];
             this.state.remoteParticipants.forEach(participant => {
                 const newStreams = participant.videoStreams
                     .flat()
