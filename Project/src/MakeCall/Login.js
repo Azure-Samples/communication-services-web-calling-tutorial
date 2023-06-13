@@ -207,6 +207,16 @@ export default class Login extends React.Component {
 
     setCallAgent(callAgent) {
         this.callAgent = callAgent;
+        this.callAgent.on('connectionStateChanged', (args) => {
+            console.log('Call agent connection state changed from', args.oldValue, 'to', args.newValue);
+            this.setState({callAgentConnectionState: args.newValue});
+            if(args.reason === 'tokenExpired') {
+                this.setState({ loggedIn: false });
+                alert('Your token has expired. Please log in again.');
+            }
+        });
+        this.setState({callAgentConnectionState: this.callAgent.connectionState});
+
         if (!!this._callAgentInitPromiseResolve) {
             this._callAgentInitPromiseResolve();
         }
@@ -604,8 +614,9 @@ export class MyCallingApp {
                                     <div>
                                         <br></br>
                                         <div>Congrats! You've provisioned an ACS user identity and initialized the ACS Calling Client Web SDK. You are ready to start making calls!</div>
-                                        <div>The Identity you've provisioned is: <span className="identity"><b>{this.state.communicationUserId}</b></span></div>
-                                        {<div>Usage is tagged with: <span className="identity"><b>{this.clientTag}</b></span></div>}
+                                        <div>The Identity you've provisioned is: <span className="identity fontweight-700">{this.state.communicationUserId}</span></div>
+                                        <div>Usage is tagged with: <span className="identity fontweight-700">{this.clientTag}</span></div>
+                                        <div>Connection status: <span className="identity fontweight-700">{this.state.callAgentConnectionState}</span></div>
                                     </div>  
                             }    
                             {
