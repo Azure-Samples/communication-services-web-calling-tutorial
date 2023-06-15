@@ -1,6 +1,7 @@
 const CommunicationIdentityClient = require("@azure/communication-identity").CommunicationIdentityClient;
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const config = require("./serverConfig.json");
+const clientConfig = require("./clientConfig.json");
 const axios = require("axios");
 const bodyParser = require('body-parser');
 const CommunicationRelayClient = require('@azure/communication-network-traversal').CommunicationRelayClient;
@@ -27,15 +28,15 @@ const registerCommunicationUserForOneSignal = async (communicationAccessToken, c
         url: config.functionAppOneSignalTokenRegistrationUrl,
         method: 'PUT',
         headers: {
-            'x-functions-key': config.functionAppOneSignalTokenRegistrationApiKey,
             'Content-Type': 'application/json'
         },
         data: JSON.stringify({
             communicationUserId: communicationUserIdentifier.communicationUserId,
-            oneSignalRegistrationToken
+            oneSignalRegistrationToken,
+            oneSignalAppId: clientConfig.oneSignalAppId
         })
     }).then((response) => { return response.data });
-    oneSignalRegistrationTokenToAcsUserAccesTokenMap.set(oneSignalRegistrationToken, communicationAccessToken);
+    oneSignalRegistrationTokenToAcsUserAccesTokenMap.set(oneSignalRegistrationToken, { communicationAccessToken, communicationUserIdentifier });
     return oneSignalRegistrationToken;
 }
 
@@ -134,7 +135,7 @@ module.exports = {
                     const CommunicationUserIdentifier = await communicationIdentityClient.createUser();
                     const communicationUserToken = await communicationIdentityClient.getToken(CommunicationUserIdentifier, ["voip"]);
                     let oneSignalRegistrationToken;
-                    if (config.functionAppOneSignalTokenRegistrationUrl && config.functionAppOneSignalTokenRegistrationApiKey) {
+                    if (config.functionAppOneSignalTokenRegistrationUrl) {
                         oneSignalRegistrationToken = await registerCommunicationUserForOneSignal(communicationUserToken, CommunicationUserIdentifier);
                     }
                     res.setHeader('Content-Type', 'application/json');
@@ -147,9 +148,9 @@ module.exports = {
             app.post('/getCommunicationUserTokenForOneSignalRegistrationToken', async (req, res) => {
                 try {
                     const oneSignalRegistrationToken = req.body.oneSignalRegistrationToken;
-                    const communicationUserToken = oneSignalRegistrationTokenToAcsUserAccesTokenMap.get(oneSignalRegistrationToken);
+                    const { communicationUserToken, communicationUserIdentifier } = oneSignalRegistrationTokenToAcsUserAccesTokenMap.get(oneSignalRegistrationToken);
                     res.setHeader('Content-Type', 'application/json');
-                    res.status(200).json({ communicationUserToken, oneSignalRegistrationToken });
+                    res.status(200).json({ communicationUserToken, userId: communicationUserIdentifier, oneSignalRegistrationToken });
                 } catch (e) {
                     console.log('Error setting registration token', e);
                     res.sendStatus(500);
@@ -157,31 +158,31 @@ module.exports = {
             });
             app.post('/getOneSignalRegistrationTokenForCommunicationUserToken', async (req, res) => {
                 try {
-                    const communicationUserToken = {
-                        token: req.body.token,
-                        user: { communicationUserId: req.body.communicationUserId }
-                    };
+                    const communicationUserToken = {token: req.body.token };
+                    const communicationUserIdentifier = { communicationUserId: req.body.communicationUserId };
 
-                    if (!config.functionAppOneSignalTokenRegistrationApiKey) {
+                    if (!config.functionAppOneSignalTokenRegistrationUrl) {
                         res.setHeader('Content-Type', 'application/json');
                         res.status(200).json({
-                            communicationUserToken
+                            communicationUserToken, userId: communicationUserIdentifier 
                         });
+                        return;
                     }
 
                     let pair = [...oneSignalRegistrationTokenToAcsUserAccesTokenMap.entries()].find((pair) => {
                         return pair[1].token === communicationUserToken.token &&
-                            pair[1].user.communicationUserId === communicationUserToken.user.communicationUserId;
+                            pair[1].communicationUserId === communicationUserIdentifier.communicationUserId;
                     });
                     let oneSignalRegistrationToken;
                     if (pair) {
                         oneSignalRegistrationToken = pair[0];
                     } else {
-                        oneSignalRegistrationToken = await registerCommunicationUserForOneSignal(communicationUserToken);
+                        oneSignalRegistrationToken = await registerCommunicationUserForOneSignal(communicationUserToken, communicationUserIdentifier);
                     }
                     res.setHeader('Content-Type', 'application/json');
                     res.status(200).json({
-                        communicationUserToken, 
+                        communicationUserToken,
+                        userId: communicationUserIdentifier,
                         oneSignalRegistrationToken
                     });
                 } catch (e) {
