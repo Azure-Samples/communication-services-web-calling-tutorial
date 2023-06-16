@@ -24,6 +24,8 @@ export default class CallCard extends React.Component {
         super(props);
         this.callFinishConnectingResolve = undefined;
         this.call = props.call;
+        this.localVideoStream = this.call.localVideoStreams.find(lvs => { return lvs.mediaStreamType === 'Video' || lvs.mediaStreamType === 'RawMedia'});
+        this.localScreenSharingStream = undefined;
         this.deviceManager = props.deviceManager;
         this.remoteVolumeLevelSubscription = undefined;
         this.handleRemoteVolumeSubscription = undefined;
@@ -42,11 +44,11 @@ export default class CallCard extends React.Component {
             remoteParticipants: [],
             allRemoteParticipantStreams: [],
             remoteScreenShareStream: undefined,
-            videoOn: !!this.call.localVideoStreams[0],
+            videoOn: this.call.isLocalVideoStarted,
+            screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
             incomingAudioMuted: false,
             onHold: this.call.state === 'LocalHold' || this.call.state === 'RemoteHold',
-            screenShareOn: this.call.isScreenShareOn,
             outgoingAudioMediaAccessActive: false,
             cameraDeviceOptions: props.cameraDeviceOptions ? props.cameraDeviceOptions : [],
             speakerDeviceOptions: props.speakerDeviceOptions ? props.speakerDeviceOptions : [],
@@ -94,43 +96,26 @@ export default class CallCard extends React.Component {
     componentDidMount() {
         if (this.call) {
             this.deviceManager.on('videoDevicesUpdated', async e => {
-                let newCameraDeviceToUse = undefined;
                 e.added.forEach(addedCameraDevice => {
-                    newCameraDeviceToUse = addedCameraDevice;
                     const addedCameraDeviceOption = { key: addedCameraDevice.id, text: addedCameraDevice.name };
                     this.setState(prevState => ({
                         ...prevState,
                         cameraDeviceOptions: [...prevState.cameraDeviceOptions, addedCameraDeviceOption]
                     }));
                 });
-                // When connecting a new camera, ts device manager automatically switches to use this new camera and
-                // this.call.localVideoStream[0].source is never updated. Hence I have to do the following logic to update
-                // this.call.localVideoStream[0].source to the newly added camera. This is a bug. Under the covers, this.call.localVideoStreams[0].source
-                // should have been updated automatically by the sdk.
-                if (newCameraDeviceToUse) {
-                    try {
-                        await this.call.localVideoStreams[0]?.switchSource(newCameraDeviceToUse);
-                        this.setState({ selectedCameraDeviceId: newCameraDeviceToUse.id });
-                    } catch {
-                        console.error('Failed to switch to newly added video device', error);
-                    }
-                }
 
-                e.removed.forEach(removedCameraDevice => {
+                e.removed.forEach(async removedCameraDevice => {
+                    // If the selected camera is removed, select a new camera.
+                    // Note: When the selected camera is removed, the calling sdk automatically turns video off.
                     this.setState(prevState => ({
                         ...prevState,
                         cameraDeviceOptions: prevState.cameraDeviceOptions.filter(option => { return option.key !== removedCameraDevice.id })
-                    }))
+                    }), () => {
+                        if (removedCameraDevice.id === this.state.selectedCameraDeviceId) {
+                            this.setState({ selectedCameraDeviceId: this.state.cameraDeviceOptions[0]?.key });
+                        }
+                    });
                 });
-
-                // If the current camera being used is removed, pick a new random one
-                if (!this.state.cameraDeviceOptions.find(option => { return option.key === this.state.selectedCameraDeviceId })) {
-                    const newSelectedCameraId = this.state.cameraDeviceOptions[0]?.key;
-                    const cameras = await this.deviceManager.getCameras();
-                    const videoDeviceInfo = cameras.find(c => { return c.id === newSelectedCameraId });
-                    await this.call.localVideoStreams[0]?.switchSource(videoDeviceInfo);
-                    this.setState({ selectedCameraDeviceId: newSelectedCameraId });
-                }
             });
 
             this.deviceManager.on('audioDevicesUpdated', e => {
@@ -194,18 +179,6 @@ export default class CallCard extends React.Component {
             callStateChanged();
             this.call.on('stateChanged', callStateChanged);
 
-            this.call.localVideoStreams.forEach(lvs => {
-                this.setState({ videoOn: true });
-            });
-            this.call.on('localVideoStreamsUpdated', e => {
-                e.added.forEach(lvs => {
-                    this.setState({ videoOn: true });
-                });
-                e.removed.forEach(lvs => {
-                    this.setState({ videoOn: false });
-                });
-            });
-
             this.call.on('idChanged', () => {
                 console.log('Call id Changed ', this.call.id);
                 this.setState({ callId: this.call.id });
@@ -221,8 +194,12 @@ export default class CallCard extends React.Component {
                 this.setState({ incomingAudioMuted: this.call.isIncomingAudioMuted });
             });
 
+            this.call.on('isLocalVideoStartedChanged', () => {
+                this.setState({ videoOn: this.call.isLocalVideoStarted });
+            });
+
             this.call.on('isScreenSharingOnChanged', () => {
-                this.setState({ screenShareOn: this.call.isScreenShareOn });
+                this.setState({ screenSharingOn: this.call.isScreenSharingOn });
             });
 
             const handleParticipant = (participant) => {
@@ -456,34 +433,27 @@ export default class CallCard extends React.Component {
             remoteScreenShareStream: screenShareStream,
             allRemoteParticipantStreams: streamsToKeep
         }));
-
     }
 
     spotlightStateChangedHandler = (event) => {
         this.setState({isSpotlighted: utils.isParticipantSpotlighted(
             this.identifier, this.spotlightFeature.getSpotlightedParticipants())})
     }
-    
+
     raiseHandChangedHandler = (event) => {
         this.setState({isHandRaised: utils.isParticipantHandRaised(this.identifier, this.raiseHandFeature.getRaisedHands())})
     }
 
     async handleVideoOnOff() {
         try {
-            const cameras = await this.deviceManager.getCameras();
-            const cameraDeviceInfo = cameras.find(cameraDeviceInfo => {
-                return cameraDeviceInfo.id === this.state.selectedCameraDeviceId
-            });
-            let selectedCameraDeviceId = this.state.selectedCameraDeviceId;
-            let localVideoStream
-            if (this.state.selectedCameraDeviceId) {
-                localVideoStream = new LocalVideoStream(cameraDeviceInfo);
-
-            } else if (!this.state.videoOn) {
+            if (!this.state.videoOn) {
                 const cameras = await this.deviceManager.getCameras();
-                selectedCameraDeviceId = cameras[0].id;
-                localVideoStream = new LocalVideoStream(cameras[0]);
-            }
+                const cameraDeviceInfo = cameras.find(cameraDeviceInfo => {
+                    return cameraDeviceInfo.id === this.state.selectedCameraDeviceId
+                });
+                this.localVideoStream = new LocalVideoStream(cameraDeviceInfo);
+            } 
+
 
             if (this.call.state === 'None' ||
                 this.call.state === 'Connecting' ||
@@ -491,23 +461,21 @@ export default class CallCard extends React.Component {
                 if (this.state.videoOn) {
                     this.setState({ videoOn: false });
                 } else {
-                    this.setState({ videoOn: true, selectedCameraDeviceId })
+                    this.setState({ videoOn: true })
                 }
                 await this.watchForCallFinishConnecting();
                 if (this.state.videoOn) {
-                    this.call.startVideo(localVideoStream).catch(error => { });
+                    await this.call.startVideo(this.localVideoStream);
                 } else {
-                    this.call.stopVideo(this.call.localVideoStreams[0]).catch(error => { });
+                    await this.call.stopVideo(this.localVideoStream);
                 }
             } else {
-                if (this.call.localVideoStreams[0]) {
-                    await this.call.stopVideo(this.call.localVideoStreams[0]);
+                if (!this.state.videoOn) {
+                    await this.call.startVideo(this.localVideoStream);
                 } else {
-                    await this.call.startVideo(localVideoStream);
+                    await this.call.stopVideo(this.localVideoStream);
                 }
             }
-
-            this.setState({ videoOn: this.call.localVideoStreams[0] ? true : false });
         } catch (e) {
             console.error(e);
         }
@@ -626,7 +594,7 @@ export default class CallCard extends React.Component {
             } else {
                 await this.call.startScreenSharing();
             }
-            this.setState({ screenShareOn: this.call.isScreenSharingOn });
+            this.setState({ screenSharingOn: this.call.isScreenSharingOn });
         } catch (e) {
             console.error(e);
         }
@@ -676,11 +644,14 @@ export default class CallCard extends React.Component {
     cameraDeviceSelectionChanged = async (event, item) => {
         const cameras = await this.deviceManager.getCameras();
         const cameraDeviceInfo = cameras.find(cameraDeviceInfo => { return cameraDeviceInfo.id === item.key });
-        const localVideoStream = this.call.localVideoStreams[0];
-        if (localVideoStream) {
-            localVideoStream.switchSource(cameraDeviceInfo);
-        }
         this.setState({ selectedCameraDeviceId: cameraDeviceInfo.id });
+        if (this.localVideoStream.mediaStreamType === 'RawMedia' && this.state.videoOn) {
+            this.localVideoStream?.switchSource(cameraDeviceInfo);
+             await this.call.stopVideo(this.localVideoStream);
+             await this.call.startVideo(this.localVideoStream);
+        } else {
+            this.localVideoStream?.switchSource(cameraDeviceInfo);
+        }
     };
 
     speakerDeviceSelectionChanged = async (event, item) => {
@@ -864,15 +835,15 @@ export default class CallCard extends React.Component {
                                     }
                                 </span>
                                 <span className="in-call-button"
-                                    title={`${this.state.screenShareOn ? 'Stop' : 'Start'} sharing your screen`}
+                                    title={`${this.state.screenSharingOn ? 'Stop' : 'Start'} sharing your screen`}
                                     variant="secondary"
                                     onClick={() => this.handleScreenSharingOnOff()}>
                                     {
-                                        !this.state.screenShareOn &&
+                                        !this.state.screenSharingOn &&
                                         <Icon iconName="TVMonitor" />
                                     }
                                     {
-                                        this.state.screenShareOn &&
+                                        this.state.screenSharingOn &&
                                         <Icon iconName="CircleStop" />
                                     }
                                 </span>
