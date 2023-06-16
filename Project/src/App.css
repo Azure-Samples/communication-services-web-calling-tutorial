@@ -1129,11 +1129,6 @@ div::before {
   transition: width 100ms linear;
 }
 
-h3 {
-  margin: 20px;
-  font-family: sans-serif;
-}
-
 .volume-indicatordiv {
   width: 300px;
   border: 1px solid #605e5c;
@@ -1154,26 +1149,6 @@ h3 {
   grid-column: span 3 !important;
 }
 
-.pre-init-option {
-  padding-top: 2rem;
-}
-
-.pre-init-option .button-group {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.pre-init-option .button-container {
-  padding: 10px 10px 0 0;
-  display: flex;
-  justify-content: center;
-}
-
-.pre-init-option button {
-  width: 100%;
-  max-width: 150px;
-}
 .caption-area {
   max-height: 300px;
   overflow: auto;
