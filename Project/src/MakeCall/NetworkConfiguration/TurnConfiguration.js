@@ -23,7 +23,7 @@ export const TurnConfiguration = (props) => {
     };
 
     return (
-        <div className='pre-init-option proxy-configuration ms-Grid-col ms-lg4 ms-sm12'>
+        <div>
             Turn configuration
             <Checkbox 
                 className='mt-2 ml-3'

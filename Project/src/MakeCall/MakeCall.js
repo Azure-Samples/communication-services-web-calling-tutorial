@@ -14,13 +14,10 @@ import CallSurvey from '../MakeCall/CallSurvey';
 import Login from './Login';
 import MediaConstraint from './MediaConstraint';
 import { setLogLevel, AzureLogger } from '@azure/logger';
-import  { utils } from '../Utils/Utils';
 export default class MakeCall extends React.Component {
     constructor(props) {
         super(props);
         this.callClient = null;
-        this.debugInfoFeature = null;
-        this.environmentInfo = null;
         this.callAgent = null;
         this.deviceManager = null;
         this.destinationUserIds = null;
@@ -47,7 +44,6 @@ export default class MakeCall extends React.Component {
             callSurvey: undefined,
             incomingCall: undefined,
             showCallSampleCode: false,
-            showEnvironmentInfoCode: false,
             showMuteUnmuteSampleCode: false,
             showHoldUnholdCallSampleCode: false,
             showPreCallDiagnosticsSampleCode: false,
@@ -118,8 +114,10 @@ export default class MakeCall extends React.Component {
                         turn: turnConfiguration
                     }
                 });
-                this.environmentInfo = await this.callClient.getEnvironmentInfoInternal();
-                this.debugInfoFeature = await this.callClient.feature(Features.DebugInfo);
+
+                this.deviceManager = await this.callClient.getDeviceManager();
+                const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
+                this.setState({permissions: permissions});
 
                 this.setState({ isTeamsUser: userDetails.isTeamsUser});
                 this.setState({ identityMri: createIdentifierFromRawId(userDetails.communicationUserId)})
@@ -171,16 +169,9 @@ export default class MakeCall extends React.Component {
                     });
 
                 });
-                this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
-                this.debugInfoFeature.on('isCallClientActiveInAnotherTabChanged', () => {
-                    this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
-                });
                 this.setState({ loggedIn: true });
                 this.logInComponentRef.current.setCallAgent(this.callAgent);
-
-                this.deviceManager = await this.callClient.getDeviceManager();
-                const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
-                this.setState({permissions: permissions});
+                this.logInComponentRef.current.setCallClient(this.callClient);
             } catch (e) {
                 console.error(e);
             }
@@ -499,43 +490,6 @@ this.currentCall = this.callAgent.join({
                             }, this.callOptions);
         `;
 
-
-        const environmentInfo = `
-/**************************************************************************************/
-/*     Environment Information     */
-/**************************************************************************************/
-// Get current environment information with details if supported by ACS
-this.environmentInfo = await this.callClient.getEnvironmentInfo();
-
-// The returned value is an object of type EnvironmentInfo
-type EnvironmentInfo = {
-    environment: Environment;
-    isSupportedPlatform: boolean;
-    isSupportedBrowser: boolean;
-    isSupportedBrowserVersion: boolean;
-    isSupportedEnvironment: boolean;
-};
-
-// The Environment type in the EnvironmentInfo type is defined as:
-type Environment = {
-  platform: string;
-  browser: string;
-  browserVersion: string;
-};
-
-// The following code snippet shows how to get the current environment details
-const currentOperatingSystem = this.environmentInfo.environment.platform;
-const currentBrowser = this.environmentInfo.environment.browser;
-const currentBrowserVersion = this.environmentInfo.environment.browserVersion;
-
-// The following code snippet shows how to check if environment details are supported by ACS
-const isSupportedOperatingSystem = this.environmentInfo.isSupportedPlatform;
-const isSupportedBrowser = this.environmentInfo.isSupportedBrowser;
-const isSupportedBrowserVersion = this.environmentInfo.isSupportedBrowserVersion;
-const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
-
-        `;
-
         const preCallDiagnosticsSampleCode = `
 //Get new token or use existing token.
 const response = (await fetch('getAcsUserAccessToken')).json();
@@ -787,40 +741,6 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
         return (
             <div>
                 <Login onLoggedIn={this.handleLogIn} ref={this.logInComponentRef}/>
-                <div className="card">
-                    <div className="ms-Grid">
-                        <div className="ms-Grid-row">
-                            <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Environment information</h2>
-                            <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
-                                <PrimaryButton
-                                    className="primary-button"
-                                    iconProps={{ iconName: 'Info', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                    text={`${this.state.showEnvironmentInfoCode ? 'Hide' : 'Show'} code`}
-                                    onClick={() => this.setState({ showEnvironmentInfoCode: !this.state.showEnvironmentInfoCode })}>
-                                </PrimaryButton>
-                            </div>
-                        </div>
-                        {
-                            this.state.showEnvironmentInfoCode &&
-                            <pre>
-                                <code style={{ color: '#b3b0ad' }}>
-                                    {environmentInfo}
-                                </code>
-                            </pre>
-                        }
-                        <h3>Current environment details</h3>
-                        <div>{`Operating system:   ${this.environmentInfo?.environment?.platform}.`}</div>
-                        <div>{`Browser:  ${this.environmentInfo?.environment?.browser}.`}</div>
-                        <div>{`Browser's version:  ${this.environmentInfo?.environment?.browserVersion}.`}</div>
-                        <div>{`Is the application loaded in many tabs:  ${this.state.isCallClientActiveInAnotherTab}.`}</div>
-                        <br></br>
-                        <h3>Environment support verification</h3>
-                        <div>{`Operating system supported:  ${this.environmentInfo?.isSupportedPlatform}.`}</div>
-                        <div>{`Browser supported:  ${this.environmentInfo?.isSupportedBrowser}.`}</div>
-                        <div>{`Browser's version supported:  ${this.environmentInfo?.isSupportedBrowserVersion}.`}</div>
-                        <div>{`Current environment supported:  ${this.environmentInfo?.isSupportedEnvironment}.`}</div>
-                    </div>
-                </div>
                 {
                     this.state?.callSurvey &&
                     <CallSurvey
