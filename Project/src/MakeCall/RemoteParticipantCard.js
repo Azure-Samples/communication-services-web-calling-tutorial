@@ -3,6 +3,8 @@ import { utils } from '../Utils/Utils';
 import { Persona, PersonaSize } from 'office-ui-fabric-react';
 import { Icon } from '@fluentui/react/lib/Icon';
 import {
+    isCommunicationUserIdentifier,
+    isMicrosoftTeamsUserIdentifier,
     isUnknownIdentifier,
     isPhoneNumberIdentifier,
 } from '@azure/communication-common';
@@ -16,6 +18,8 @@ export default class RemoteParticipantCard extends React.Component {
         this.remoteParticipant = props.remoteParticipant;
         this.identifier = this.remoteParticipant.identifier;
         this.id = utils.getIdentifierText(this.remoteParticipant.identifier);
+        this.isCheckable = isCommunicationUserIdentifier(this.remoteParticipant.identifier) ||
+            isMicrosoftTeamsUserIdentifier(this.remoteParticipant.identifier);
 
         this.spotlightFeature = this.call.feature(Features.Spotlight);
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
@@ -38,6 +42,9 @@ export default class RemoteParticipantCard extends React.Component {
         this.spotlightFeature.off('spotlightChanged', ()=>{});
         this.raiseHandFeature.off("loweredHandEvent", ()=>{});
         this.raiseHandFeature.off("raisedHandEvent", ()=>{});
+        if (this.props.onSelectionChanged) {
+            this.props.onSelectionChanged(this.remoteParticipant.identifier, false);
+        }
     }
 
     componentDidMount() {
@@ -80,6 +87,10 @@ export default class RemoteParticipantCard extends React.Component {
         this.call.removeParticipant(identifier).catch((e) => console.error(e))
     }
 
+    handleCheckboxChange(e) {
+        this.props.onSelectionChanged(this.remoteParticipant.identifier, e.target.checked);
+    }
+
     async handleRemoteRaiseHand() {
         try {
             if (this.state.isHandRaised) {
@@ -115,6 +126,12 @@ export default class RemoteParticipantCard extends React.Component {
                             id={this.remoteParticipant.identifier}
                             menuOptionsHandler={this.menuOptionsHandler}
                             menuOptionsState={{isSpotlighted: this.state.isSpotlighted}} />
+                    </div>
+                    <div className="ms-Grid-col ms-lg1 ms-sm2">
+                    {
+                        this.isCheckable &&
+                        <input type="checkbox" onChange={e => this.handleCheckboxChange(e)} />
+                    }
                     </div>
                 </div>
                 <div className="ms-Grid-row">

@@ -17,6 +17,7 @@ import { Label } from '@fluentui/react/lib/Label';
 import { AzureLogger } from '@azure/logger';
 import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
+import DataChannelCard from './DataChannelCard';
 import CallCaption from "./CallCaption";
 import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 export default class CallCard extends React.Component {
@@ -71,6 +72,8 @@ export default class CallCard extends React.Component {
             isHandRaised: false,
             showParticipantsCard: true
         };
+        this.selectedRemoteParticipants = new Set();
+        this.dataChannelRef = React.createRef();
     }
 
     componentWillUnmount() {
@@ -719,6 +722,23 @@ export default class CallCard extends React.Component {
         ]
         return menuItems.filter(item => item != 0)
     }
+
+    remoteParticipantSelectionChanged(identifier, isChecked) {
+        if (isChecked) {
+            this.selectedRemoteParticipants.add(identifier);
+        } else {
+            this.selectedRemoteParticipants.delete(identifier);
+        }
+        const selectedParticipants = [];
+        const allParticipants = new Set(this.call.remoteParticipants.map(rp => rp.identifier));
+        this.selectedRemoteParticipants.forEach(identifier => {
+            if (allParticipants.has(identifier)) {
+                selectedParticipants.push(identifier);
+            }
+        });
+        this.dataChannelRef.current.setParticipants(selectedParticipants);
+    }
+
     render() {
         return (
             <div className="ms-Grid mt-2">
@@ -1054,6 +1074,7 @@ export default class CallCard extends React.Component {
                                             remoteParticipant={remoteParticipant} 
                                             call={this.call} 
                                             menuOptionsHandler={this.getParticipantMenuCallBacks()} 
+                                            onSelectionChanged={(identifier, isChecked) => this.remoteParticipantSelectionChanged(identifier, isChecked)}
                                             />
                                     )
                                 }
@@ -1083,8 +1104,15 @@ export default class CallCard extends React.Component {
                                     this.state.captionOn &&
                                     <CallCaption call={this.call} isTeamsUser={this.isTeamsUser}/>
                                 }
-                            </div>
+                        </div>
+                        <div className="ms-Grid-row">
+                        {
+                            this.state.callState === 'Connected' &&
+                                <DataChannelCard call={this.call} ref={this.dataChannelRef} remoteParticipants={this.state.remoteParticipants} />
+                        }
+                        </div>
                     </div>
+
                 }
             </div>
         );

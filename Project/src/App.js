@@ -2,6 +2,7 @@ import React from 'react';
 import './App.css';
 import MakeCall from './MakeCall/MakeCall'
 import { initializeIcons } from '@uifabric/icons';
+import { ToastContainer } from 'react-toastify';
 
 initializeIcons();
 
@@ -12,6 +13,7 @@ function VWebSdkVersion() {
 function App() {
   return (
     <div className="App">
+      <ToastContainer />
       <div className="header ms-Grid">
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-lg6">
