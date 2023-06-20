@@ -4,7 +4,7 @@ import { Persona, PersonaSize } from 'office-ui-fabric-react';
 import { Icon } from '@fluentui/react/lib/Icon';
 import {
     isCommunicationUserIdentifier,
-    isMicrosoftTeamsUserIdentifier 
+    isMicrosoftTeamsUserIdentifier,
     isUnknownIdentifier,
     isPhoneNumberIdentifier,
 } from '@azure/communication-common';

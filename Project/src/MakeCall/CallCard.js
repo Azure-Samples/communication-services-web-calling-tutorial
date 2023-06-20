@@ -1017,12 +1017,6 @@ export default class CallCard extends React.Component {
                         </div>
                     </div>
                 </div>
-                <div className="ms-Grid-row">
-                {
-                    this.state.callState === 'Connected' &&
-                        <DataChannelCard call={this.call} ref={this.dataChannelRef} remoteParticipants={this.state.remoteParticipants} />
-                }
-                </div>
                 <div className="ms-Grid-row text-center">
                     {
                         this.state.videoOn &&
@@ -1110,8 +1104,15 @@ export default class CallCard extends React.Component {
                                     this.state.captionOn &&
                                     <CallCaption call={this.call} isTeamsUser={this.isTeamsUser}/>
                                 }
-                            </div>
+                        </div>
+                        <div className="ms-Grid-row">
+                        {
+                            this.state.callState === 'Connected' &&
+                                <DataChannelCard call={this.call} ref={this.dataChannelRef} remoteParticipants={this.state.remoteParticipants} />
+                        }
+                        </div>
                     </div>
+
                 }
             </div>
         );
