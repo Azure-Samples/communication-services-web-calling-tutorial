@@ -205,6 +205,9 @@ export default class CallCard extends React.Component {
 
             this.call.on('isScreenSharingOnChanged', () => {
                 this.setState({ screenSharingOn: this.call.isScreenSharingOn });
+                if (!this.call.isScreenSharing) {
+                    this.setState({ showLocalScreenSharingPreview: false});
+                }
             });
 
             const handleParticipant = (participant) => {
