@@ -1,12 +1,14 @@
 import React from "react";
 import { PrimaryButton } from 'office-ui-fabric-react'
 import { LocalVideoStream } from "@azure/communication-calling";
+import { utils } from '../../Utils/Utils';
 
 export default class CustomVideoEffects extends React.Component {
 
     constructor(props) {
         super(props);
         this.call = props.call;
+        this.stream = props.stream;
         this.deviceManager = props.deviceManager;
         this.remoteVideoElementId = props.videoContainerId;
         this.remoteParticipantId = props.remoteParticipantId;
@@ -37,42 +39,6 @@ export default class CustomVideoEffects extends React.Component {
         };
     }
 
-    bwVideoStream(currentStream) { 
-        let width = 1280, height = 720;
-        const videoElem = document.createElement("video");
-        videoElem.srcObject = currentStream;
-        videoElem.height = height;
-        videoElem.width = width;
-        videoElem.play();
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d', {willReadFrequently: true});
-        canvas.width = width;
-        canvas.height = height;
-        
-
-        const FPS = 30;
-        function processVideo() {
-            try {
-                let begin = Date.now();
-                // start processing.
-                ctx.filter = "grayscale(1)";
-                ctx.drawImage(videoElem, 0, 0, width, height);
-                const imageData = ctx.getImageData(0, 0, width, height);
-                ctx.putImageData(imageData, 0, 0);              
-                // schedule the next one.
-                let delay = Math.abs(1000/FPS - (Date.now() - begin));
-                setTimeout(processVideo, delay)
-                ;
-            } catch (err) {
-                console.error(err);
-            }
-        };
-
-        // schedule the first one.
-        setTimeout(processVideo, 0);
-        return canvas.captureStream(FPS);
-    }
-
     setSourceObject(mediaStream, videoContainerId) {
         const target = document.getElementById(videoContainerId)
         const video = target.querySelector("video");
@@ -84,40 +50,6 @@ export default class CustomVideoEffects extends React.Component {
                 console.error('There was an issue setting the source', err);
             }   
         }
-    }
-
-    dummyStream() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d', {willReadFrequently: true});
-        canvas.width = 1280;
-        canvas.height = 720;
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        const colors = ['red', 'yellow', 'green'];
-        const FPS = 30;
-        function createShapes() {
-            try {
-                let begin = Date.now();
-                // start processing.
-                if (ctx) {
-                    ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
-                    const x = Math.floor(Math.random() * canvas.width);
-                    const y = Math.floor(Math.random() * canvas.height);
-                    const size = 100;
-                    ctx.fillRect(x, y, size, size);
-                }            
-                // schedule the next one.
-                let delay = Math.abs(1000/FPS - (Date.now() - begin));
-                setTimeout(createShapes, delay);
-            } catch (err) {
-                console.error(err);
-            }
-        };
-
-        // schedule the first one.
-        setTimeout(createShapes, 0);
-        return canvas.captureStream(FPS);
     }
 
     async addEffect(e) {
@@ -132,13 +64,12 @@ export default class CustomVideoEffects extends React.Component {
         switch (e.currentTarget.children[0].textContent) {
             case this.outgoingVideoBtns.add.label:
                 //add filters to outgoing video  
-                const _addLocalVideoStream = this.call.localVideoStreams[0];
-                const _localVideoStreamRawStream = await _addLocalVideoStream.getMediaStream();
-                const bwStream = this.bwVideoStream(_localVideoStreamRawStream);
+                const _localVideoStreamRawStream = await this.stream.getMediaStream();
+                const bwStream = utils.bwVideoStream(_localVideoStreamRawStream);
                 if(bwStream) {
                     this.outgoingVideoBtns.add.disabled = true;
                     this.outgoingVideoBtns.remove.disabled = false;
-                    this.call.localVideoStreams[0].setMediaStream(bwStream);
+                    this.stream.setMediaStream(bwStream);
                 }
                 break;
             case this.outgoingVideoBtns.remove.label:
@@ -146,15 +77,15 @@ export default class CustomVideoEffects extends React.Component {
                 const cameras = await this.deviceManager.getCameras();
                 const localVideoStream = new LocalVideoStream(cameras[0]);
                 const mediaStream = await localVideoStream.getMediaStream();
-                this.call.localVideoStreams[0].setMediaStream(mediaStream);
+                this.stream.setMediaStream(mediaStream);
                 this.outgoingVideoBtns.add.disabled = false;
                 this.outgoingVideoBtns.remove.disabled = true;
                 break;
             case this.outgoingVideoBtns.sendDummy.label:
                 // send a dummy video
-                const _dummyStream = this.dummyStream();
+                const _dummyStream = utils.dummyStream();
                 if(_dummyStream) {
-                    this.call.localVideoStreams[0].setMediaStream(_dummyStream);
+                    this.stream.setMediaStream(_dummyStream);
                     this.outgoingVideoBtns.remove.disabled = false;
                 }
                 break;
@@ -164,7 +95,7 @@ export default class CustomVideoEffects extends React.Component {
                     identifierTable[participant.identifier.kind].forEach(async (prop) => {
                         if(participant.identifier[prop] === e.currentTarget.dataset[prop.toLowerCase()]) {
                             const _addRemoteVideoStream = await participant.videoStreams[0].getMediaStream();
-                            const bwRemoteStream = this.bwVideoStream(_addRemoteVideoStream);
+                            const bwRemoteStream = utils.bwVideoStream(_addRemoteVideoStream);
                             if(bwRemoteStream) {
                                 //render the filtered video
                                 this.setSourceObject(bwRemoteStream, identifierTable.videocontainerid);
@@ -194,13 +125,15 @@ export default class CustomVideoEffects extends React.Component {
         return this.isOutgoingVideoComponent 
             ?
                 Object.keys(this.outgoingVideoBtns).map((obj, idx) => {
-                    return <PrimaryButton 
-                                key={`${idx}-abcd`} 
-                                className="primary-button mt-3" 
-                                onClick={async (e) => this.addEffect(e)}
-                                disabled={this.outgoingVideoBtns[obj].disabled}>
-                                    {this.outgoingVideoBtns[obj].label}
-                            </PrimaryButton>
+                    return <div>
+                                <PrimaryButton 
+                                    key={`${idx}-abcd`} 
+                                    className="primary-button" 
+                                    onClick={async (e) => this.addEffect(e)}
+                                    disabled={this.outgoingVideoBtns[obj].disabled}>
+                                        {this.outgoingVideoBtns[obj].label}
+                                </PrimaryButton>
+                            </div>
                 })
             :
                 Object.keys(this.incomingVideoBtns).map((obj, idx) => {
@@ -211,7 +144,7 @@ export default class CustomVideoEffects extends React.Component {
                         dataProps[`data-${id.toLowerCase()}`] = this.props.remoteParticipantId[id];
                     }
                     return <PrimaryButton 
-                                key={`${idx}-abcd`} 
+                                key={`${idx}-abcdefg`} 
                                 data-videocontainerid={this.props.videoContainerId}
                                 {...dataProps}
                                 className="primary-button mt-3" onClick={async (e) => this.addEffect(e)}

@@ -625,35 +625,35 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                             <h3>ACS User Identity</h3>
                                         </div>
                                     </div>
-                                    <div className="ms-Grid-row ml-3">
+                                    <div className="ms-Grid-row">
                                         <div className="ms-Grid-col">
                                             <div>The ACS Identity SDK can be used to create a user access token which authenticates the calling clients. </div>
                                             <div>The example code shows how to use the ACS Identity SDK from a backend service. A walkthrough of integrating the ACS Identity SDK can be found on <a className="sdk-docs-link" target="_blank" href="https://docs.microsoft.com/en-us/azure/communication-services/quickstarts/access-tokens?pivots=programming-language-javascript">Microsoft Docs</a></div>
                                         </div>
                                     </div>
-                                    <div className="ms-Grid-row ml-3">
+                                    <div className="ms-Grid-row">
                                         <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
-                                            <TextField className="mt-3"
-                                                            defaultValue={undefined}
-                                                            label="Optional - Display name"
-                                                            onChange={(e) => { this.displayName = e.target.value }} />
-                                            <TextField className="mt-3"
-                                                        defaultValue={this.clientTag}
-                                                        label="Optinal - Usage tag for this session"
-                                                        onChange={(e) => { this.clientTag = e.target.value }} />
+                                            <TextField
+                                                    defaultValue={undefined}
+                                                    label="Optional - Display name"
+                                                    onChange={(e) => { this.displayName = e.target.value }}/>
+                                            <TextField
+                                                    defaultValue={this.clientTag}
+                                                    label="Optinal - Usage tag for this session"
+                                                    onChange={(e) => { this.clientTag = e.target.value }}/>
                                         </div>
                                         <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
-                                            <TextField className="mt-3"
-                                                        placeholder="JWT Token"
-                                                        label="Optional - ACS communication user token. If no token is provided, then a random one will be generated"
-                                                        onChange={(e) => { this.state.token = e.target.value }} />
-                                            <TextField className="mt-3"
-                                                        placeholder="8:acs:<ACS Resource ID>_<guid>"
-                                                        label="Optional - ACS Identity associated with the token above"
-                                                        onChange={(e) => { this.state.communicationUserId = e.target.value }} />
+                                            <TextField
+                                                placeholder="JWT Token"
+                                                label="Optional - ACS communication user token. If no token is provided, then a random one will be generated"
+                                                onChange={(e) => { this.state.token = e.target.value }}/>
+                                            <TextField
+                                                    placeholder="8:acs:<ACS Resource ID>_<guid>"
+                                                    label="Optional - ACS Identity associated with the token above"
+                                                    onChange={(e) => { this.state.communicationUserId = e.target.value }}/>
                                         </div>
                                     </div>
-                                    <div className="ms-Grid-row ml-3">
+                                    <div className="ms-Grid-row">
                                         <div className="ms-Grid-col">
                                             <PrimaryButton className="primary-button mt-3"
                                                 iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
@@ -668,7 +668,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                             <h3>Teams User Identity</h3>
                                         </div>
                                     </div>
-                                    <div className="ms-Grid-row ml-3">
+                                    <div className="ms-Grid-row">
                                         <div className="ms-Grid-col">
                                             <div>Microsoft Authentication Library (MSAL) is used to retrieve user token which is then exchanged to get an access
                                                 to get an access token from the communication service. The access token is then used to initialize the ACS SDK</div>
@@ -676,13 +676,6 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                             <div>On clicking the Login Teams User and Initialize SDK, if the Teams user email or password is not provided, Microsoft signin pop-up will be used </div>
                                         </div>
                                     </div>
-                                    {
-                                        this.state.showSpinner && this.state.isTeamsUser &&
-                                        <div className="justify-content-left mt-4">
-                                            <div className="loader inline-block"> </div>
-                                            <div className="ml-2 inline-block">Fetching Teams User token from service and initializing SDK...</div>
-                                        </div>
-                                    }
                                     {
                                         this.state.loggedIn && this.state.isTeamsUser &&
                                             <div>
@@ -695,7 +688,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                     {
                                         (!this.state.showSpinner && !this.state.loggedIn) &&
                                         <div>
-                                            <div className="ms-Grid-row ml-3">
+                                            <div className="ms-Grid-row">
                                                 <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
                                                     <TextField 
                                                         className="mt-3"
@@ -703,7 +696,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                         onBlur={(e) => { this.teamsUserEmail = e.target.value }} />
                                                 </div>
                                             </div>
-                                            <div className="ms-Grid-row ml-3">
+                                            <div className="ms-Grid-row">
                                                 <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
                                                     <TextField
                                                         type="password"
@@ -712,7 +705,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                         onBlur={(e) => { this.teamsUserPassword = e.target.value }} />
                                                 </div>
                                             </div>
-                                            <div className="ms-Grid-row ml-3">
+                                            <div className="ms-Grid-row">
                                                 <div className="ms-Grid-col">
                                                 <PrimaryButton className="primary-button mt-3"
                                                     iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
@@ -729,7 +722,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                             <div className="ms-Grid-row mt-4">
                                                 <h3 className="ms-Grid-col ms-sm12 ms-md12 ms-lg12">Options</h3>
                                             </div>
-                                            <div className="ms-Grid-row mt-1 ml-3">
+                                            <div className="ms-Grid-row mt-1">
                                                 <div className="ms-Grid-col ms-sm12 ms-md4 ms-lg4"
                                                     disabled={
                                                         !this.state.initializedOneSignal ||
@@ -738,7 +731,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                     }>
                                                     Push Notifications options
                                                     <Checkbox
-                                                        className="mt-2 ml-3"
+                                                        className="mt-2"
                                                         label="Initialize Call Agent"
                                                         disabled={
                                                             !this.state.initializedOneSignal ||
