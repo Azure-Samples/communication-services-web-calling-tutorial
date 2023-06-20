@@ -9,11 +9,10 @@ import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
 import { Icon } from '@fluentui/react/lib/Icon';
 import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
-import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
+import { LocalVideoStream, Features, LocalAudioStream, VideoStreamRenderer } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
-import { Label } from '@fluentui/react/lib/Label';
 import { AzureLogger } from '@azure/logger';
 import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
@@ -25,7 +24,9 @@ export default class CallCard extends React.Component {
         super(props);
         this.callFinishConnectingResolve = undefined;
         this.call = props.call;
-        this.localVideoStream = this.call.localVideoStreams.find(lvs => { return lvs.mediaStreamType === 'Video' || lvs.mediaStreamType === 'RawMedia'});
+        this.localVideoStream = this.call.localVideoStreams.find(lvs => {
+            return lvs.mediaStreamType === 'Video' || lvs.mediaStreamType === 'RawMedia'
+        });
         this.localScreenSharingStream = undefined;
         this.deviceManager = props.deviceManager;
         this.remoteVolumeLevelSubscription = undefined;
@@ -59,6 +60,7 @@ export default class CallCard extends React.Component {
             selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id,
             showSettings: false,
             showLocalVideo: false,
+            showLocalScreenSharingPreview: false,
             callMessage: undefined,
             dominantSpeakerMode: false,
             captionOn: false,
@@ -592,12 +594,53 @@ export default class CallCard extends React.Component {
 
     async handleScreenSharingOnOff() {
         try {
+            let startNormalScreenSharing = false;
+            const wasRawScreenShareOn = this.call.isScreenSharingOn &&
+                this.localScreenSharingStream.mediaStreamType === 'RawMedia';
+
             if (this.call.isScreenSharingOn) {
-                await this.call.stopScreenSharing()
+                await this.call.stopScreenSharing();
+                this.setState({ showLocalScreenSharingPreview: false });
+                if (wasRawScreenShareOn) {
+                    startNormalScreenSharing = true;
+                }
             } else {
-                await this.call.startScreenSharing();
+                startNormalScreenSharing = true;
             }
-            this.setState({ screenSharingOn: this.call.isScreenSharingOn });
+
+            if (startNormalScreenSharing) {
+                await this.call.startScreenSharing();
+                this.localScreenSharingStream = this.call.localVideoStreams.find(ss => {
+                    return ss.mediaStreamType === 'ScreenSharing'
+                });
+                this.setState({ showLocalScreenSharingPreview: true });
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async handleRawScreenSharingOnOff() {
+        try {
+            let startRawScreenSharing = false;
+            const wasNormalScreenShareOn = this.call.isScreenSharingOn &&
+                this.localScreenSharingStream.mediaStreamType === 'ScreenSharing';
+
+            if (this.call.isScreenSharingOn) {
+                await this.call.stopScreenSharing();
+                this.setState({ showLocalScreenSharingPreview: false });
+                if (wasNormalScreenShareOn) {
+                    startRawScreenSharing = true;
+                }
+            } else {
+                startRawScreenSharing = true;
+            }
+
+            if (startRawScreenSharing) {
+                this.localScreenSharingStream = new LocalVideoStream(utils.dummyStream());
+                await this.call.startScreenSharing(this.localScreenSharingStream);
+                this.setState({ showLocalScreenSharingPreview: true });
+            }
         } catch (e) {
             console.error(e);
         }
@@ -763,14 +806,6 @@ export default class CallCard extends React.Component {
                         <CurrentCallInformation sentResolution={this.state.sentResolution} call={this.call} />
                     }
                 </div>
-                <div>
-                    {
-                        this.state.showLocalVideo &&
-                        <div className="mb-3">
-                            <LocalVideoPreviewCard selectedCameraDeviceId={this.state.selectedCameraDeviceId} deviceManager={this.deviceManager} />
-                        </div>
-                    }
-                </div>
                 <div className="video-grid-row">
                     {
                         (this.state.callState === 'Connected' ||
@@ -806,236 +841,277 @@ export default class CallCard extends React.Component {
                     }
                 </div>
                 <div className="ms-Grid-row">
-                    <div className={'ms-Grid'}>
-                        <div className="mb-2">
-                            {
-                                this.state.callState !== 'Connected' &&
-                                <div className="custom-row">
-                                    <div className="ringing-loader mb-4"></div>
-                                </div>
-                            }
-                            <div className="text-center">
-                                <span className="in-call-button"
-                                    title={`Turn your video ${this.state.videoOn ? 'off' : 'on'}`}
-                                    variant="secondary"
-                                    onClick={() => this.handleVideoOnOff()}>
-                                    {
-                                        this.state.videoOn &&
-                                        <Icon iconName="Video" />
-                                    }
-                                    {
-                                        !this.state.videoOn &&
-                                        <Icon iconName="VideoOff" />
-                                    }
-                                </span>
-                                <span className="in-call-button"
-                                    title={`${this.state.micMuted ? 'Unmute' : 'Mute'} your microphone`}
-                                    variant="secondary"
-                                    onClick={() => this.handleMicOnOff()}>
-                                    {
-                                        this.state.micMuted &&
-                                        <Icon iconName="MicOff2" />
-                                    }
-                                    {
-                                        !this.state.micMuted &&
-                                        <Icon iconName="Microphone" />
-                                    }
-                                </span>
-                                <span className="in-call-button"
-                                    title={`${this.state.incomingAudioMuted ? 'Unmute' : 'Mute'} incoming audio`}
-                                    variant="secondary"
-                                    onClick={() => this.handleIncomingAudioOnOff()}>
-                                    {
-                                        this.state.incomingAudioMuted &&
-                                        <Icon iconName="VolumeDisabled" />
-                                    }
-                                    {
-                                        !this.state.incomingAudioMuted &&
-                                        <Icon iconName="Volume2" />
-                                    }
-                                </span>
-                                <span className="in-call-button"
-                                    title={`${this.state.screenSharingOn ? 'Stop' : 'Start'} sharing your screen`}
-                                    variant="secondary"
-                                    onClick={() => this.handleScreenSharingOnOff()}>
-                                    {
-                                        !this.state.screenSharingOn &&
-                                        <Icon iconName="TVMonitor" />
-                                    }
-                                    {
-                                        this.state.screenSharingOn &&
-                                        <Icon iconName="CircleStop" />
-                                    }
-                                </span>
-                                {
-                                    (this.state.callState === 'Connected' ||
-                                        this.state.callState === 'LocalHold' ||
-                                        this.state.callState === 'RemoteHold') &&
-                                    <span className="in-call-button"
-                                        title={`${this.state.callState === 'LocalHold' ? 'Unhold' : 'Hold'} call`}
-                                        variant="secondary"
-                                        onClick={() => this.handleHoldUnhold()}>
-                                        {
-                                            (this.state.callState === 'LocalHold') &&
-                                            <Icon iconName="Pause" />
-                                        }
-                                        {
-                                            (this.state.callState === 'Connected' || this.state.callState === 'RemoteHold') &&
-                                            <Icon iconName="Play" />
-                                        }
-                                    </span>
-                                }
-                                <span className="in-call-button"
-                                    title="Settings"
-                                    variant="secondary"
-                                    onClick={() => this.setState({ showSettings: true })}>
-                                    <Icon iconName="Settings" />
-                                </span>
-                                <span className="in-call-button"
-                                    onClick={() => this.call.hangUp()}>
-                                    <Icon iconName="DeclineCall" />
-                                </span>
-                                <span className="in-call-button"
-                                    title={`${this.state.outgoingAudioMediaAccessActive ? 'Clear audio effect' : 'Apply outgoing audio effect'} to call`}
-                                    variant="secondary"
-                                    onClick={() => this.handleOutgoingAudioEffect()}>
-                                    {
-                                        this.state.outgoingAudioMediaAccessActive &&
-                                        <Icon iconName="PlugConnected" />
-                                    }
-                                    {
-                                        !this.state.outgoingAudioMediaAccessActive &&
-                                        <Icon iconName="PlugDisconnected" />
-                                    }
-                                </span>
-                                <span className="in-call-button"
-                                    title={`${this.state.logMediaStats ? 'Stop' : 'Start'} logging MediaStats`}
-                                    variant="secondary"
-                                    onClick={() => this.handleMediaStatsLogState()}>
-                                    {
-                                        this.state.logMediaStats &&
-                                        <Icon iconName="NumberedList" />
-                                    }
-                                    {
-                                        !this.state.logMediaStats &&
-                                        <Icon iconName="NumberedListText" />
-                                    }
-                                </span>
-                                <span className="in-call-button"
-                                    title={`${!this.state.showParticipantsCard ? `Show Participants and Caption Panel` : `Hide Participants and Caption Panel`}`}
-                                    variant="secondary"
-                                    onClick={() => this.toggleParticipantsCard()}>
-                                    {
-                                        this.state.showParticipantsCard &&
-                                        <Icon iconName="Hide3" />
-                                    }
-                                    {
-                                        !this.state.showParticipantsCard &&
-                                        <Icon iconName="People" />
-                                    }
-                                </span>
-                                <span className="in-call-button "
-                                    title={`${this.state.isHandRaised  ? 'LowerHand' : 'RaiseHand'}`}
-                                    variant="secondary"
-                                    onClick={() => this.handleRaiseHand()}>
-                                    <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
-                                </span>
-                                <ParticipantMenuOptions
-                                    id={this.identifier}
-                                    appendMenuitems={this.getMenuItems()}
-                                    menuOptionsHandler={this.getParticipantMenuCallBacks()}
-                                    menuOptionsState={{isSpotlighted: this.state.isSpotlighted}}
-                                    />
-
-                                <Panel type={PanelType.medium}
-                                    isLightDismiss
-                                    isOpen={this.state.showSettings}
-                                    onDismiss={() => this.setState({ showSettings: false })}
-                                    closeButtonAriaLabel="Close"
-                                    headerText="Settings">
-                                    <div className="pl-2 mt-3">
-                                        <h3>Video settings</h3>
-                                        <div className="pl-2">
-                                            <span>
-                                                <h4>Camera preview</h4>
-                                            </span>
-                                            <DefaultButton onClick={() => this.setState({ showLocalVideo: !this.state.showLocalVideo })}>
-                                                Show/Hide
-                                            </DefaultButton>
-                                            {
-                                                this.state.callState === 'Connected' &&
-                                                <Dropdown
-                                                    selectedKey={this.state.selectedCameraDeviceId}
-                                                    onChange={this.cameraDeviceSelectionChanged}
-                                                    label={'Camera'}
-                                                    options={this.state.cameraDeviceOptions}
-                                                    placeHolder={this.state.cameraDeviceOptions.length === 0 ? 'No camera devices found' : this.state.selectedCameraDeviceId}
-                                                    styles={{ dropdown: { width: 400 } }}
-                                                />
-                                            }
-                                        </div>
-                                    </div>
-                                    <div className="pl-2 mt-4">
-                                        <h3>Sound Settings</h3>
-                                        <div className="pl-2">
-                                            {
-                                                this.state.callState === 'Connected' &&
-                                                <Dropdown
-                                                    selectedKey={this.state.selectedSpeakerDeviceId}
-                                                    onChange={this.speakerDeviceSelectionChanged}
-                                                    options={this.state.speakerDeviceOptions}
-                                                    label={'Speaker'}
-                                                    placeHolder={this.state.speakerDeviceOptions.length === 0 ? 'No speaker devices found' : this.state.selectedSpeakerDeviceId}
-                                                    styles={{ dropdown: { width: 400 } }}
-                                                />
-                                            }
-                                            {
-                                                this.state.callState === 'Connected' &&
-                                                <Dropdown
-                                                    selectedKey={this.state.selectedMicrophoneDeviceId}
-                                                    onChange={this.microphoneDeviceSelectionChanged}
-                                                    options={this.state.microphoneDeviceOptions}
-                                                    label={'Microphone'}
-                                                    placeHolder={this.state.microphoneDeviceOptions.length === 0 ? 'No microphone devices found' : this.state.selectedMicrophoneDeviceId}
-                                                    styles={{ dropdown: { width: 400 } }}
-                                                />
-                                            }
-                                            <div>
-                                                {
-                                                    (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
-                                                    <h3>Volume Visualizer</h3>
-                                                }
-                                                {
-                                                    (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
-                                                    <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} remoteVolumeLevel={this.state.remoteVolumeLevel} />
-                                                }
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Panel>
-                            </div>
+                    {
+                        this.state.callState !== 'Connected' &&
+                        <div className="custom-row">
+                            <div className="ringing-loader mb-4"></div>
                         </div>
+                    }
+                    <div className="text-center">
+                        <span className="in-call-button"
+                            title={`Turn your video ${this.state.videoOn ? 'off' : 'on'}`}
+                            variant="secondary"
+                            onClick={() => this.handleVideoOnOff()}>
+                            {
+                                this.state.videoOn &&
+                                <Icon iconName="Video" />
+                            }
+                            {
+                                !this.state.videoOn &&
+                                <Icon iconName="VideoOff" />
+                            }
+                        </span>
+                        <span className="in-call-button"
+                            title={`${this.state.micMuted ? 'Unmute' : 'Mute'} your microphone`}
+                            variant="secondary"
+                            onClick={() => this.handleMicOnOff()}>
+                            {
+                                this.state.micMuted &&
+                                <Icon iconName="MicOff2" />
+                            }
+                            {
+                                !this.state.micMuted &&
+                                <Icon iconName="Microphone" />
+                            }
+                        </span>
+                        <span className="in-call-button"
+                            title={`${this.state.incomingAudioMuted ? 'Unmute' : 'Mute'} incoming audio`}
+                            variant="secondary"
+                            onClick={() => this.handleIncomingAudioOnOff()}>
+                            {
+                                this.state.incomingAudioMuted &&
+                                <Icon iconName="VolumeDisabled" />
+                            }
+                            {
+                                !this.state.incomingAudioMuted &&
+                                <Icon iconName="Volume2" />
+                            }
+                        </span>
+                        <span className="in-call-button"
+                            title={`${this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'ScreenSharing' ? 'Stop' : 'Start'} sharing your screen`}
+                            variant="secondary"
+                            onClick={() => this.handleScreenSharingOnOff()}>
+                            {
+                                (
+                                    !this.state.screenSharingOn ||
+                                    (this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'RawMedia')
+                                ) &&
+                                <Icon iconName="TVMonitor" />
+                            }
+                            {
+                                this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'ScreenSharing' &&
+                                <Icon iconName="CircleStop" />
+                            }
+                        </span>
+                        <span className="in-call-button"
+                            title={`${this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'RawMedia' ? 'Stop' : 'Start'} screen sharing dummy raw stream`}
+                            variant="secondary"
+                            onClick={() => this.handleRawScreenSharingOnOff()}>
+                            {
+                                (
+                                    !this.state.screenSharingOn ||
+                                    (this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'ScreenSharing')
+                                ) &&
+                                <Icon iconName="Tablet" />
+                            }
+                            {
+                                this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'RawMedia' &&
+                                <Icon iconName="CircleStop" />
+                            }
+                        </span>
+                        {
+                            (this.state.callState === 'Connected' ||
+                                this.state.callState === 'LocalHold' ||
+                                this.state.callState === 'RemoteHold') &&
+                            <span className="in-call-button"
+                                title={`${this.state.callState === 'LocalHold' ? 'Unhold' : 'Hold'} call`}
+                                variant="secondary"
+                                onClick={() => this.handleHoldUnhold()}>
+                                {
+                                    (this.state.callState === 'LocalHold') &&
+                                    <Icon iconName="Pause" />
+                                }
+                                {
+                                    (this.state.callState === 'Connected' || this.state.callState === 'RemoteHold') &&
+                                    <Icon iconName="Play" />
+                                }
+                            </span>
+                        }
+                        <span className="in-call-button"
+                            title="Settings"
+                            variant="secondary"
+                            onClick={() => this.setState({ showSettings: true })}>
+                            <Icon iconName="Settings" />
+                        </span>
+                        <span className="in-call-button"
+                            onClick={() => this.call.hangUp()}>
+                            <Icon iconName="DeclineCall" />
+                        </span>
+                        <span className="in-call-button"
+                            title={`${this.state.outgoingAudioMediaAccessActive ? 'Clear audio effect' : 'Apply outgoing audio effect'} to call`}
+                            variant="secondary"
+                            onClick={() => this.handleOutgoingAudioEffect()}>
+                            {
+                                this.state.outgoingAudioMediaAccessActive &&
+                                <Icon iconName="PlugConnected" />
+                            }
+                            {
+                                !this.state.outgoingAudioMediaAccessActive &&
+                                <Icon iconName="PlugDisconnected" />
+                            }
+                        </span>
+                        <span className="in-call-button"
+                            title={`${this.state.logMediaStats ? 'Stop' : 'Start'} logging MediaStats`}
+                            variant="secondary"
+                            onClick={() => this.handleMediaStatsLogState()}>
+                            {
+                                this.state.logMediaStats &&
+                                <Icon iconName="NumberedList" />
+                            }
+                            {
+                                !this.state.logMediaStats &&
+                                <Icon iconName="NumberedListText" />
+                            }
+                        </span>
+                        <span className="in-call-button"
+                            title={`${!this.state.showParticipantsCard ? `Show Participants and Caption Panel` : `Hide Participants and Caption Panel`}`}
+                            variant="secondary"
+                            onClick={() => this.toggleParticipantsCard()}>
+                            {
+                                this.state.showParticipantsCard &&
+                                <Icon iconName="Hide3" />
+                            }
+                            {
+                                !this.state.showParticipantsCard &&
+                                <Icon iconName="People" />
+                            }
+                        </span>
+                        <span className="in-call-button "
+                            title={`${this.state.isHandRaised  ? 'LowerHand' : 'RaiseHand'}`}
+                            variant="secondary"
+                            onClick={() => this.handleRaiseHand()}>
+                            <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
+                        </span>
+                        <ParticipantMenuOptions
+                            id={this.identifier}
+                            appendMenuitems={this.getMenuItems()}
+                            menuOptionsHandler={this.getParticipantMenuCallBacks()}
+                            menuOptionsState={{isSpotlighted: this.state.isSpotlighted}}
+                            />
+
+                        <Panel type={PanelType.medium}
+                            isLightDismiss
+                            isOpen={this.state.showSettings}
+                            onDismiss={() => this.setState({ showSettings: false })}
+                            closeButtonAriaLabel="Close"
+                            headerText="Settings">
+                            <div className="pl-2 mt-3">
+                                <h3>Video settings</h3>
+                                <div className="pl-2">
+                                    <span>
+                                        <h4>Camera preview</h4>
+                                    </span>
+                                    <DefaultButton onClick={() => this.setState({ showLocalVideo: !this.state.showLocalVideo })}>
+                                        Show/Hide
+                                    </DefaultButton>
+                                    {
+                                        this.state.callState === 'Connected' &&
+                                        <Dropdown
+                                            selectedKey={this.state.selectedCameraDeviceId}
+                                            onChange={this.cameraDeviceSelectionChanged}
+                                            label={'Camera'}
+                                            options={this.state.cameraDeviceOptions}
+                                            placeHolder={this.state.cameraDeviceOptions.length === 0 ? 'No camera devices found' : this.state.selectedCameraDeviceId}
+                                            styles={{ dropdown: { width: 400 } }}
+                                        />
+                                    }
+                                </div>
+                            </div>
+                            <div className="pl-2 mt-4">
+                                <h3>Sound Settings</h3>
+                                <div className="pl-2">
+                                    {
+                                        this.state.callState === 'Connected' &&
+                                        <Dropdown
+                                            selectedKey={this.state.selectedSpeakerDeviceId}
+                                            onChange={this.speakerDeviceSelectionChanged}
+                                            options={this.state.speakerDeviceOptions}
+                                            label={'Speaker'}
+                                            placeHolder={this.state.speakerDeviceOptions.length === 0 ? 'No speaker devices found' : this.state.selectedSpeakerDeviceId}
+                                            styles={{ dropdown: { width: 400 } }}
+                                        />
+                                    }
+                                    {
+                                        this.state.callState === 'Connected' &&
+                                        <Dropdown
+                                            selectedKey={this.state.selectedMicrophoneDeviceId}
+                                            onChange={this.microphoneDeviceSelectionChanged}
+                                            options={this.state.microphoneDeviceOptions}
+                                            label={'Microphone'}
+                                            placeHolder={this.state.microphoneDeviceOptions.length === 0 ? 'No microphone devices found' : this.state.selectedMicrophoneDeviceId}
+                                            styles={{ dropdown: { width: 400 } }}
+                                        />
+                                    }
+                                    <div>
+                                        {
+                                            (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
+                                            <h3>Volume Visualizer</h3>
+                                        }
+                                        {
+                                            (this.state.callState === 'Connected') && !this.state.micMuted && !this.state.incomingAudioMuted &&
+                                            <VolumeVisualizer call={this.call} deviceManager={this.deviceManager} remoteVolumeLevel={this.state.remoteVolumeLevel} />
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </Panel>
                     </div>
                 </div>
-                <div className="ms-Grid-row text-center">
-                    {
-                        this.state.videoOn &&
-                        <div className="text-center">
-                            <div className='video-feature-sample'>
-                                <Label className='title'>Raw Video access</Label>
-                                <CustomVideoEffects call={this.call} deviceManager={this.deviceManager} />
+                {
+                    this.state.videoOn &&
+                    <div className="mt-5">
+                        <div className="ms-Grid-row">
+                            <h3>Local video preview</h3>
+                        </div>
+                        <div className="ms-Grid-row">
+                            <div className="ms-Grid-col ms-sm12 ms-md4 ms-lg4">
+                                <LocalVideoPreviewCard stream={this.localVideoStream}/>
                             </div>
-                            <div className='video-feature-sample'>
-                                <Label className='title'>Video effects</Label>
+                            <div className='ms-Grid-col ms-sm12 ms-md2 md-lg2'>
+                                <h4>Raw Video access</h4>
+                                <CustomVideoEffects
+                                    call={this.call}
+                                    stream={this.localVideoStream}
+                                    deviceManager={this.deviceManager} />
+                            </div>
+                            <div className='ms-Grid-col ms-sm12 ms-md5 md-lg6'>
                                 <VideoEffectsContainer call={this.call} />
                             </div>
                         </div>
-                    }
-                </div>
+                    </div>
+                }
+                {   this.state.showLocalScreenSharingPreview &&
+                    <div className="mt-5">
+                        <div className="ms-Grid-row">
+                            <h3>Local screen sharing preview</h3>
+                        </div>
+                        <div className="ms-Grid-row">
+                            <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
+                                <LocalVideoPreviewCard stream={this.localScreenSharingStream}/>
+                            </div>
+                            <div className='ms-Grid-col ms-sm12 ms-md2 md-lg2'>
+                                <h4>Raw Screen Sharing access</h4>
+                                <CustomVideoEffects
+                                    stream={this.localScreenSharingStream}
+                                    deviceManager={this.deviceManager} />
+                            </div>
+                        </div>
+                    </div>
+                }
                 {
                     this.state.callState === 'Connected' && this.state.showParticipantsCard &&
                     <div>
-                        <div className="participants-panel mt-1 mb-3">
+                        <div className="participants-panel mt-5 mb-3">
                             <Toggle label={
                                 <div>
                                     Dominant Speaker mode{' '}

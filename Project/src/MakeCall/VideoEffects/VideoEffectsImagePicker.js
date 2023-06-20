@@ -40,11 +40,11 @@ export default class VideoEffectsImagePicker extends React.Component {
 
     render() {
         return (
-            <div className={`ms-Grid-row video-effects-image-picker ${this.props.disabled && 'disabled'}`} id='video-effects-image-picker'>
+            <div className={`ms-Grid-row video-effects-image-picker ${this.props.disabled && 'disabled'}`}>
                 {this.state.images.map((image, key) => (
-                    <div className='image-container' key={`container-key-${key}`}>
+                    <div className='ms-Grid-col ms-sm12 ms-md6 ms-lg6 image-container' key={`container-key-${key}`}>
                         <img 
-                            className={`background-image-sample ${this.state.selectedImage.name === image.name ? 'selected' : ''}`}
+                            className={`${this.state.selectedImage.name === image.name ? 'selected' : ''}`}
                             src={image.location}
                             alt={image.name}
                             onClick={() => this.handleImageClick(image)}

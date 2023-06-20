@@ -3,33 +3,33 @@ import { LocalVideoStream, VideoStreamRenderer} from '@azure/communication-calli
 export default class LocalVideoPreviewCard extends React.Component {
     constructor(props) {
         super(props);
-        this.deviceManager = props.deviceManager;
-        this.selectedCameraDeviceId = props.selectedCameraDeviceId;
+        this.stream = props.stream;
+        this.type = this.stream.mediaStreamType;
+        this.view = undefined;
     }
 
     async componentDidMount() {
         try {
-            const cameras = await this.deviceManager.getCameras();
-            this.cameraDeviceInfo = cameras.find(cameraDevice => {
-                return cameraDevice.id === this.selectedCameraDeviceId;
-            });
-            const localVideoStream = new LocalVideoStream(this.cameraDeviceInfo);
-            const renderer = new VideoStreamRenderer(localVideoStream);
-            this.view = await renderer.createView();
-            const targetContainer = document.getElementById('localVideoRenderer');
+            this.renderer = new VideoStreamRenderer(this.stream);
+            this.view = await this.renderer.createView();
+            const targetContainer = document.getElementById(`local${this.type}Renderer`);
+            if (this.type === 'ScreenSharing' || this.type === 'RawMedia') {
+                this.view.target.querySelector('video').style.width = targetContainer.style.width;
+            }
             targetContainer.appendChild(this.view.target);
         } catch (error) {
-            console.error(error);
+            console.error('Failed to render preview', error);
         }
+    }
+
+    async componentWillUnmount() {
+        this.view.dispose();
+        this.view = undefined;
     }
 
     render() {
         return (
-            <div>
-                <div style={{ marginBottom: "0.5em", padding: "0.5em" }}>
-                    <div id="localVideoRenderer"></div>
-                </div>
-            </div>
+            <div style={{ width: '100%' }} id={ `local${this.type}Renderer` }></div>
         );
     }
 }

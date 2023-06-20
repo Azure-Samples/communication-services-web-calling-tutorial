@@ -26,13 +26,13 @@ export const TurnConfiguration = (props) => {
         <div>
             Turn configuration
             <Checkbox 
-                className='mt-2 ml-3'
+                className='mt-2'
                 disabled={props.customTurn.isLoading}
                 label='Use custom TURN'
                 checked={props.customTurn.useCustomTurn}
                 onChange={props.handleCustomTurnChecked}
             />
-            <div className='mt-2 ml-3'>
+            <div className='mt-2'>
                 {props.customTurn.turn &&
                     props.customTurn.turn?.iceServers?.map((iceServer, key) => {
                         if (iceServer.urls && iceServer.urls.length > 0) {
@@ -56,7 +56,7 @@ export const TurnConfiguration = (props) => {
                 }
             </div>
             <TextField
-                className='mt-2 ml-3'
+                className='mt-2'
                 label='URLs (seperate each by semicolon)'
                 value={turnUrls}
                 onChange={(e) => {
@@ -65,7 +65,7 @@ export const TurnConfiguration = (props) => {
             >
             </TextField>
             <TextField
-                className='mt-2 ml-3'
+                className='mt-2'
                 label='Username'
                 value={turnUsername}
                 onChange={(e) => {
@@ -74,7 +74,7 @@ export const TurnConfiguration = (props) => {
             >
             </TextField>
             <TextField
-                className='mt-2 ml-3'
+                className='mt-2'
                 label='Credential'
                 value={turnCredential}
                 onChange={(e) => {
@@ -82,7 +82,7 @@ export const TurnConfiguration = (props) => {
                 }}
             >
             </TextField>
-            <div className='button-group ms-Grid-row mt-2 ml-3'>
+            <div className='button-group ms-Grid-row mt-2'>
                 <div className='button-container ms-Grid-col ms-sm6 ms-xl6 ms-xxl4'>
                     <PrimaryButton
                         text='Add TURN(s)'
