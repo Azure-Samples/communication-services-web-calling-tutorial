@@ -3,10 +3,15 @@
   "version": "0.3.0",
   "private": true,
   "dependencies": {
-    "@azure/communication-administration": "1.0.0-beta.4",
-    "@azure/communication-calling": "1.12.0-beta.2",
-    "@azure/communication-calling-effects": "1.0.0-beta.1",
+
+    "@azure/communication-calling": "1.14.1-beta.1",
+    "@azure/communication-calling-effects": "1.0.1",
+    "@azure/communication-common": "^2.2.0",
+    "@azure/communication-identity": "^1.2.0",
+
     "@azure/communication-network-traversal": "^1.1.0-beta.1",
+    "@azure/msal-browser": "^2.33.0",
+    "@azure/msal-node": "^1.17.1",
     "@fluentui/react": "^7.158.1",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",

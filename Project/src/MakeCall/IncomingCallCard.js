@@ -5,13 +5,10 @@ export default class IncomingCallCard extends React.Component {
     constructor(props) {
         super(props);
         this.incomingCall = props.incomingCall;
-        this.acceptCallOptions = props.acceptCallOptions;
-        this.acceptCallWithVideoOptions = props.acceptCallWithVideoOptions;
-    }
-
-    async componentDidMount() {
-        this.acceptCallOptions = { videoOptions: (await this.acceptCallOptions()).videoOptions };
-        this.acceptCallWithVideoOptions = { videoOptions: (await this.acceptCallWithVideoOptions()).videoOptions };
+        this.acceptCallMicrophoneUnmutedVideoOff = props.acceptCallMicrophoneUnmutedVideoOff;
+        this.acceptCallMicrophoneUnmutedVideoOn = props.acceptCallMicrophoneUnmutedVideoOn;
+        this.acceptCallMicrophoneMutedVideoOn = props.acceptCallMicrophoneMutedVideoOn;
+        this.acceptCallMicrophoneMutedVideoOff = props.acceptCallMicrophoneMutedVideoOff;
     }
 
     render() {
@@ -33,14 +30,28 @@ export default class IncomingCallCard extends React.Component {
                 </div>
                 <div className="ms-Grid-row text-center">
                     <span className="incoming-call-button"
-                        title={'Answer call with video off'}
-                        onClick={() => this.incomingCall.accept(this.acceptCallOptions)}>
-                        <Icon iconName="IncomingCall"/>
+                        title={'Answer call with microphone unmuted and video off'}
+                        onClick={async () => this.incomingCall.accept(await this.acceptCallMicrophoneUnmutedVideoOff())}>
+                        <Icon iconName="Microphone"/>
+                        <Icon iconName="VideoOff"/>
                     </span>
                     <span className="incoming-call-button"
-                        title={'Answer call with video on'}
-                        onClick={() => this.incomingCall.accept(this.acceptCallWithVideoOptions)}>
+                        title={'Answer call with microphone unmuted and video on'}
+                        onClick={async () => this.incomingCall.accept(await this.acceptCallMicrophoneUnmutedVideoOn())}>
+                        <Icon iconName="Microphone"/>
                         <Icon iconName="Video"/>
+                    </span>
+                    <span className="incoming-call-button"
+                        title={'Answer call with microphone muted and video on'}
+                        onClick={async () => this.incomingCall.accept(await this.acceptCallMicrophoneMutedVideoOn())}>
+                        <Icon iconName="MicOff"/>
+                        <Icon iconName="Video"/>
+                    </span>
+                    <span className="incoming-call-button"
+                        title={'Answer call with microphone muted and video off'}
+                        onClick={async () => this.incomingCall.accept(await this.acceptCallMicrophoneMutedVideoOff())}>
+                        <Icon iconName="MicOff"/>
+                        <Icon iconName="VideoOff"/>
                     </span>
                     <span className="incoming-call-button"
                         title={'Reject call'}

@@ -3,6 +3,7 @@ import {
     TextField, PrimaryButton, Checkbox,
     MessageBar, MessageBarType
 } from 'office-ui-fabric-react'
+import { Features } from "@azure/communication-calling";
 import { utils } from "../Utils/Utils";
 import { v4 as uuid } from 'uuid';
 import OneSignal from "react-onesignal";
@@ -13,7 +14,8 @@ import { ProxyConfiguration } from './NetworkConfiguration/ProxyConfiguration';
 export default class Login extends React.Component {
     constructor(props) {
         super(props);
-
+        this.callAgent = undefined;
+        this.callClient = undefined;
         this.userDetailsResponse = undefined;
         this.displayName = undefined;
         this.clientTag = uuid();
@@ -21,7 +23,12 @@ export default class Login extends React.Component {
         this._callAgentInitPromise = undefined;
         this._callAgentInitPromiseResolve = undefined;
         this.currentCustomTurnConfig = undefined;
+        this.teamsUserEmail= '';
+        this.teamsUserPassword= '';
         this.state = {
+            isCallClientActiveInAnotherTab: false,
+            environmentInfo: undefined,
+            showCallClientOptions: false,
             initializedOneSignal: false,
             subscribedForPushNotifications: false,
             initializeCallAgentAfterPushRegistration: true,
@@ -37,7 +44,9 @@ export default class Login extends React.Component {
                 useCustomTurn: false,
                 isLoading: false,
                 turn: null
-            }
+            },
+            isTeamsUser: false,
+            
         }
     }
 
@@ -91,8 +100,33 @@ export default class Login extends React.Component {
         }
     }
 
+    async setupLoginStates() {
+        this.setState({
+            token: this.userDetailsResponse.communicationUserToken.token
+        });
+        this.setState({
+            communicationUserId: utils.getIdentifierText(this.userDetailsResponse.userId)
+        });
+        
+        if (!this.state.subscribedForPushNotifications ||
+            (this.state.subscribedForPushNotifications && this.state.initializeCallAgentAfterPushRegistration)) {
+            await this.props.onLoggedIn({ 
+                communicationUserId: this.userDetailsResponse.userId.communicationUserId,
+                token: this.userDetailsResponse.communicationUserToken.token,
+                displayName: this.displayName,
+                clientTag:this.clientTag,
+                proxy: this.state.proxy,
+                customTurn: this.state.customTurn,
+                isTeamsUser: this.state.isTeamsUser
+            });
+        }
+        console.log('Login response: ', this.userDetailsResponse);
+        this.setState({ loggedIn: true });
+    }
+
     async logIn() {
         try {
+            this.setState({ isTeamsUser: false });
             this.setState({ showSpinner: true });
             if (!this.state.token && !this.state.communicationUserId) {
                 this.userDetailsResponse = await utils.getCommunicationUserToken();
@@ -105,28 +139,29 @@ export default class Login extends React.Component {
             } else if (!this.state.token && this.state.communicationUserId) {
                 throw new Error('You must specify the ACS communication user token for the provided ACS identity');
             }
-            this.setState({
-                token: this.userDetailsResponse.communicationUserToken.token
-            });
-            this.setState({
-                communicationUserId: utils.getIdentifierText(this.userDetailsResponse.communicationUserToken.user)
-            });
             if (this.state.initializedOneSignal) {
                 OneSignal.setExternalUserId(this.userDetailsResponse.oneSignalRegistrationToken);
             }
-            if (!this.state.subscribedForPushNotifications ||
-                (this.state.subscribedForPushNotifications && this.state.initializeCallAgentAfterPushRegistration)) {
-                await this.props.onLoggedIn({ 
-                    communicationUserId: this.userDetailsResponse.communicationUserToken.user.communicationUserId,
-                    token: this.userDetailsResponse.communicationUserToken.token,
-                    displayName: this.displayName,
-                    clientTag:this.clientTag,
-                    proxy: this.state.proxy,
-                    customTurn: this.state.customTurn
-                });
-            }
-            console.log('Login response: ', this.userDetailsResponse);
-            this.setState({ loggedIn: true });
+            await this.setupLoginStates()
+        } catch (error) {
+            this.setState({
+                loginErrorMessage: error.message
+            });
+            console.log(error);
+        } finally {
+            this.setState({ showSpinner: false });
+        }
+    }
+
+    async teamsUserOAuthLogin() {
+        try {
+            this.setState({ isTeamsUser: true });
+            this.setState({ showSpinner: true });
+            this.userDetailsResponse  = this.teamsUserEmail && this.teamsUserPassword ?
+                await utils.teamsM365Login(this.teamsUserEmail, this.teamsUserPassword ):
+                await utils.teamsPopupLogin();
+            this.teamsUserEmail = this.teamsUserPassword = '';
+            await this.setupLoginStates();
         } catch (error) {
             this.setState({
                 loginErrorMessage: error.message
@@ -147,7 +182,7 @@ export default class Login extends React.Component {
                         token: this.userDetailsResponse.communicationUserToken.token
                     });
                     this.setState({
-                        communicationUserId: utils.getIdentifierText(this.userDetailsResponse.communicationUserToken.user)
+                        communicationUserId: utils.getIdentifierText(this.userDetailsResponse.userId.communicationUserId)
                     });
                 }
                 this.props.onLoggedIn({ 
@@ -180,6 +215,17 @@ export default class Login extends React.Component {
         if (!!this._callAgentInitPromiseResolve) {
             this._callAgentInitPromiseResolve();
         }
+    }
+
+    async setCallClient(callClient) {
+        this.callClient = callClient;
+        const environmentInfo = await this.callClient.getEnvironmentInfoInternal();
+        this.setState({ environmentInfo });
+        const debugInfoFeature = await this.callClient.feature(Features.DebugInfo);
+        this.setState({ isCallClientActiveInAnotherTab: debugInfoFeature.isCallClientActiveInAnotherTab });
+        debugInfoFeature.on('isCallClientActiveInAnotherTabChanged', () => {
+            this.setState({ isCallClientActiveInAnotherTab: debugInfoFeature.isCallClientActiveInAnotherTab });
+        });
     }
 
     handleProxyChecked = (e, isChecked) => {
@@ -468,142 +514,288 @@ export class MyCallingApp {
         });
     }
 }
+
+/**************************************************************************************/
+/*     Environment Information     */
+/**************************************************************************************/
+// Get current environment information with details if supported by ACS
+this.environmentInfo = await this.callClient.getEnvironmentInfo();
+
+// The returned value is an object of type EnvironmentInfo
+type EnvironmentInfo = {
+    environment: Environment;
+    isSupportedPlatform: boolean;
+    isSupportedBrowser: boolean;
+    isSupportedBrowserVersion: boolean;
+    isSupportedEnvironment: boolean;
+};
+
+// The Environment type in the EnvironmentInfo type is defined as:
+type Environment = {
+    platform: string;
+    browser: string;
+    browserVersion: string;
+};
+
+// The following code snippet shows how to get the current environment details
+const currentOperatingSystem = this.environmentInfo.environment.platform;
+const currentBrowser = this.environmentInfo.environment.browser;
+const currentBrowserVersion = this.environmentInfo.environment.browserVersion;
+
+// The following code snippet shows how to check if environment details are supported by ACS
+const isSupportedOperatingSystem = this.environmentInfo.isSupportedPlatform;
+const isSupportedBrowser = this.environmentInfo.isSupportedBrowser;
+const isSupportedBrowserVersion = this.environmentInfo.isSupportedBrowserVersion;
+const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
         `;
 
         return (
-            <div className="card">
-                <div className="ms-Grid">
-                    <div className="ms-Grid-row">
-                        <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">ACS User identity Provisioning and Calling SDK Initialization</h2>
-                        <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
-                            <PrimaryButton className="primary-button"
-                                iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
-                                text={`${this.state.showUserProvisioningAndSdkInitializationCode ? 'Hide' : 'Show'} code`}
-                                onClick={() => this.setState({showUserProvisioningAndSdkInitializationCode: !this.state.showUserProvisioningAndSdkInitializationCode})}>
-                            </PrimaryButton>
-                        </div>
-                    </div>
-                    <div className="ms-Grid-row">
-                    {
-                        this.state.loginWarningMessage &&
-                        <MessageBar
-                            className="mb-2"
-                            messageBarType={MessageBarType.warning}
-                            isMultiline={true}
-                            onDismiss={() => { this.setState({ loginWarningMessage: undefined })}}
-                            dismissButtonAriaLabel="Close">
-                            <b>{this.state.loginWarningMessage}</b>
-                        </MessageBar>
-                    }
-                    </div>
-                    <div className="ms-Grid-row">
-                    {
-                        this.state.loginErrorMessage &&
-                        <MessageBar
-                            className="mb-2"
-                            messageBarType={MessageBarType.error}
-                            isMultiline={true}
-                            onDismiss={() => { this.setState({ loginErrorMessage: undefined })}}
-                            dismissButtonAriaLabel="Close">
-                            <b>{this.state.loginErrorMessage}</b>
-                        </MessageBar>
-                    }
-                    </div>
-                    {
-                        this.state.showUserProvisioningAndSdkInitializationCode &&
-                        <pre>
-                            <code style={{color: '#b3b0ad'}}>
-                                {userProvisioningAndSdkInitializationCode}
-                            </code>
-                        </pre>
-                    }
-                    <div>The ACS Identity SDK can be used to create a user access token which authenticates the calling clients. </div>
-                    <div>The example code shows how to use the ACS Identity SDK from a backend service. A walkthrough of integrating the ACS Identity SDK can be found on <a className="sdk-docs-link" target="_blank" href="https://docs.microsoft.com/en-us/azure/communication-services/quickstarts/access-tokens?pivots=programming-language-javascript">Microsoft Docs</a></div>
-                    {
-                        this.state.showSpinner &&
-                        <div className="justify-content-left mt-4">
-                            <div className="loader inline-block"> </div>
-                            <div className="ml-2 inline-block">Fetching token from service and initializing SDK...</div>
-                        </div>
-                    }
-                    {
-                        this.state.loggedIn &&
-                        <div>
-                            <br></br>
-                            <div>Congrats! You've provisioned an ACS user identity and initialized the ACS Calling Client Web SDK. You are ready to start making calls!</div>
-                            <div>The Identity you've provisioned is: <span className="identity"><b>{this.state.communicationUserId}</b></span></div>
-                            <div>Usage is tagged with: <span className="identity"><b>{this.clientTag}</b></span></div>
-                        </div>
-                    }
-                    {
-                        (!this.state.showSpinner && !this.state.loggedIn) &&
-                        <div>
+                    <div className="card">
+                        <div className="ms-Grid">
                             <div className="ms-Grid-row">
-                                    <div className="ms-Grid-col ms-sm12 ms-lg6 ms-xl6 ms-xxl6">
-                                    <TextField className="mt-3"
-                                                    defaultValue={undefined}
-                                                    label="Optional - Display name"
-                                                    onChange={(e) => { this.displayName = e.target.value }} />
-                                    <TextField className="mt-3"
-                                                defaultValue={this.clientTag}
-                                                label="Optinal - Usage tag for this session"
-                                                onChange={(e) => { this.clientTag = e.target.value }} />
-                                </div>
-                                <div className="ms-Grid-col ms-sm12 ms-lg6 ms-xl6 ms-xxl6">
-                                     <TextField className="mt-3"
-                                                placeholder="JWT Token"
-                                                label="Optional - ACS communication user token. If no token is provided, then a random one will be generated"
-                                                onChange={(e) => { this.state.token = e.target.value }} />
-                                    <TextField className="mt-3"
-                                                placeholder="8:acs:<ACS Resource ID>_<guid>"
-                                                label="Optional - ACS Identity associated with the token above"
-                                                onChange={(e) => { this.state.communicationUserId = e.target.value }} />
+                                <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">User Identity Provisioning and Calling SDK Initialization</h2>
+                                <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
+                                    <PrimaryButton className="primary-button"
+                                        iconProps={{iconName: 'Settings', style: {verticalAlign: 'middle', fontSize: 'large'}}}
+                                        text={`${this.state.showCallClientOptions ? 'Hide' : 'Show'} options`}
+                                        onClick={() => this.setState({showCallClientOptions: !this.state.showCallClientOptions})}>
+                                    </PrimaryButton>
+                                    <PrimaryButton className="primary-button"
+                                        iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
+                                        text={`${this.state.showUserProvisioningAndSdkInitializationCode ? 'Hide' : 'Show'} code`}
+                                        onClick={() => this.setState({showUserProvisioningAndSdkInitializationCode: !this.state.showUserProvisioningAndSdkInitializationCode})}>
+                                    </PrimaryButton>
                                 </div>
                             </div>
                             <div className="ms-Grid-row">
-                                <div className="pre-init-option push-notification-options ms-Grid-col ms-lg4 ms-sm12"
-                                    disabled={
-                                        !this.state.initializedOneSignal ||
-                                        !this.state.subscribedForPushNotifications ||
-                                        this.isSafari
-                                    }>
-                                    Push Notifications options
-                                    <Checkbox className="mt-2 ml-3"
-                                                label="Initialize Call Agent"
-                                                disabled={
-                                                    !this.state.initializedOneSignal ||
-                                                    !this.state.subscribedForPushNotifications ||
-                                                    this.isSafari
-                                                }
-                                                checked={this.state.initializeCallAgentAfterPushRegistration}
-                                                onChange={(e, isChecked) => { this.setState({ initializeCallAgentAfterPushRegistration: isChecked })}}/>
+                            {
+                                this.state.loginWarningMessage &&
+                                <MessageBar
+                                    className="mb-2"
+                                    messageBarType={MessageBarType.warning}
+                                    isMultiline={true}
+                                    onDismiss={() => { this.setState({ loginWarningMessage: undefined })}}
+                                    dismissButtonAriaLabel="Close">
+                                    <b>{this.state.loginWarningMessage}</b>
+                                </MessageBar>
+                            }
+                            </div>
+                            <div className="ms-Grid-row">
+                            {
+                                this.state.loginErrorMessage &&
+                                <MessageBar
+                                    className="mb-2"
+                                    messageBarType={MessageBarType.error}
+                                    isMultiline={true}
+                                    onDismiss={() => { this.setState({ loginErrorMessage: undefined })}}
+                                    dismissButtonAriaLabel="Close">
+                                    <b>{this.state.loginErrorMessage}</b>
+                                </MessageBar>
+                            }
+                            </div>
+                            {
+                                this.state.showUserProvisioningAndSdkInitializationCode &&
+                                <pre>
+                                    <code style={{color: '#b3b0ad'}}>
+                                        {userProvisioningAndSdkInitializationCode}
+                                    </code>
+                                </pre>
+                            }
+                            {
+                                this.state.showSpinner &&
+                                <div className="justify-content-left mt-4">
+                                    <div className="loader inline-block"> </div>
+                                    <div className="ml-2 inline-block">Initializing SDK...</div>
                                 </div>
-                                <TurnConfiguration
-                                    customTurn={this.state.customTurn}
-                                    handleCustomTurnChecked={this.handleCustomTurnChecked}
-                                    handleAddTurnConfig={this.handleAddTurnConfig}
-                                    handleTurnUrlResetToDefault={this.handleTurnUrlResetToDefault}
-                                    handleTurnUrlReset={this.handleTurnUrlReset}
-                                />
-                                <ProxyConfiguration 
-                                    proxy={this.state.proxy}
-                                    handleProxyChecked={this.handleProxyChecked}
-                                    handleAddProxyUrl={this.handleAddProxyUrl}
-                                    handleProxyUrlReset={this.handleProxyUrlReset}
-                                />
-                            </div>
-                            <div className="mt-3">
-                                <PrimaryButton className="primary-button mt-3"
-                                    iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
-                                    label="Provision an user" 
-                                    onClick={() => this.logIn()}>
-                                        Provision user and initialize SDK
-                                </PrimaryButton>
-                            </div>
+                            }
+                            {
+                                this.state.loggedIn && !this.state.isTeamsUser &&
+                                    <div>
+                                        <br></br>
+                                        <div>Congrats! You've provisioned an ACS user identity and initialized the ACS Calling Client Web SDK. You are ready to start making calls!</div>
+                                        <div>The Identity you've provisioned is: <span className="identity"><b>{this.state.communicationUserId}</b></span></div>
+                                        {<div>Usage is tagged with: <span className="identity"><b>{this.clientTag}</b></span></div>}
+                                    </div>  
+                            }
+                            {
+                                !this.state.showSpinner && !this.state.loggedIn &&
+                                <div>
+                                    <div className="ms-Grid-row">
+                                        <div className="ms-Grid-col">
+                                            <h3>ACS User Identity</h3>
+                                        </div>
+                                    </div>
+                                    <div className="ms-Grid-row ml-3">
+                                        <div className="ms-Grid-col">
+                                            <div>The ACS Identity SDK can be used to create a user access token which authenticates the calling clients. </div>
+                                            <div>The example code shows how to use the ACS Identity SDK from a backend service. A walkthrough of integrating the ACS Identity SDK can be found on <a className="sdk-docs-link" target="_blank" href="https://docs.microsoft.com/en-us/azure/communication-services/quickstarts/access-tokens?pivots=programming-language-javascript">Microsoft Docs</a></div>
+                                        </div>
+                                    </div>
+                                    <div className="ms-Grid-row ml-3">
+                                        <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
+                                            <TextField className="mt-3"
+                                                            defaultValue={undefined}
+                                                            label="Optional - Display name"
+                                                            onChange={(e) => { this.displayName = e.target.value }} />
+                                            <TextField className="mt-3"
+                                                        defaultValue={this.clientTag}
+                                                        label="Optinal - Usage tag for this session"
+                                                        onChange={(e) => { this.clientTag = e.target.value }} />
+                                        </div>
+                                        <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
+                                            <TextField className="mt-3"
+                                                        placeholder="JWT Token"
+                                                        label="Optional - ACS communication user token. If no token is provided, then a random one will be generated"
+                                                        onChange={(e) => { this.state.token = e.target.value }} />
+                                            <TextField className="mt-3"
+                                                        placeholder="8:acs:<ACS Resource ID>_<guid>"
+                                                        label="Optional - ACS Identity associated with the token above"
+                                                        onChange={(e) => { this.state.communicationUserId = e.target.value }} />
+                                        </div>
+                                    </div>
+                                    <div className="ms-Grid-row ml-3">
+                                        <div className="ms-Grid-col">
+                                            <PrimaryButton className="primary-button mt-3"
+                                                iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
+                                                label="Provision an user" 
+                                                onClick={() => this.logIn()}>
+                                                    Login ACS user and initialize SDK
+                                            </PrimaryButton>
+                                        </div>
+                                    </div>
+                                    <div className="ms-Grid-row mt-4">
+                                        <div className="ms-Grid-col">
+                                            <h3>Teams User Identity</h3>
+                                        </div>
+                                    </div>
+                                    <div className="ms-Grid-row ml-3">
+                                        <div className="ms-Grid-col">
+                                            <div>Microsoft Authentication Library (MSAL) is used to retrieve user token which is then exchanged to get an access
+                                                to get an access token from the communication service. The access token is then used to initialize the ACS SDK</div>
+                                            <div>Information and steps on how to generate access token for a Teams user can be found in the  <a className="sdk-docs-link" target="_blank" href="https://learn.microsoft.com/en-us/azure/communication-services/quickstarts/manage-teams-identity?pivots=programming-language-javascript">Microsoft Docs</a></div>
+                                            <div>On clicking the Login Teams User and Initialize SDK, if the Teams user email or password is not provided, Microsoft signin pop-up will be used </div>
+                                        </div>
+                                    </div>
+                                    {
+                                        this.state.showSpinner && this.state.isTeamsUser &&
+                                        <div className="justify-content-left mt-4">
+                                            <div className="loader inline-block"> </div>
+                                            <div className="ml-2 inline-block">Fetching Teams User token from service and initializing SDK...</div>
+                                        </div>
+                                    }
+                                    {
+                                        this.state.loggedIn && this.state.isTeamsUser &&
+                                            <div>
+                                                <br></br>
+                                                <div>Congrats! Teams User was successfully logged in. You are ready to start making calls!</div>
+                                                <div>Teams User logged in identity is: <span className="identity"><b>{this.state.communicationUserId}</b></span></div>
+                                                {<div>Usage is tagged with: <span className="identity"><b>{this.clientTag}</b></span></div>}
+                                            </div>
+                                    }
+                                    {
+                                        (!this.state.showSpinner && !this.state.loggedIn) &&
+                                        <div>
+                                            <div className="ms-Grid-row ml-3">
+                                                <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
+                                                    <TextField 
+                                                        className="mt-3"
+                                                        placeholder="Teams User Email" 
+                                                        onBlur={(e) => { this.teamsUserEmail = e.target.value }} />
+                                                </div>
+                                            </div>
+                                            <div className="ms-Grid-row ml-3">
+                                                <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
+                                                    <TextField
+                                                        type="password"
+                                                        className="mt-3"
+                                                        placeholder="Teams User Password" 
+                                                        onBlur={(e) => { this.teamsUserPassword = e.target.value }} />
+                                                </div>
+                                            </div>
+                                            <div className="ms-Grid-row ml-3">
+                                                <div className="ms-Grid-col">
+                                                <PrimaryButton className="primary-button mt-3"
+                                                    iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
+                                                    onClick={() => this.teamsUserOAuthLogin()}>
+                                                        Login Teams user and Initialize SDK
+                                                </PrimaryButton>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                    {
+                                        this.state.showCallClientOptions &&
+                                        <div>
+                                            <div className="ms-Grid-row mt-4">
+                                                <h3 className="ms-Grid-col ms-sm12 ms-md12 ms-lg12">Options</h3>
+                                            </div>
+                                            <div className="ms-Grid-row mt-1 ml-3">
+                                                <div className="ms-Grid-col ms-sm12 ms-md4 ms-lg4"
+                                                    disabled={
+                                                        !this.state.initializedOneSignal ||
+                                                        !this.state.subscribedForPushNotifications ||
+                                                        this.isSafari
+                                                    }>
+                                                    Push Notifications options
+                                                    <Checkbox
+                                                        className="mt-2 ml-3"
+                                                        label="Initialize Call Agent"
+                                                        disabled={
+                                                            !this.state.initializedOneSignal ||
+                                                            !this.state.subscribedForPushNotifications ||
+                                                            this.isSafari
+                                                        }
+                                                        checked={this.state.initializeCallAgentAfterPushRegistration}
+                                                        onChange={(e, isChecked) => { this.setState({ initializeCallAgentAfterPushRegistration: isChecked })}}/>
+                                                </div>
+                                                <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                                                    <TurnConfiguration
+                                                        customTurn={this.state.customTurn}
+                                                        handleCustomTurnChecked={this.handleCustomTurnChecked}
+                                                        handleAddTurnConfig={this.handleAddTurnConfig}
+                                                        handleTurnUrlResetToDefault={this.handleTurnUrlResetToDefault}
+                                                        handleTurnUrlReset={this.handleTurnUrlReset}
+                                                    />
+                                                </div>
+                                                <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                                                    <ProxyConfiguration 
+                                                        proxy={this.state.proxy}
+                                                        handleProxyChecked={this.handleProxyChecked}
+                                                        handleAddProxyUrl={this.handleAddProxyUrl}
+                                                        handleProxyUrlReset={this.handleProxyUrlReset}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            {
+                                this.state.loggedIn &&
+                                <div>
+                                    <div className="ms-Grid-row mt-4">
+                                        <h3 className="ms-Grid-col ms-sm12 ms-md12 ms-lg12">Environment information</h3>
+                                    </div>
+                                    <div className="ms-Grid-row ml-1">
+                                        <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg3">
+                                            <h4>Current environment details</h4>
+                                            <div>{`Operating system:   ${this.state.environmentInfo?.environment?.platform}.`}</div>
+                                            <div>{`Browser:  ${this.state.environmentInfo?.environment?.browser}.`}</div>
+                                            <div>{`Browser's version:  ${this.state.environmentInfo?.environment?.browserVersion}.`}</div>
+                                            <div>{`Is the application loaded in many tabs:  ${this.state.isCallClientActiveInAnotherTab}.`}</div>
+                                        </div>
+                                        <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg9">
+                                            <h4>Environment support verification</h4>
+                                            <div>{`Operating system supported:  ${this.state.environmentInfo?.isSupportedPlatform}.`}</div>
+                                            <div>{`Browser supported:  ${this.state.environmentInfo?.isSupportedBrowser}.`}</div>
+                                            <div>{`Browser's version supported:  ${this.state.environmentInfo?.isSupportedBrowserVersion}.`}</div>
+                                            <div>{`Current environment supported:  ${this.state.environmentInfo?.isSupportedEnvironment}.`}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                         </div>
-                    }
-                </div>
-            </div>
+                    </div>
         );
     }
 }

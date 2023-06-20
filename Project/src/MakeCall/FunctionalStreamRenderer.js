@@ -10,16 +10,14 @@ export const FunctionalStreamRenderer = forwardRef(({
     dominantRemoteParticipant,
     dominantSpeakerMode,
     call,
-    updateStreamList,
-    maximumNumberOfRenderers,
     showMediaStats
 }, ref) => {
     const componentId = `${utils.getIdentifierText(remoteParticipant.identifier)}-${stream.mediaStreamType}-${stream.id}`;
     const videoContainerId = componentId + '-videoContainer';
     const componentContainer = useRef(null);
     const videoContainer = useRef(null);
-    const [renderer, setRenderer] = useState();
-    const [view, setView] = useState();
+    let renderer;
+    let view;
     const [isLoading, setIsLoading] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(!!remoteParticipant?.isSpeaking);
     const [isMuted, setIsMuted] = useState(!!remoteParticipant?.isMuted);
@@ -30,7 +28,6 @@ export const FunctionalStreamRenderer = forwardRef(({
         initializeComponent();
         return () => {
             stream.off('isReceivingChanged', isReceivingChanged);
-            stream.off('isAvailableChanged', isAvailableChanged);
             remoteParticipant.off('isSpeakingChanged', isSpeakingChanged);
             remoteParticipant.off('isMutedChanged', isMutedChanged);
             remoteParticipant.off('displayNameChanged', isDisplayNameChanged);
@@ -40,26 +37,10 @@ export const FunctionalStreamRenderer = forwardRef(({
         }
     }, []);
 
-    useEffect(() => {
-        const createView = async () => {
-            if (renderer) {
-                const createdView = await renderer.createView();
-                setView(createdView);
-            }
-        };
-        createView();
-    }, [renderer]);
-
-    useEffect(() => {
-        if (view) {
-            attachRenderer();
-        }
-    }, [view]);
-
-    const createRenderer = () => {
+    const createRenderer = async () => {
         if (!renderer) {
-            const videoRenderer = new VideoStreamRenderer(stream);
-            setRenderer(videoRenderer);
+            renderer = new VideoStreamRenderer(stream);
+            view = await renderer.createView();
         } else {
             throw new Error(`[App][StreamMedia][id=${stream.id}][createRenderer] stream already has a renderer`);
         }
@@ -78,13 +59,13 @@ export const FunctionalStreamRenderer = forwardRef(({
         }
     }
 
-    const disposeRenderer = async () => {
+    const disposeRenderer = () => {
         if (videoContainer.current && componentContainer.current) {
             videoContainer.current.innerHTML = '';
             componentContainer.current.style.display = 'none';
         }
         if (renderer) {
-            await renderer.dispose();
+            renderer.dispose();
         } else {
             console.warn(`[App][StreamMedia][id=${stream.id}][disposeRender] no renderer to dispose`);
         }
@@ -97,32 +78,6 @@ export const FunctionalStreamRenderer = forwardRef(({
                 setIsLoading(false);
             }
             
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    const isAvailableChanged = async () => {
-        try {
-            if (dominantSpeakerMode && dominantRemoteParticipant !== remoteParticipant) {
-                return;
-            }
-            if (call.activeRemoteVideoStreamViews?.size >= maximumNumberOfRenderers && !stream.isAvailable) {
-                updateStreamList();
-            }
-            if (stream.isAvailable && !renderer) {
-                if (call.activeRemoteVideoStreamViews?.size >= maximumNumberOfRenderers) {
-                    console.error(`[App][StreamMedia][id=${stream.id}][createRenderer] reached maximum number of renderers`);
-                    return;
-                }
-                console.log(`[App][StreamMedia][id=${stream.id}][isAvailableChanged] isAvailable=${stream.isAvailable}`);
-                createRenderer();
-            } else if (!stream.isAvailable) {
-                disposeRenderer();
-                if (videoStats) {
-                    setVideoStats(null);
-                }
-            }
         } catch (e) {
             console.error(e);
         }
@@ -144,20 +99,16 @@ export const FunctionalStreamRenderer = forwardRef(({
      */
     const initializeComponent = async () => {
         stream.on('isReceivingChanged', isReceivingChanged);
-
-        stream.on('isAvailableChanged', isAvailableChanged);
-
         remoteParticipant.on('isMutedChanged', isMutedChanged);
-
         remoteParticipant.on('isSpeakingChanged', isSpeakingChanged);
-
         if (dominantSpeakerMode && dominantRemoteParticipant !== remoteParticipant) {
             return;
         }
 
         try {
             if (stream.isAvailable && !renderer) {
-                createRenderer();
+                await createRenderer();
+                attachRenderer();
             }
         } catch (e) {
             console.error(e);
@@ -167,10 +118,6 @@ export const FunctionalStreamRenderer = forwardRef(({
     useImperativeHandle(ref, () => ({
         updateReceiveStats(videoStatsReceived) {
             if (videoStatsReceived) {
-                console.log('***** VIDEOSTATS RECEIVED', videoStatsReceived);
-                console.log('***** current videoStats', videoStats);
-                console.log('***** STREAM', stream.isAvailable);
-                console.log('***** RENDERER', renderer);
                 if (videoStatsReceived !== videoStats && stream.isAvailable) {
                     setVideoStats(videoStatsReceived);
                 }
@@ -178,23 +125,26 @@ export const FunctionalStreamRenderer = forwardRef(({
         }
     }));
 
-    return (
-        <div id={componentId} ref={componentContainer} className={`stream-container py-3 ms-Grid-col ms-sm-12 ms-lg12 ms-xl12 ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : `ms-xxl6`}`}>
-            <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`} id={videoContainerId} ref={videoContainer}>
-                <h4 className="video-title">
-                    {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
-                </h4>
+    if (stream.isAvailable) {
+        return (
+            <div id={componentId} ref={componentContainer} className={`stream-container ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``} ${stream.isAvailable ? 'rendering' : ''}`}>
+                <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`} id={videoContainerId} ref={videoContainer}>
+                    <h4 className="video-title">
+                        {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
+                    </h4>
+                    <CustomVideoEffects call={call} videoContainerId={videoContainerId} remoteParticipantId={remoteParticipant.identifier} />
+                    {
+                        isLoading && <div className="remote-video-loading-spinner"></div>
+                    }
+                </div>
                 {
-                    isLoading && <div className="remote-video-loading-spinner"></div>
+                    videoStats && showMediaStats &&
+                    <h4 className="video-stats">
+                        <VideoReceiveStats videoStats={videoStats} />
+                    </h4>
                 }
             </div>
-            {
-                videoStats && showMediaStats &&
-                <h4 className="video-stats">
-                    <VideoReceiveStats videoStats={videoStats} />
-                </h4>
-            }
-            <CustomVideoEffects call={call} videoContainerId={videoContainerId} remoteParticipantId={remoteParticipant.identifier} />
-        </div>
-    );
+        );
+    }
+    return <></>;
 });

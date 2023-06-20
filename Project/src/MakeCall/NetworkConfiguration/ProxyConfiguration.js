@@ -9,7 +9,7 @@ export const ProxyConfiguration = (props) => {
     const [proxyUrl, setProxyUrl] = useState('');
 
     return (
-        <div className='pre-init-option proxy-configuration ms-Grid-col ms-lg4 ms-sm12'>
+        <div>
             Proxy configuration
             <Checkbox 
                 className='mt-2 ml-3'

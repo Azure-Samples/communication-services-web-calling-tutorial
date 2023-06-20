@@ -1,6 +1,6 @@
 import React from "react";
-import { CallClient, LocalVideoStream, Features } from '@azure/communication-calling';
-import { AzureCommunicationTokenCredential } from '@azure/communication-common';
+import { CallClient, LocalVideoStream, Features, CallAgentKind } from '@azure/communication-calling';
+import { AzureCommunicationTokenCredential, createIdentifierFromRawId} from '@azure/communication-common';
 import {
     PrimaryButton,
     TextField,
@@ -14,13 +14,10 @@ import CallSurvey from '../MakeCall/CallSurvey';
 import Login from './Login';
 import MediaConstraint from './MediaConstraint';
 import { setLogLevel, AzureLogger } from '@azure/logger';
-
 export default class MakeCall extends React.Component {
     constructor(props) {
         super(props);
         this.callClient = null;
-        this.debugInfoFeature = null;
-        this.environmentInfo = null;
         this.callAgent = null;
         this.deviceManager = null;
         this.destinationUserIds = null;
@@ -47,7 +44,6 @@ export default class MakeCall extends React.Component {
             callSurvey: undefined,
             incomingCall: undefined,
             showCallSampleCode: false,
-            showEnvironmentInfoCode: false,
             showMuteUnmuteSampleCode: false,
             showHoldUnholdCallSampleCode: false,
             showPreCallDiagnosticsSampleCode: false,
@@ -63,7 +59,9 @@ export default class MakeCall extends React.Component {
                 audio: null,
                 video: null
             },
-            preCallDiagnosticsResults: {}
+            preCallDiagnosticsResults: {},
+            isTeamsUser: false,
+            identityMri: undefined
         };
 
         setInterval(() => {
@@ -116,9 +114,17 @@ export default class MakeCall extends React.Component {
                         turn: turnConfiguration
                     }
                 });
-                this.environmentInfo = await this.callClient.getEnvironmentInfoInternal();
-                this.debugInfoFeature = await this.callClient.feature(Features.DebugInfo);
-                this.callAgent = await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
+
+                this.deviceManager = await this.callClient.getDeviceManager();
+                const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
+                this.setState({permissions: permissions});
+
+                this.setState({ isTeamsUser: userDetails.isTeamsUser});
+                this.setState({ identityMri: createIdentifierFromRawId(userDetails.communicationUserId)})
+                this.callAgent =  this.state.isTeamsUser ? 
+                    await this.callClient.createTeamsCallAgent(tokenCredential) :
+                    await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
+
                 this.callAgent.on('callsUpdated', e => {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
 
@@ -163,16 +169,9 @@ export default class MakeCall extends React.Component {
                     });
 
                 });
-                this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
-                this.debugInfoFeature.on('isCallClientActiveInAnotherTabChanged', () => {
-                    this.setState({ isCallClientActiveInAnotherTab: this.debugInfoFeature.isCallClientActiveInAnotherTab });
-                });
                 this.setState({ loggedIn: true });
                 this.logInComponentRef.current.setCallAgent(this.callAgent);
-
-                this.deviceManager = await this.callClient.getDeviceManager();
-                const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
-                this.setState({permissions: permissions});
+                this.logInComponentRef.current.setCallClient(this.callClient);
             } catch (e) {
                 console.error(e);
             }
@@ -198,8 +197,9 @@ export default class MakeCall extends React.Component {
                     userId = userId.trim();
                     if (userId === '8:echo123') {
                         userId = { id: userId };
-                    } else {
-                        userId = { communicationUserId: userId };
+                    }
+                    else {
+                        userId = createIdentifierFromRawId(userId);
                     }
                     if (!identitiesToCall.find(id => { return id === userId })) {
                         identitiesToCall.push(userId);
@@ -210,19 +210,27 @@ export default class MakeCall extends React.Component {
             phoneIdsArray.forEach((phoneNumberId, index) => {
                 if (phoneNumberId) {
                     phoneNumberId = phoneNumberId.trim();
-                    phoneNumberId = { phoneNumber: phoneNumberId };
+                    phoneNumberId = createIdentifierFromRawId(phoneNumberId);
                     if (!identitiesToCall.find(id => { return id === phoneNumberId })) {
                         identitiesToCall.push(phoneNumberId);
                     }
                 }
             });
 
-            const callOptions = await this.getCallOptions(withVideo);
+            const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
 
-            if (this.alternateCallerId.value !== '') {
+            if (this.callAgent.kind === CallAgentKind.CallAgent && this.alternateCallerId.value !== '') {
                 callOptions.alternateCallerId = { phoneNumber: this.alternateCallerId.value.trim() };
             }
-
+            
+            if (identitiesToCall.length > 1) {
+                if (this.callAgent.kind === CallAgentKind.TeamsCallAgent && this.threadId === '') {
+                    throw new Error('Thread ID is needed to make Teams Group Call');
+                } else {
+                    callOptions.threadId = this.threadId.value;
+                }
+            }
+            
             this.callAgent.startCall(identitiesToCall, callOptions);
 
         } catch (e) {
@@ -248,7 +256,7 @@ export default class MakeCall extends React.Component {
 
     joinGroup = async (withVideo) => {
         try {
-            const callOptions = await this.getCallOptions(withVideo);
+            const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
             this.callAgent.join({ groupId: this.destinationGroup.value }, callOptions);
         } catch (e) {
             console.error('Failed to join a call', e);
@@ -258,7 +266,7 @@ export default class MakeCall extends React.Component {
 
     joinRooms = async (withVideo) => {
         try {
-            const callOptions = await this.getCallOptions(withVideo);
+            const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
             this.callAgent.join({ meetingId: this.roomsId.value }, callOptions);
         } catch (e) {
             console.error('Failed to join a call', e);
@@ -268,7 +276,7 @@ export default class MakeCall extends React.Component {
 
     joinTeamsMeeting = async (withVideo) => {
         try {
-            const callOptions = await this.getCallOptions(withVideo);
+            const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
             if (this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({ meetingLink: this.meetingLink.value }, callOptions);
 
@@ -290,13 +298,13 @@ export default class MakeCall extends React.Component {
         }
     }
 
-    async getCallOptions(withVideo) {
+    async getCallOptions(options) {
         let callOptions = {
             videoOptions: {
                 localVideoStreams: undefined
             },
             audioOptions: {
-                muted: false
+                muted: !!options.micMuted
             }
         };
 
@@ -316,7 +324,7 @@ export default class MakeCall extends React.Component {
                 cameraDeviceOptions: cameras.map(camera => { return { key: camera.id, text: camera.name } })
             });
         }
-        if (withVideo) {
+        if (!!options.video) {
             try {
                 if (!cameraDevice || cameraDevice?.id === 'camera:') {
                     throw new Error('No camera devices found.');
@@ -480,43 +488,6 @@ this.currentCall = this.callAgent.join({
                                 tenantId,
                                 organizerId
                             }, this.callOptions);
-        `;
-
-
-        const environmentInfo = `
-/**************************************************************************************/
-/*     Environment Information     */
-/**************************************************************************************/
-// Get current environment information with details if supported by ACS
-this.environmentInfo = await this.callClient.getEnvironmentInfo();
-
-// The returned value is an object of type EnvironmentInfo
-type EnvironmentInfo = {
-    environment: Environment;
-    isSupportedPlatform: boolean;
-    isSupportedBrowser: boolean;
-    isSupportedBrowserVersion: boolean;
-    isSupportedEnvironment: boolean;
-};
-
-// The Environment type in the EnvironmentInfo type is defined as:
-type Environment = {
-  platform: string;
-  browser: string;
-  browserVersion: string;
-};
-
-// The following code snippet shows how to get the current environment details
-const currentOperatingSystem = this.environmentInfo.environment.platform;
-const currentBrowser = this.environmentInfo.environment.browser;
-const currentBrowserVersion = this.environmentInfo.environment.browserVersion;
-
-// The following code snippet shows how to check if environment details are supported by ACS
-const isSupportedOperatingSystem = this.environmentInfo.isSupportedPlatform;
-const isSupportedBrowser = this.environmentInfo.isSupportedBrowser;
-const isSupportedBrowserVersion = this.environmentInfo.isSupportedBrowserVersion;
-const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
-
         `;
 
         const preCallDiagnosticsSampleCode = `
@@ -770,40 +741,6 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
         return (
             <div>
                 <Login onLoggedIn={this.handleLogIn} ref={this.logInComponentRef}/>
-                <div className="card">
-                    <div className="ms-Grid">
-                        <div className="ms-Grid-row">
-                            <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Environment information</h2>
-                            <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
-                                <PrimaryButton
-                                    className="primary-button"
-                                    iconProps={{ iconName: 'Info', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                    text={`${this.state.showEnvironmentInfoCode ? 'Hide' : 'Show'} code`}
-                                    onClick={() => this.setState({ showEnvironmentInfoCode: !this.state.showEnvironmentInfoCode })}>
-                                </PrimaryButton>
-                            </div>
-                        </div>
-                        {
-                            this.state.showEnvironmentInfoCode &&
-                            <pre>
-                                <code style={{ color: '#b3b0ad' }}>
-                                    {environmentInfo}
-                                </code>
-                            </pre>
-                        }
-                        <h3>Current environment details</h3>
-                        <div>{`Operating system:   ${this.environmentInfo?.environment?.platform}.`}</div>
-                        <div>{`Browser:  ${this.environmentInfo?.environment?.browser}.`}</div>
-                        <div>{`Browser's version:  ${this.environmentInfo?.environment?.browserVersion}.`}</div>
-                        <div>{`Is the application loaded in many tabs:  ${this.state.isCallClientActiveInAnotherTab}.`}</div>
-                        <br></br>
-                        <h3>Environment support verification</h3>
-                        <div>{`Operating system supported:  ${this.environmentInfo?.isSupportedPlatform}.`}</div>
-                        <div>{`Browser supported:  ${this.environmentInfo?.isSupportedBrowser}.`}</div>
-                        <div>{`Browser's version supported:  ${this.environmentInfo?.isSupportedBrowserVersion}.`}</div>
-                        <div>{`Current environment supported:  ${this.environmentInfo?.isSupportedEnvironment}.`}</div>
-                    </div>
-                </div>
                 {
                     this.state?.callSurvey &&
                     <CallSurvey
@@ -1029,6 +966,8 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                 cameraDeviceOptions={this.state.cameraDeviceOptions}
                                 speakerDeviceOptions={this.state.speakerDeviceOptions}
                                 microphoneDeviceOptions={this.state.microphoneDeviceOptions}
+                                identityMri={this.state.identityMri}
+                                isTeamsUser={this.state.isTeamsUser}
                                 onShowCameraNotFoundWarning={(show) => { this.setState({ showCameraNotFoundWarning: show }) }}
                                 onShowSpeakerNotFoundWarning={(show) => { this.setState({ showSpeakerNotFoundWarning: show }) }}
                                 onShowMicrophoneNotFoundWarning={(show) => { this.setState({ showMicrophoneNotFoundWarning: show }) }} />
@@ -1037,8 +976,10 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             this.state.incomingCall && !this.state.call &&
                             <IncomingCallCard
                                 incomingCall={this.state.incomingCall}
-                                acceptCallOptions={async () => await this.getCallOptions()}
-                                acceptCallWithVideoOptions={async () => await this.getCallOptions(true)}
+                                acceptCallMicrophoneUnmutedVideoOff={async () => await this.getCallOptions({ video: false, micMuted: false })}
+                                acceptCallMicrophoneUnmutedVideoOn={async () => await this.getCallOptions({ video: true, micMuted: false })}
+                                acceptCallMicrophoneMutedVideoOn={async () => await this.getCallOptions({ video: true, micMuted: true })}
+                                acceptCallMicrophoneMutedVideoOff={async () => await this.getCallOptions({ video: false, micMuted: true })}
                                 onReject={() => { this.setState({ incomingCall: undefined }) }} />
                         }
                     </div>
