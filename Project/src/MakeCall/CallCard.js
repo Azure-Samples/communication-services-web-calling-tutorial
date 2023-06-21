@@ -59,7 +59,6 @@ export default class CallCard extends React.Component {
             selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id,
             selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id,
             showSettings: false,
-            showLocalVideo: false,
             showLocalScreenSharingPreview: false,
             callMessage: undefined,
             dominantSpeakerMode: false,
@@ -597,21 +596,10 @@ export default class CallCard extends React.Component {
 
     async handleScreenSharingOnOff() {
         try {
-            let startNormalScreenSharing = false;
-            const wasRawScreenShareOn = this.call.isScreenSharingOn &&
-                this.localScreenSharingStream.mediaStreamType === 'RawMedia';
-
             if (this.call.isScreenSharingOn) {
                 await this.call.stopScreenSharing();
                 this.setState({ showLocalScreenSharingPreview: false });
-                if (wasRawScreenShareOn) {
-                    startNormalScreenSharing = true;
-                }
             } else {
-                startNormalScreenSharing = true;
-            }
-
-            if (startNormalScreenSharing) {
                 await this.call.startScreenSharing();
                 this.localScreenSharingStream = this.call.localVideoStreams.find(ss => {
                     return ss.mediaStreamType === 'ScreenSharing'
@@ -625,21 +613,10 @@ export default class CallCard extends React.Component {
 
     async handleRawScreenSharingOnOff() {
         try {
-            let startRawScreenSharing = false;
-            const wasNormalScreenShareOn = this.call.isScreenSharingOn &&
-                this.localScreenSharingStream.mediaStreamType === 'ScreenSharing';
-
             if (this.call.isScreenSharingOn) {
                 await this.call.stopScreenSharing();
                 this.setState({ showLocalScreenSharingPreview: false });
-                if (wasNormalScreenShareOn) {
-                    startRawScreenSharing = true;
-                }
             } else {
-                startRawScreenSharing = true;
-            }
-
-            if (startRawScreenSharing) {
                 this.localScreenSharingStream = new LocalVideoStream(utils.dummyStream());
                 await this.call.startScreenSharing(this.localScreenSharingStream);
                 this.setState({ showLocalScreenSharingPreview: true });
@@ -1011,12 +988,6 @@ export default class CallCard extends React.Component {
                             <div className="pl-2 mt-3">
                                 <h3>Video settings</h3>
                                 <div className="pl-2">
-                                    <span>
-                                        <h4>Camera preview</h4>
-                                    </span>
-                                    <DefaultButton onClick={() => this.setState({ showLocalVideo: !this.state.showLocalVideo })}>
-                                        Show/Hide
-                                    </DefaultButton>
                                     {
                                         this.state.callState === 'Connected' &&
                                         <Dropdown
