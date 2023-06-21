@@ -18,10 +18,6 @@ export default class CustomVideoEffects extends React.Component {
                 label: "Set B/W effect on local video", 
                 disabled: false
             },
-            remove: {
-                label: "Remove effect on local video", 
-                disabled: true
-            },
             sendDummy: {
                 label: "Send dummy local video", 
                 disabled: false
@@ -68,25 +64,14 @@ export default class CustomVideoEffects extends React.Component {
                 const bwStream = utils.bwVideoStream(_localVideoStreamRawStream);
                 if(bwStream) {
                     this.outgoingVideoBtns.add.disabled = true;
-                    this.outgoingVideoBtns.remove.disabled = false;
                     this.stream.setMediaStream(bwStream);
                 }
-                break;
-            case this.outgoingVideoBtns.remove.label:
-                //remove filters from outgoing video
-                const cameras = await this.deviceManager.getCameras();
-                const localVideoStream = new LocalVideoStream(cameras[0]);
-                const mediaStream = await localVideoStream.getMediaStream();
-                this.stream.setMediaStream(mediaStream);
-                this.outgoingVideoBtns.add.disabled = false;
-                this.outgoingVideoBtns.remove.disabled = true;
                 break;
             case this.outgoingVideoBtns.sendDummy.label:
                 // send a dummy video
                 const _dummyStream = utils.dummyStream();
                 if(_dummyStream) {
                     this.stream.setMediaStream(_dummyStream);
-                    this.outgoingVideoBtns.remove.disabled = false;
                 }
                 break;
             case this.incomingVideoBtns.add.label:
