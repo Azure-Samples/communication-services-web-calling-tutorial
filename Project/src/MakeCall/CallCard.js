@@ -783,7 +783,13 @@ export default class CallCard extends React.Component {
                 </div>
                 <div className="ms-Grid-row">
                     <div className="ms-Grid-col ms-lg6">
-                        <h2>{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
+                        {
+                            this.state.callState !== 'Connected' &&
+                            <div>
+                                <div className="inline-block ringing-loader mr-2"></div>
+                                <h2 className="inline-block">{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
+                            </div>
+                        }
                     </div>
                     {
                         this.call &&
@@ -825,12 +831,6 @@ export default class CallCard extends React.Component {
                     }
                 </div>
                 <div className="ms-Grid-row">
-                    {
-                        this.state.callState !== 'Connected' &&
-                        <div className="custom-row">
-                            <div className="ringing-loader mb-4"></div>
-                        </div>
-                    }
                     <div className="text-center">
                         <span className="in-call-button"
                             title={`Turn your video ${this.state.videoOn ? 'off' : 'on'}`}
@@ -1099,7 +1099,7 @@ export default class CallCard extends React.Component {
                                         stream={this.localScreenSharingStream}/>
                                 </div>
                             }
-                            <div className='ms-Grid-col ms-sm12 ms-md2 md-lg2'>
+                            <div className={this.state.localScreenSharingMode === 'StartWithNormalAccessRaw' ? 'ms-Grid-col ms-sm12 ms-md12 md-lg12' : 'ms-Grid-col ms-sm12 ms-md2 md-lg2'}>
                                 {
                                     (this.state.localScreenSharingMode === 'StartWithNormalTrnasformToDummy' ||
                                      this.state.localScreenSharingMode === 'StartWithNormalAccessRaw') &&
@@ -1118,14 +1118,29 @@ export default class CallCard extends React.Component {
                                 }
                                 {
                                     this.state.localScreenSharingMode === 'StartWithNormalAccessRaw' &&
-                                    <CustomVideoEffects
-                                        stream={this.localScreenSharingStream}
-                                        outgoingVideoBtns={{
-                                            add: {
-                                                label: "Send black and white screen share", 
-                                                disabled: false
-                                            }
-                                        }}/>
+                                    <div>
+                                        <div>
+                                            - Your screen sharing stream is being sent and remote participants can see it.
+                                        </div>
+                                        <div>
+                                            - You can click on the button to transform it into black and white.
+                                        </div>
+                                        <div>
+                                            - Local screen share preview is not fully supported when transforming the screen/tab/app raw stream.
+                                              If you view local screen share preview and transform teh raw stream to black and white, then when
+                                              you stop screen sharing the stream wont be gracefully released and you will have to refresh browser to start screen sharing again.
+                                        </div>
+                                        <CustomVideoEffects
+                                            className="mt-3"
+                                            stream={this.localScreenSharingStream}
+                                            outgoingVideoBtns={{
+                                                add: {
+                                                    label: "Send black and white screen share", 
+                                                    disabled: false
+                                                }
+                                            }}
+                                        />
+                                    </div>
                                 }
                             </div>
                         </div>
