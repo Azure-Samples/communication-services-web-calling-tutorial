@@ -1,6 +1,5 @@
 import React from "react";
 import { PrimaryButton } from 'office-ui-fabric-react'
-import { LocalVideoStream } from "@azure/communication-calling";
 import { utils } from '../../Utils/Utils';
 
 export default class CustomVideoEffects extends React.Component {
@@ -9,20 +8,25 @@ export default class CustomVideoEffects extends React.Component {
         super(props);
         this.call = props.call;
         this.stream = props.stream;
-        this.deviceManager = props.deviceManager;
+        this.bwStream = undefined;
+        this.bwVideoelem = undefined;
         this.remoteVideoElementId = props.videoContainerId;
         this.remoteParticipantId = props.remoteParticipantId;
         this.isOutgoingVideoComponent = !props.remoteParticipantId;
-        this.outgoingVideoBtns = {
-            add: {
-                label: "Set B/W effect on local video", 
-                disabled: false
-            },
-            sendDummy: {
-                label: "Send dummy local video", 
-                disabled: false
-            }
-        };
+        if (props.outgoingVideoBtns) {
+            this.outgoingVideoBtns = props.outgoingVideoBtns;
+        } else {
+            this.outgoingVideoBtns = {
+                add: {
+                    label: "Set B/W effect on local video", 
+                    disabled: false
+                },
+                sendDummy: {
+                    label: "Send dummy local video", 
+                    disabled: false
+                }
+            };
+        }
         this.incomingVideoBtns = {
             add: {
                 label: "Set B/W effect on remote video", 
@@ -33,6 +37,13 @@ export default class CustomVideoEffects extends React.Component {
                 disabled: false
             }
         };
+    }
+
+    componentWillUnmount() {
+        if (this.bwVideoElem) {
+            this.bwVideoElem.srcObject.getVideoTracks().forEach((track) => { track.stop(); });
+            this.bwVideoElem.srcObject = null;
+        }
     }
 
     setSourceObject(mediaStream, videoContainerId) {
@@ -58,23 +69,25 @@ export default class CustomVideoEffects extends React.Component {
 
         };
         switch (e.currentTarget.children[0].textContent) {
-            case this.outgoingVideoBtns.add.label:
+            case this.outgoingVideoBtns.add?.label:
                 //add filters to outgoing video  
                 const _localVideoStreamRawStream = await this.stream.getMediaStream();
-                const bwStream = utils.bwVideoStream(_localVideoStreamRawStream);
+                const { bwStream, bwVideoElem } = utils.bwVideoStream(_localVideoStreamRawStream);
+                this.bwStream = bwStream;
+                this.bwVideoElem = bwVideoElem;
                 if(bwStream) {
                     this.outgoingVideoBtns.add.disabled = true;
                     this.stream.setMediaStream(bwStream);
                 }
                 break;
-            case this.outgoingVideoBtns.sendDummy.label:
+            case this.outgoingVideoBtns.sendDummy?.label:
                 // send a dummy video
                 const _dummyStream = utils.dummyStream();
                 if(_dummyStream) {
                     this.stream.setMediaStream(_dummyStream);
                 }
                 break;
-            case this.incomingVideoBtns.add.label:
+            case this.incomingVideoBtns.add?.label:
                 //add filters to incoming video
                 this.call.remoteParticipants.forEach((participant) => {
                     identifierTable[participant.identifier.kind].forEach(async (prop) => {
@@ -89,7 +102,7 @@ export default class CustomVideoEffects extends React.Component {
                     })
                 });
                 break;
-            case this.incomingVideoBtns.remove.label:
+            case this.incomingVideoBtns.remove?.label:
                 //remove filters from incoming video
                 this.call.remoteParticipants.forEach((participant) => {
                     identifierTable[participant.identifier.kind].forEach(async (prop) => {
