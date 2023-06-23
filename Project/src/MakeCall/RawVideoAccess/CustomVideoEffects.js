@@ -13,20 +13,6 @@ export default class CustomVideoEffects extends React.Component {
         this.remoteVideoElementId = props.videoContainerId;
         this.remoteParticipantId = props.remoteParticipantId;
         this.isOutgoingVideoComponent = !props.remoteParticipantId;
-        if (props.outgoingVideoBtns) {
-            this.outgoingVideoBtns = props.outgoingVideoBtns;
-        } else {
-            this.outgoingVideoBtns = {
-                add: {
-                    label: "Set B/W effect on local video", 
-                    disabled: false
-                },
-                sendDummy: {
-                    label: "Send dummy local video", 
-                    disabled: false
-                }
-            };
-        }
         this.incomingVideoBtns = {
             add: {
                 label: "Set B/W effect on remote video", 
@@ -36,6 +22,25 @@ export default class CustomVideoEffects extends React.Component {
                 label: "Remove effect on remote video", 
                 disabled: false
             }
+        };
+
+        if (props.outgoingVideoBtns) {
+            this.state = {
+                outgoingVideoBtns: props.outgoingVideoBtns
+            };
+        } else {
+            this.state = {
+                outgoingVideoBtns: {
+                    add: {
+                        label: "Set B/W effect on local video", 
+                        disabled: false
+                    },
+                    sendDummy: {
+                        label: "Send dummy local video", 
+                        disabled: false
+                    }
+                }
+            };
         };
     }
 
@@ -69,18 +74,18 @@ export default class CustomVideoEffects extends React.Component {
 
         };
         switch (e.currentTarget.children[0].textContent) {
-            case this.outgoingVideoBtns.add?.label:
+            case this.state.outgoingVideoBtns.add?.label:
                 //add filters to outgoing video  
                 const _localVideoStreamRawStream = await this.stream.getMediaStream();
                 const { bwStream, bwVideoElem } = utils.bwVideoStream(_localVideoStreamRawStream);
                 this.bwStream = bwStream;
                 this.bwVideoElem = bwVideoElem;
                 if(bwStream) {
-                    this.outgoingVideoBtns.add.disabled = true;
+                    this.state.outgoingVideoBtns.add.disabled = true;
                     this.stream.setMediaStream(bwStream);
                 }
                 break;
-            case this.outgoingVideoBtns.sendDummy?.label:
+            case this.state.outgoingVideoBtns.sendDummy?.label:
                 // send a dummy video
                 const _dummyStream = utils.dummyStream();
                 if(_dummyStream) {
@@ -122,14 +127,15 @@ export default class CustomVideoEffects extends React.Component {
     renderElm() {
         return this.isOutgoingVideoComponent 
             ?
-                Object.keys(this.outgoingVideoBtns).map((obj, idx) => {
+                this.state.outgoingVideoBtns &&
+                Object.keys(this.state.outgoingVideoBtns).map((obj, idx) => {
                     return <div>
                                 <PrimaryButton 
                                     key={`${idx}-abcd`} 
                                     className="primary-button" 
                                     onClick={async (e) => this.addEffect(e)}
-                                    disabled={this.outgoingVideoBtns[obj].disabled}>
-                                        {this.outgoingVideoBtns[obj].label}
+                                    disabled={this.state.outgoingVideoBtns[obj].disabled}>
+                                        {this.state.outgoingVideoBtns[obj].label}
                                 </PrimaryButton>
                             </div>
                 })
