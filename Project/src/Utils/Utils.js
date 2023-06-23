@@ -148,16 +148,16 @@ export const utils = {
     },
     bwVideoStream(stream) {
         let width = 1280, height = 720;
-        const videoElem = document.createElement("video");
-        videoElem.srcObject = stream;
-        videoElem.height = height;
-        videoElem.width = width;
-        videoElem.play();
+        const bwVideoElem = document.createElement("video");
+        bwVideoElem.srcObject = stream;
+        bwVideoElem.height = height;
+        bwVideoElem.width = width;
+        bwVideoElem.play();
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d', {willReadFrequently: true});
         canvas.width = width;
         canvas.height = height;
-        
+
 
         const FPS = 30;
         function processVideo() {
@@ -165,9 +165,9 @@ export const utils = {
                 let begin = Date.now();
                 // start processing.
                 ctx.filter = "grayscale(1)";
-                ctx.drawImage(videoElem, 0, 0, width, height);
+                ctx.drawImage(bwVideoElem, 0, 0, width, height);
                 const imageData = ctx.getImageData(0, 0, width, height);
-                ctx.putImageData(imageData, 0, 0);              
+                ctx.putImageData(imageData, 0, 0);
                 // schedule the next one.
                 let delay = Math.abs(1000/FPS - (Date.now() - begin));
                 setTimeout(processVideo, delay)
@@ -179,7 +179,8 @@ export const utils = {
 
         // schedule the first one.
         setTimeout(processVideo, 0);
-        return canvas.captureStream(FPS);
+        const bwStream = canvas.captureStream(FPS);
+        return { bwStream, bwVideoElem };
     },
     dummyStream() {
         const canvas = document.createElement('canvas');
