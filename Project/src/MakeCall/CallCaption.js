@@ -48,7 +48,7 @@ const CallCaption = ({ call, isTeamsUser }) => {
                 ${captionData.speaker.displayName}: ${captionData.text}`;
 
         console.log(mri, captionText);
-        if (captionData.resultType === 'Final') {
+        if (captionData.resultType === 'Final' || captionData.resultType === 1) {
             setCaptionHistory(oldCaptions => [...oldCaptions, captionText]);
         }
 
