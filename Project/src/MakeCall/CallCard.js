@@ -38,6 +38,7 @@ export default class CallCard extends React.Component {
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.identifier = props.identityMri;
         this.isTeamsUser = props.isTeamsUser;
+        this.dummyStreamTimeout = undefined;
         this.state = {
             ovc: 4,
             callState: this.call.state,
@@ -58,7 +59,7 @@ export default class CallCard extends React.Component {
             selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id,
             selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id,
             showSettings: false,
-            // StartWithNormalTrnasformToDummy, StartWithNormalAccessRaw, or StartWithDummy
+            // StartWithNormal or StartWithDummy
             localScreenSharingMode: undefined,
             callMessage: undefined,
             dominantSpeakerMode: false,
@@ -205,6 +206,10 @@ export default class CallCard extends React.Component {
             this.call.on('isScreenSharingOnChanged', () => {
                 this.setState({ screenSharingOn: this.call.isScreenSharingOn });
                 if (!this.call.isScreenSharing) {
+                    if (this.state.localScreenSharingMode == 'StartWithDummy') {
+                        clearTimeout(this.dummyStreamTimeout);
+                        this.dummyStreamTimeout = undefined;
+                    }
                     this.setState({ localScreenSharingMode: undefined });
                 }
             });
@@ -594,7 +599,7 @@ export default class CallCard extends React.Component {
         this.call.startAudio(customLocalAudioStream);
     }
 
-    async handleScreenSharingOnOff(showLocalSSPreview) {
+    async handleScreenSharingOnOff() {
         try {
             if (this.call.isScreenSharingOn) {
                 await this.call.stopScreenSharing();
@@ -604,11 +609,7 @@ export default class CallCard extends React.Component {
                 this.localScreenSharingStream = this.call.localVideoStreams.find(ss => {
                     return ss.mediaStreamType === 'ScreenSharing'
                 });
-                if (showLocalSSPreview) {
-                    this.setState({ localScreenSharingMode: 'StartWithNormalTrnasformToDummy'});
-                } else {
-                    this.setState({ localScreenSharingMode: 'StartWithNormalAccessRaw'});
-                }
+                this.setState({ localScreenSharingMode: 'StartWithNormal'});
             }
         } catch (e) {
             console.error(e);
@@ -619,9 +620,42 @@ export default class CallCard extends React.Component {
         try {
             if (this.call.isScreenSharingOn) {
                 await this.call.stopScreenSharing();
+                clearImmediate(this.dummyStreamTimeout);
+                this.dummyStreamTimeout = undefined;
                 this.setState({ localScreenSharingMode: undefined });
             } else {
-                this.localScreenSharingStream = new LocalVideoStream(utils.dummyStream());
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d', {willReadFrequently: true});
+                canvas.width = 1280;
+                canvas.height = 720;
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+                const colors = ['red', 'yellow', 'green'];
+                const FPS = 30;
+                const createShapes = function () {
+                    try {
+                        let begin = Date.now();
+                        // start processing.
+                        if (ctx) {
+                            ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                            const x = Math.floor(Math.random() * canvas.width);
+                            const y = Math.floor(Math.random() * canvas.height);
+                            const size = 100;
+                            ctx.fillRect(x, y, size, size);
+                        }            
+                        // schedule the next one.
+                        let delay = Math.abs(1000/FPS - (Date.now() - begin));
+                        this.dummyStreamTimeout = setTimeout(createShapes, delay);
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }.bind(this);
+        
+                // schedule the first one.
+                this.dummyStreamTimeout = setTimeout(createShapes, 0);
+                const dummyStream = canvas.captureStream(FPS);
+                this.localScreenSharingStream = new LocalVideoStream(dummyStream);
                 await this.call.startScreenSharing(this.localScreenSharingStream);
                 this.setState({ localScreenSharingMode: 'StartWithDummy'});
             }
@@ -872,39 +906,23 @@ export default class CallCard extends React.Component {
                             }
                         </span>
                         <span className="in-call-button"
-                            title={`${this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'ScreenSharing' ? 'Stop' : 'Start'} screen sharing a screen/tab/app (Show local preview / Transform to dummy stream)`}
+                            title={`${this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'ScreenSharing' ? 'Stop' : 'Start'} screen sharing a screen/tab/app`}
                             variant="secondary"
-                            onClick={() => this.handleScreenSharingOnOff(true)}>
+                            onClick={() => this.handleScreenSharingOnOff()}>
                             {
                                 (
                                     !this.state.screenSharingOn ||
-                                    (this.state.screenSharingOn && this.state.localScreenSharingMode !== 'StartWithNormalTrnasformToDummy')
+                                    (this.state.screenSharingOn && this.state.localScreenSharingMode !== 'StartWithNormal')
                                 ) &&
                                 <Icon iconName="TVMonitor" />
                             }
                             {
-                                this.state.screenSharingOn && this.state.localScreenSharingMode === 'StartWithNormalTrnasformToDummy' &&
+                                this.state.screenSharingOn && this.state.localScreenSharingMode === 'StartWithNormal' &&
                                 <Icon iconName="CircleStop" />
                             }
                         </span>
                         <span className="in-call-button"
-                            title={`${this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'ScreenSharing' ? 'Stop' : 'Start'} sharing your screen (No local preview / Access raw stream and apply black and white effects)`}
-                            variant="secondary"
-                            onClick={() => this.handleScreenSharingOnOff(false)}>
-                            {
-                                (
-                                    !this.state.screenSharingOn ||
-                                    (this.state.screenSharingOn && this.state.localScreenSharingMode !== 'StartWithNormalAccessRaw')
-                                ) &&
-                                <Icon iconName="Personalize" />
-                            }
-                            {
-                                this.state.screenSharingOn && this.state.localScreenSharingMode === 'StartWithNormalAccessRaw' &&
-                                <Icon iconName="CircleStop" />
-                            }
-                        </span>
-                        <span className="in-call-button"
-                            title={`${this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'RawMedia' ? 'Stop' : 'Start'} screen sharing a dummy stream (Show local preview)`}
+                            title={`${this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'RawMedia' ? 'Stop' : 'Start'} screen sharing a dummy stream`}
                             variant="secondary"
                             onClick={() => this.handleRawScreenSharingOnOff()}>
                             {
@@ -1075,7 +1093,17 @@ export default class CallCard extends React.Component {
                             <div className='ms-Grid-col ms-sm12 ms-md2 md-lg2'>
                                 <h4>Raw Video access</h4>
                                 <CustomVideoEffects
-                                    stream={this.localVideoStream}/>
+                                    stream={this.localVideoStream}
+                                    outgoingVideoBtns={{
+                                        add: {
+                                            label: "Set B/W effect",
+                                            disabled: false
+                                        },
+                                        sendDummy: {
+                                            label: "Set dummy effects", 
+                                            disabled: false
+                                        }
+                                    }}/>
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md5 md-lg6'>
                                 <VideoEffectsContainer call={this.call} />
@@ -1090,56 +1118,37 @@ export default class CallCard extends React.Component {
                         </div>
                         <div className="ms-Grid-row">
                             {
-                                (
-                                    this.state.localScreenSharingMode === 'StartWithNormalTrnasformToDummy' ||
-                                    this.state.localScreenSharingMode === 'StartWithDummy'
-                                ) &&
                                 <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
                                     <LocalVideoPreviewCard
                                         stream={this.localScreenSharingStream}/>
                                 </div>
                             }
-                            <div className={this.state.localScreenSharingMode === 'StartWithNormalAccessRaw' ? 'ms-Grid-col ms-sm12 ms-md12 md-lg12' : 'ms-Grid-col ms-sm12 ms-md2 md-lg2'}>
+                            <div className={'ms-Grid-col ms-sm12 ms-md2 md-lg2'}>
                                 {
-                                    (this.state.localScreenSharingMode === 'StartWithNormalTrnasformToDummy' ||
-                                     this.state.localScreenSharingMode === 'StartWithNormalAccessRaw') &&
+                                    this.state.localScreenSharingMode === 'StartWithNormal' &&
                                     <h4>Raw Screen Sharing access</h4>
                                 }
                                 {
-                                    this.state.localScreenSharingMode === 'StartWithNormalTrnasformToDummy' &&
+                                    this.state.localScreenSharingMode === 'StartWithNormal' &&
                                     <CustomVideoEffects
                                         stream={this.localScreenSharingStream}
                                         outgoingVideoBtns={{
+                                            add: {
+                                                label: "Set B/W effect",
+                                                disabled: false
+                                            },
                                             sendDummy: {
-                                                label: "Transform to dummy local video", 
+                                                label: "Set dummy effect", 
                                                 disabled: false
                                             }
                                         }}/>
                                 }
                                 {
-                                    this.state.localScreenSharingMode === 'StartWithNormalAccessRaw' &&
+                                    this.state.localScreenSharingMode === 'StartWithDummy' &&
                                     <div>
-                                        <div>
-                                            - Your screen sharing stream is being sent and remote participants can see it.
-                                        </div>
-                                        <div>
-                                            - You can click on the button to transform it into black and white.
-                                        </div>
-                                        <div>
-                                            - Local screen share preview is not fully supported when transforming the screen/tab/app raw stream.
-                                              If you view local screen share preview and transform teh raw stream to black and white, then when
-                                              you stop screen sharing the stream wont be gracefully released and you will have to refresh browser to start screen sharing again.
-                                        </div>
                                         <CustomVideoEffects
                                             className="mt-3"
-                                            stream={this.localScreenSharingStream}
-                                            outgoingVideoBtns={{
-                                                add: {
-                                                    label: "Send black and white screen share", 
-                                                    disabled: false
-                                                }
-                                            }}
-                                        />
+                                            stream={this.localScreenSharingStream}/>
                                     </div>
                                 }
                             </div>

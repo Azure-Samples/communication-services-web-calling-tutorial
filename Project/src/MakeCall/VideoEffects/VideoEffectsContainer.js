@@ -45,12 +45,13 @@ export default class VideoEffectsContainer extends React.Component {
     }
 
     initLocalVideoStreamFeatureApi() {
-        if (this.call.localVideoStreams.length < 1) {
+        const localVideoStream =  this.call.localVideoStreams.find(v => { return v.mediaStreamType === 'Video'});
+
+        if (!localVideoStream) {
             this.logError('No local video streams found.');
             return;
         }
-
-        const lvsFeatureApi = this.call.localVideoStreams[0].feature && this.call.localVideoStreams[0].feature(Features?.VideoEffects);
+        const lvsFeatureApi = localVideoStream.feature && localVideoStream.feature(Features?.VideoEffects);
         if (!lvsFeatureApi) {
             this.logError('Could not get local video stream feature API.');
             return;
