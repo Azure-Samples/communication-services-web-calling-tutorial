@@ -1051,7 +1051,7 @@ div.volumeVisualizer {
   background-color: #DDD;
 }
 
-/* div::before {
+div.volumeVisualizer::before {
   content: '';
   position: absolute;
   top: 0;
@@ -1060,7 +1060,7 @@ div.volumeVisualizer {
   width: var(--volume);
   background-color: #ca5010;
   transition: width 100ms linear;
-} */
+}
 
 .volume-indicatordiv {
   width: 300px;
