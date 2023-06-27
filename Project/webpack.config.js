@@ -132,7 +132,13 @@ module.exports = {
             app.use(bodyParser.json());
             app.post('/getCommunicationUserToken', async (req, res) => {
                 try {
-                    const CommunicationUserIdentifier = await communicationIdentityClient.createUser();
+                    const communicationUserId = req.body.communicationUserId;
+                    let CommunicationUserIdentifier;
+                    if (!communicationUserId) {
+                        CommunicationUserIdentifier = await communicationIdentityClient.createUser();
+                    } else {
+                        CommunicationUserIdentifier = { communicationUserId: communicationUserId };
+                    }
                     const communicationUserToken = await communicationIdentityClient.getToken(CommunicationUserIdentifier, ["voip"]);
                     let oneSignalRegistrationToken;
                     if (config.functionAppOneSignalTokenRegistrationUrl) {

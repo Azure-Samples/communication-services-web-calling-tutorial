@@ -134,10 +134,10 @@ export default class Login extends React.Component {
                 this.userDetailsResponse = await utils.getOneSignalRegistrationTokenForCommunicationUserToken(
                     this.state.token, this.state.communicationUserId
                 );
-            } else if (this.state.token && !this.state.communicationUserId) {
-                throw new Error('You must specify the associated ACS identity for the provided ACS communication user token');
             } else if (!this.state.token && this.state.communicationUserId) {
-                throw new Error('You must specify the ACS communication user token for the provided ACS identity');
+                this.userDetailsResponse = await utils.getCommunicationUserToken(this.state.communicationUserId);
+            }else if (this.state.token && !this.state.communicationUserId) {
+                throw new Error('You must specify the associated ACS identity for the provided ACS communication user token');
             }
             if (this.state.initializedOneSignal) {
                 OneSignal.setExternalUserId(this.userDetailsResponse.oneSignalRegistrationToken);
@@ -649,7 +649,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                 onChange={(e) => { this.state.token = e.target.value }}/>
                                             <TextField
                                                     placeholder="8:acs:<ACS Resource ID>_<guid>"
-                                                    label="Optional - ACS Identity associated with the token above"
+                                                    label="Optional - ACS Identity"
                                                     onChange={(e) => { this.state.communicationUserId = e.target.value }}/>
                                         </div>
                                     </div>

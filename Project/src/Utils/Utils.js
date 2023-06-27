@@ -13,13 +13,14 @@ export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    getCommunicationUserToken: async () => {
+    getCommunicationUserToken: async (communicationUserId) => {
         let response = await axios({
             url: 'getCommunicationUserToken',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            data: communicationUserId ? JSON.stringify({communicationUserId}) : undefined
         })
         if (response.status === 200) {
             return response.data;
