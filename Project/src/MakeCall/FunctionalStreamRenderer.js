@@ -132,7 +132,20 @@ export const FunctionalStreamRenderer = forwardRef(({
                     <h4 className="video-title">
                         {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
                     </h4>
-                    <CustomVideoEffects call={call} videoContainerId={videoContainerId} remoteParticipantId={remoteParticipant.identifier} />
+                    <CustomVideoEffects
+                        stream={stream}
+                        buttons={{
+                            add: {
+                                label: "Set B/W effect",
+                                disabled: false
+                            },
+                            remove: {
+                                label: "Remove B/W effect", 
+                                disabled: false
+                            }
+                        }}
+                        isLocal={false}
+                        videoContainerId={videoContainerId}/>
                     {
                         isLoading && <div className="remote-video-loading-spinner"></div>
                     }
