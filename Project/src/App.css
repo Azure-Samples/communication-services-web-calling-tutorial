@@ -1088,14 +1088,14 @@ div.volumeVisualizer::before {
 }
 
 .custom-video-effects-buttons:not(.outgoing) {
+  display: flex;
   position: absolute;
-  top: 1%;
+  top: 4%;
   left: 5%;
   margin-bottom: -0.5em;
 }
 
 .custom-video-effects-buttons:not(.outgoing) button {
-  width: 40%;
   z-index: 999;
   background-color: #0000006e;
   border: none;

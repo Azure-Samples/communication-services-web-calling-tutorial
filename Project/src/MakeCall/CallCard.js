@@ -1094,7 +1094,7 @@ export default class CallCard extends React.Component {
                                 <h4>Raw Video access</h4>
                                 <CustomVideoEffects
                                     stream={this.localVideoStream}
-                                    outgoingVideoBtns={{
+                                    buttons={{
                                         add: {
                                             label: "Set B/W effect",
                                             disabled: false
@@ -1103,7 +1103,8 @@ export default class CallCard extends React.Component {
                                             label: "Set dummy effects", 
                                             disabled: false
                                         }
-                                    }}/>
+                                    }}
+                                    isLocal={true}/>
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md5 md-lg6'>
                                 <VideoEffectsContainer call={this.call} />
@@ -1132,7 +1133,7 @@ export default class CallCard extends React.Component {
                                     this.state.localScreenSharingMode === 'StartWithNormal' &&
                                     <CustomVideoEffects
                                         stream={this.localScreenSharingStream}
-                                        outgoingVideoBtns={{
+                                        buttons={{
                                             add: {
                                                 label: "Set B/W effect",
                                                 disabled: false
@@ -1141,7 +1142,8 @@ export default class CallCard extends React.Component {
                                                 label: "Set dummy effect", 
                                                 disabled: false
                                             }
-                                        }}/>
+                                        }}
+                                        isLocal={true}/>
                                 }
                                 {
                                     this.state.localScreenSharingMode === 'StartWithDummy' &&
