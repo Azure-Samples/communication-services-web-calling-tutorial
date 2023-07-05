@@ -3,6 +3,9 @@ import { LocalVideoStream, VideoStreamRenderer} from '@azure/communication-calli
 export default class LocalVideoPreviewCard extends React.Component {
     constructor(props) {
         super(props);
+        if (!this.stream) {
+            return;
+        }
         this.stream = props.stream;
         this.type = this.stream.mediaStreamType;
         this.view = undefined;

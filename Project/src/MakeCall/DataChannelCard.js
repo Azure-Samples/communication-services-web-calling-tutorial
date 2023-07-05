@@ -23,6 +23,9 @@ export default class DataChannelCard extends React.Component {
             inputMessage: ''
         }
         const call = props.call;
+        if (!Features.DataChannel) {
+            return;
+        }
         const dataChannel = call.feature(Features.DataChannel);
         const getDisplayName = (participantId) => {
             const remoteParticipant = props.remoteParticipants.find(rp => rp.identifier.communicationUserId === participantId);
