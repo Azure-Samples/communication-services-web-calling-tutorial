@@ -392,10 +392,6 @@ export default class CallCard extends React.Component {
             this.raiseHandFeature.on("loweredHandEvent", this.raiseHandChangedHandler);
             this.raiseHandFeature.on("raisedHandEvent", this.raiseHandChangedHandler);
             this.capabilitiesFeature.on('capabilitiesChanged', this.capabilitiesChangedHandler);
-
-            console.warn('capabilities on initialization');
-            console.warn(this.capabilitiesFeature.capabilities);
-
         }
     }
 
@@ -462,8 +458,6 @@ export default class CallCard extends React.Component {
     }
 
     capabilitiesChangedHandler = (capabilitiesChangeInfo) => {
-        console.warn('capabilities change to');
-        console.warn(capabilitiesChangeInfo);
         for (const [key, value] of Object.entries(capabilitiesChangeInfo.newValue)) {
             if(key === 'turnVideoOn' && value.reason != 'FeatureNotSupported') {
                 (value.isPresent) ? this.setState({ canOnVideo: true }) : this.setState({ canOnVideo: false });
