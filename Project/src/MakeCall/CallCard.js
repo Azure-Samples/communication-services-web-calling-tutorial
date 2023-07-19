@@ -393,6 +393,9 @@ export default class CallCard extends React.Component {
             this.raiseHandFeature.on("raisedHandEvent", this.raiseHandChangedHandler);
             this.capabilitiesFeature.on('capabilitiesChanged', this.capabilitiesChangedHandler);
 
+            console.warn('capabilities on initialization');
+            console.warn(this.capabilitiesFeature.capabilities);
+
         }
     }
 
@@ -459,24 +462,26 @@ export default class CallCard extends React.Component {
     }
 
     capabilitiesChangedHandler = (capabilitiesChangeInfo) => {
+        console.warn('capabilities change to');
+        console.warn(capabilitiesChangeInfo);
         for (const [key, value] of Object.entries(capabilitiesChangeInfo.newValue)) {
-            if(key === 'turnVideoOn') {
+            if(key === 'turnVideoOn' && value.reason != 'FeatureNotSupported') {
                 (value.isPresent) ? this.setState({ canOnVideo: true }) : this.setState({ canOnVideo: false });
                 continue;
             }
-            if(key === 'unmuteMic') {
+            if(key === 'unmuteMic' && value.reason != 'FeatureNotSupported') {
                 (value.isPresent) ? this.setState({ canUnMuteMic: true }) : this.setState({ canUnMuteMic: false });
                 continue;
             }
-            if(key === 'shareScreen') {
+            if(key === 'shareScreen' && value.reason != 'FeatureNotSupported') {
                 (value.isPresent) ? this.setState({ canShareScreen: true }) : this.setState({ canShareScreen: false });
                 continue;
             }
-            if(key === 'spotlightParticipant') {
+            if(key === 'spotlightParticipant' && value.reason != 'FeatureNotSupported') {
                 (value.isPresent) ? this.setState({ canSpotlight: true }) : this.setState({ canSpotlight: false });
                 continue;
             }
-            if(key === 'raiseHand') {
+            if(key === 'raiseHand' && value.reason != 'FeatureNotSupported') {
                 (value.isPresent) ? this.setState({ canRaiseHands: true }) : this.setState({ canRaiseHands: false });
                 continue;
             }
@@ -937,14 +942,14 @@ export default class CallCard extends React.Component {
                             variant="secondary"
                             onClick={() => this.handleScreenSharingOnOff()}>
                             {
-                                (
+                                this.state.canShareScreen && (
                                     !this.state.screenSharingOn ||
                                     (this.state.screenSharingOn && this.state.localScreenSharingMode !== 'StartWithNormal')
                                 ) &&
                                 <Icon iconName="TVMonitor" />
                             }
                             {
-                                this.state.screenSharingOn && this.state.localScreenSharingMode === 'StartWithNormal' &&
+                                (!this.state.canShareScreen) || (this.state.screenSharingOn && this.state.localScreenSharingMode === 'StartWithNormal') &&
                                 <Icon iconName="CircleStop" />
                             }
                         </span>
@@ -1107,7 +1112,7 @@ export default class CallCard extends React.Component {
                     </div>
                 </div>
                 {
-                    this.state.videoOn &&
+                    this.state.videoOn && this.state.canOnVideo &&
                     <div className="mt-5">
                         <div className="ms-Grid-row">
                             <h3>Local video preview</h3>
