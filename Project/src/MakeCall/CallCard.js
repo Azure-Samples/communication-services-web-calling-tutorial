@@ -36,6 +36,7 @@ export default class CallCard extends React.Component {
         this.identifier = props.identityMri;
         this.spotlightFeature = this.call.feature(Features.Spotlight);
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
+        this.capabilitiesFeature = this.call.feature(Features.Capabilities);
         this.identifier = props.identityMri;
         this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
@@ -46,6 +47,11 @@ export default class CallCard extends React.Component {
             remoteParticipants: [],
             allRemoteParticipantStreams: [],
             remoteScreenShareStream: undefined,
+            canOnVideo: true,
+            canUnMuteMic: true,
+            canShareScreen: true,
+            canRaiseHands: true,
+            canSpotlight: true,
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
@@ -228,9 +234,9 @@ export default class CallCard extends React.Component {
                             this.streamIsAvailableListeners.set(vs, isAvailableChangedListener);
                             vs.on('isAvailableChanged', isAvailableChangedListener)
                         }
-        
+
                         participant.videoStreams.forEach(handleVideoStreamAdded);
-        
+
                         const videoStreamsUpdatedListener = (e) => {
                             e.added.forEach(handleVideoStreamAdded);
                             e.removed.forEach((vs) => {
@@ -240,7 +246,7 @@ export default class CallCard extends React.Component {
                                     vs.off('isAvailableChanged', streamIsAvailableListener);
                                     this.streamIsAvailableListeners.delete(vs);
                                 }
-                            }); 
+                            });
                         }
                         this.videoStreamsUpdatedListeners.set(participant, videoStreamsUpdatedListener);
                         participant.on('videoStreamsUpdated', videoStreamsUpdatedListener);
@@ -374,12 +380,6 @@ export default class CallCard extends React.Component {
             }
             this.call.feature(Features.DominantSpeakers).on('dominantSpeakersChanged', dominantSpeakersChangedHandler);
 
-            const capabilitiesFeature = this.call.feature(Features.Capabilities);
-            const capabilities = this.call.feature(Features.Capabilities).capabilities;
-            capabilitiesFeature.on('capabilitiesChanged', () => {
-                const updatedCapabilities = capabilitiesFeature.capabilities;
-            });
-
             const ovcFeature = this.call.feature(Features.OptimalVideoCount);
             const ovcChangedHandler = () => {
                 if (this.state.ovc !== ovcFeature.optimalVideoCount) {
@@ -391,9 +391,11 @@ export default class CallCard extends React.Component {
             this.spotlightFeature.on("spotlightChanged", this.spotlightStateChangedHandler);
             this.raiseHandFeature.on("loweredHandEvent", this.raiseHandChangedHandler);
             this.raiseHandFeature.on("raisedHandEvent", this.raiseHandChangedHandler);
+            this.capabilitiesFeature.on('capabilitiesChanged', this.capabilitiesChangedHandler);
+
         }
     }
-    
+
     updateListOfParticipantsToRender(reason) {
 
         const ovcFeature = this.call.feature(Features.OptimalVideoCount);
@@ -410,7 +412,7 @@ export default class CallCard extends React.Component {
         screenShareStream = this.state.remoteParticipants
             .filter(participant => participant.videoStreams.find(stream => stream.mediaStreamType === 'ScreenSharing' && stream.isAvailable))
             .map(participant => {
-            return { 
+            return {
                 stream: participant.videoStreams.filter(stream => stream.mediaStreamType === 'ScreenSharing')[0],
                 participant,
                 streamRendererComponentRef: React.createRef() }
@@ -456,6 +458,31 @@ export default class CallCard extends React.Component {
         this.setState({isHandRaised: utils.isParticipantHandRaised(this.identifier, this.raiseHandFeature.getRaisedHands())})
     }
 
+    capabilitiesChangedHandler = (capabilitiesChangeInfo) => {
+        for (const [key, value] of Object.entries(capabilitiesChangeInfo.newValue)) {
+            if(key === 'turnVideoOn') {
+                (value.isPresent) ? this.setState({ canOnVideo: true }) : this.setState({ canOnVideo: false });
+                continue;
+            }
+            if(key === 'unmuteMic') {
+                (value.isPresent) ? this.setState({ canUnMuteMic: true }) : this.setState({ canUnMuteMic: false });
+                continue;
+            }
+            if(key === 'shareScreen') {
+                (value.isPresent) ? this.setState({ canShareScreen: true }) : this.setState({ canShareScreen: false });
+                continue;
+            }
+            if(key === 'spotlightParticipant') {
+                (value.isPresent) ? this.setState({ canSpotlight: true }) : this.setState({ canSpotlight: false });
+                continue;
+            }
+            if(key === 'raiseHand') {
+                (value.isPresent) ? this.setState({ canRaiseHands: true }) : this.setState({ canRaiseHands: false });
+                continue;
+            }
+        }
+    }
+
     async handleVideoOnOff() {
         try {
             if (!this.state.videoOn) {
@@ -464,7 +491,7 @@ export default class CallCard extends React.Component {
                     return cameraDeviceInfo.id === this.state.selectedCameraDeviceId
                 });
                 this.localVideoStream = new LocalVideoStream(cameraDeviceInfo);
-            } 
+            }
 
 
             if (this.call.state === 'None' ||
@@ -630,7 +657,7 @@ export default class CallCard extends React.Component {
                 canvas.height = 720;
                 ctx.fillStyle = 'blue';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
+
                 const colors = ['red', 'yellow', 'green'];
                 const FPS = 30;
                 const createShapes = function () {
@@ -643,7 +670,7 @@ export default class CallCard extends React.Component {
                             const y = Math.floor(Math.random() * canvas.height);
                             const size = 100;
                             ctx.fillRect(x, y, size, size);
-                        }            
+                        }
                         // schedule the next one.
                         let delay = Math.abs(1000/FPS - (Date.now() - begin));
                         this.dummyStreamTimeout = setTimeout(createShapes, delay);
@@ -651,7 +678,7 @@ export default class CallCard extends React.Component {
                         console.error(err);
                     }
                 }.bind(this);
-        
+
                 // schedule the first one.
                 this.dummyStreamTimeout = setTimeout(createShapes, 0);
                 const dummyStream = canvas.captureStream(FPS);
@@ -773,7 +800,7 @@ export default class CallCard extends React.Component {
                 iconProps: { iconName: 'Focus'},
                 text: 'Stop All Spotlight',
                 onClick: (e) => menuCallBacks.stopAllSpotlight(e)
-            }, 
+            },
             this.raiseHandFeature.getRaisedHands().length && {
                 key: 'Lower All Hands',
                 iconProps: { iconName: 'HandsFree'},
@@ -871,11 +898,11 @@ export default class CallCard extends React.Component {
                             variant="secondary"
                             onClick={() => this.handleVideoOnOff()}>
                             {
-                                this.state.videoOn &&
+                                this.state.canOnVideo && this.state.videoOn &&
                                 <Icon iconName="Video" />
                             }
                             {
-                                !this.state.videoOn &&
+                                (!this.state.canOnVideo || !this.state.videoOn) &&
                                 <Icon iconName="VideoOff" />
                             }
                         </span>
@@ -884,12 +911,12 @@ export default class CallCard extends React.Component {
                             variant="secondary"
                             onClick={() => this.handleMicOnOff()}>
                             {
-                                this.state.micMuted &&
-                                <Icon iconName="MicOff2" />
+                                this.state.canUnMuteMic && !this.state.micMuted &&
+                                <Icon iconName="Microphone" />
                             }
                             {
-                                !this.state.micMuted &&
-                                <Icon iconName="Microphone" />
+                                (!this.state.canUnMuteMic || this.state.micMuted) &&
+                                <Icon iconName="MicOff2" />
                             }
                         </span>
                         <span className="in-call-button"
@@ -1100,7 +1127,7 @@ export default class CallCard extends React.Component {
                                             disabled: false
                                         },
                                         sendDummy: {
-                                            label: "Set dummy effects", 
+                                            label: "Set dummy effects",
                                             disabled: false
                                         }
                                     }}
@@ -1139,7 +1166,7 @@ export default class CallCard extends React.Component {
                                                 disabled: false
                                             },
                                             sendDummy: {
-                                                label: "Set dummy effect", 
+                                                label: "Set dummy effect",
                                                 disabled: false
                                             }
                                         }}
@@ -1194,11 +1221,11 @@ export default class CallCard extends React.Component {
                             <ul className="participants-panel-list">
                                 {
                                     this.state.remoteParticipants.map(remoteParticipant =>
-                                        <RemoteParticipantCard 
-                                            key={`${utils.getIdentifierText(remoteParticipant.identifier)}`} 
-                                            remoteParticipant={remoteParticipant} 
-                                            call={this.call} 
-                                            menuOptionsHandler={this.getParticipantMenuCallBacks()} 
+                                        <RemoteParticipantCard
+                                            key={`${utils.getIdentifierText(remoteParticipant.identifier)}`}
+                                            remoteParticipant={remoteParticipant}
+                                            call={this.call}
+                                            menuOptionsHandler={this.getParticipantMenuCallBacks()}
                                             onSelectionChanged={(identifier, isChecked) => this.remoteParticipantSelectionChanged(identifier, isChecked)}
                                             />
                                     )
@@ -1224,7 +1251,7 @@ export default class CallCard extends React.Component {
                                     defaultChecked={this.state.captionOn}
                                     onChange={() => { this.setState({ captionOn: !this.state.captionOn })}}
                                 />
-                                
+
                                 {
                                     this.state.captionOn &&
                                     <CallCaption call={this.call} isTeamsUser={this.isTeamsUser}/>
