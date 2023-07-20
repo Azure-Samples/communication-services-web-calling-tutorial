@@ -1082,9 +1082,15 @@ div.volumeVisualizer::before {
   grid-column: span 3 !important;
 }
 
-.caption-area {
-  max-height: 300px;
+.scrollable-captions-container {
   overflow: auto;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.scrollable-captions-container .captions-area .caption-item {
+    transform: translateZ(0);
 }
 
 .custom-video-effects-buttons:not(.outgoing) {
