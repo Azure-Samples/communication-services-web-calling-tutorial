@@ -102,12 +102,12 @@ export default class MakeCall extends React.Component {
 
                 const proxyConfiguration = userDetails.proxy.useProxy ? { url: userDetails.proxy.url } : undefined;
                 const turnConfiguration = userDetails.customTurn.useCustomTurn && !userDetails.customTurn.isLoading ? userDetails.customTurn.turn : undefined;
-                this.callClient = new CallClient({ 
-                    diagnostics: { 
-                        appName: 'azure-communication-services', 
-                        appVersion: '1.3.1-beta.1', 
-                        tags: ["javascript_calling_sdk", 
-                        `#clientTag:${userDetails.clientTag}`] 
+                this.callClient = new CallClient({
+                    diagnostics: {
+                        appName: 'azure-communication-services',
+                        appVersion: '1.3.1-beta.1',
+                        tags: ["javascript_calling_sdk",
+                        `#clientTag:${userDetails.clientTag}`]
                     },
                     networkConfiguration: {
                         proxy: proxyConfiguration,
@@ -121,7 +121,7 @@ export default class MakeCall extends React.Component {
 
                 this.setState({ isTeamsUser: userDetails.isTeamsUser});
                 this.setState({ identityMri: createIdentifierFromRawId(userDetails.communicationUserId)})
-                this.callAgent =  this.state.isTeamsUser ? 
+                this.callAgent =  this.state.isTeamsUser ?
                     await this.callClient.createTeamsCallAgent(tokenCredential) :
                     await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
 
@@ -222,7 +222,7 @@ export default class MakeCall extends React.Component {
             if (this.callAgent.kind === CallAgentKind.CallAgent && this.alternateCallerId.value !== '') {
                 callOptions.alternateCallerId = { phoneNumber: this.alternateCallerId.value.trim() };
             }
-            
+
             if (identitiesToCall.length > 1) {
                 if (this.callAgent.kind === CallAgentKind.TeamsCallAgent && this.threadId === '') {
                     throw new Error('Thread ID is needed to make Teams Group Call');
@@ -230,7 +230,7 @@ export default class MakeCall extends React.Component {
                     callOptions.threadId = this.threadId.value;
                 }
             }
-            
+
             this.callAgent.startCall(identitiesToCall, callOptions);
 
         } catch (e) {
@@ -267,7 +267,7 @@ export default class MakeCall extends React.Component {
     joinRooms = async (withVideo) => {
         try {
             const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
-            this.callAgent.join({ meetingId: this.roomsId.value }, callOptions);
+            this.callAgent.join({ roomId: this.roomsId.value }, callOptions);
         } catch (e) {
             console.error('Failed to join a call', e);
             this.setState({ callError: 'Failed to join a call: ' + e });
@@ -780,7 +780,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </pre>
                         }
                         {
-                            this.state.callError && 
+                            this.state.callError &&
                             <div>
                                 <MessageBar
                                     messageBarType={MessageBarType.error}
