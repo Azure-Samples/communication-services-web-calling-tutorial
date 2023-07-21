@@ -677,15 +677,6 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                         </div>
                                     </div>
                                     {
-                                        this.state.loggedIn && this.state.isTeamsUser &&
-                                            <div>
-                                                <br></br>
-                                                <div>Congrats! Teams User was successfully logged in. You are ready to start making calls!</div>
-                                                <div>Teams User logged in identity is: <span className="identity"><b>{this.state.communicationUserId}</b></span></div>
-                                                {<div>Usage is tagged with: <span className="identity"><b>{this.clientTag}</b></span></div>}
-                                            </div>
-                                    }
-                                    {
                                         (!this.state.showSpinner && !this.state.loggedIn) &&
                                         <div>
                                             <div className="ms-Grid-row">
@@ -762,6 +753,15 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                         </div>
                                     }
                                 </div>
+                            }
+                            {
+                                this.state.loggedIn && this.state.isTeamsUser &&
+                                    <div>
+                                        <br></br>
+                                        <div>Congrats! Teams User was successfully logged in. You are ready to start making calls!</div>
+                                        <div>Teams User logged in identity is: <span className="identity"><b>{this.state.communicationUserId}</b></span></div>
+                                        {<div>Usage is tagged with: <span className="identity"><b>{this.clientTag}</b></span></div>}
+                                    </div>
                             }
                             {
                                 this.state.loggedIn &&
