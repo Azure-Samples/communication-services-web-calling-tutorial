@@ -14,6 +14,7 @@ import CallSurvey from '../MakeCall/CallSurvey';
 import Login from './Login';
 import MediaConstraint from './MediaConstraint';
 import { setLogLevel, AzureLogger } from '@azure/logger';
+import { inflate } from 'pako';
 export default class MakeCall extends React.Component {
     constructor(props) {
         super(props);
@@ -252,6 +253,35 @@ export default class MakeCall extends React.Component {
         element.click();
         document.body.removeChild(element);
         this.logBuffer = [];
+    }
+
+    downloadDebugInfoLogDump = async () => {
+        const date = new Date();
+        const fileName = `logs-${date.toISOString().slice(0, 19)}.txt`;
+        var element = document.createElement('a');
+        let newDebugInfo = null;
+        try {
+            let debugInfoFeature = this.callClient.feature(Features.DebugInfo);
+            let debugInfo = debugInfoFeature.dumpDebugInfo();
+            let debugInfoZippedDump = debugInfo.dump;
+            let debugInfoDumpId = debugInfo.dumpId;
+            newDebugInfo = {
+                lastCallId: debugInfoFeature.lastCallId,
+                lastLocalParticipantId: debugInfoFeature.lastLocalParticipantId,
+                debugInfoDumpId:debugInfoDumpId,
+                debugInfoDumpUnzipped: JSON.parse(inflate(debugInfoZippedDump, { to: 'string' })),
+             }
+        } catch (e) {
+            console.error('ERROR, failed to dumpDebugInfo', e);
+        }
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(JSON.stringify(newDebugInfo)));
+        element.setAttribute('download', fileName);
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+        document.body.removeChild(element);
     }
 
     joinGroup = async (withVideo) => {
@@ -761,6 +791,12 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                     iconProps={{ iconName: 'Download', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`Get Logs`}
                                     onClick={this.downloadLog}>
+                                </PrimaryButton>
+                                <PrimaryButton
+                                    className="primary-button"
+                                    iconProps={{ iconName: 'Download', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                    text={`Get Debug Info Log Dump`}
+                                    onClick={this.downloadDebugInfoLogDump}>
                                 </PrimaryButton>
                                 <PrimaryButton
                                     className="primary-button"
