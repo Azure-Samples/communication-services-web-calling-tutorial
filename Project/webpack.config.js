@@ -47,13 +47,8 @@ const generateGuid = function () {
     return `${s4()}${s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
 }
 
-const parseJWT = (token) => {
-    let [, payload] = token?.split(".");
-    if (payload != undefined) {
-        payload = payload.replace(/-/g, "+").replace(/_/g, "/");
-        return JSON.parse(decodeURIComponent(escape(atob(payload))));
-    }
-    return '';
+function parseJWT (token) {
+    return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
 }
 
 // Exchanging Azure AD access token of a Teams User for a Communication access token
