@@ -1,41 +1,60 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Features } from '@azure/communication-calling';
+import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
 
 // CallCaption react function component
-const CallCaption = ({ call, isTeamsUser }) => {
-    // caption history state
-    const [captionHistory, setCaptionHistory] = useState([]);
-    let captions;
+const CallCaption = ({ call }) => {
+    const [captionsFeature, setCaptionsFeature] = useState(call.feature(Features.Captions));
+    const [captions, setCaptions] = useState(captionsFeature.captions);
+    const [currentSpokenLanguage, setCurrentSpokenLanguage] = useState(captions.activeSpokenLanguage);
+    const [currentCaptionLanguage, setCurrentCaptionLanguage] = useState(captions.activeCaptionLanguage);
 
     useEffect(() => {
-        captions = (isTeamsUser || (!isTeamsUser && call.info?.context === 'teamsMeetingJoin') ) ?
-            call.feature(Features.TeamsCaptions) : call.feature(Features.Captions);
-        startCaptions(captions);
+        try {
+            startCaptions(captions);
+        }
+        catch(e) {
+            console.log("Captions not configured for this release version")
+        }
         
         return () => {
             // cleanup
-            captions.off('isCaptionsActiveChanged', isCaptionsActiveHandler);
-            captions.off('captionsReceived', captionHandler);
+            captions.off('CaptionsActiveChanged', captionsActiveHandler);
+            captions.off('CaptionsReceived', captionsReceivedHandler);
+            captions.off('SpokenLanguageChanged', activeSpokenLanguageHandler);
+            if (captions.captionsType === 'TeamsCaptions') {
+                captions.off('CaptionLanguageChanged', activeCaptionLanguageHandler);
+            }
         };
     }, []);
 
     const startCaptions = async () => {
         try {
-            if (!captions.isCaptionsActive || !captions.isCaptionsFeatureActive) {
+            if (!captions.isCaptionsFeatureActive) {
                 await captions.startCaptions({ spokenLanguage: 'en-us' });
             }
-            captions.on('isCaptionsActiveChanged', isCaptionsActiveHandler);
-            captions.on('captionsReceived', captionHandler);
+            captions.on('CaptionsActiveChanged', captionsActiveHandler);
+            captions.on('CaptionsReceived', captionsReceivedHandler);
+            captions.on('SpokenLanguageChanged', activeSpokenLanguageHandler);
+            if (captions.captionsType === 'TeamsCaptions') {
+                captions.on('CaptionLanguageChanged', activeCaptionLanguageHandler);
+            }
         } catch (e) {
             console.error('startCaptions failed', e);
         }
     };
 
-    const isCaptionsActiveHandler = () => {
-        console.log('isCaptionsActiveChanged: ', captions.isCaptionsActive);
+    const captionsActiveHandler = () => {
+        console.log('CaptionsActiveChanged: ', captions.isCaptionsFeatureActive);
+    }
+    const activeSpokenLanguageHandler = () => {
+        setCurrentSpokenLanguage(captions.activeSpokenLanguage);
+    }
+    const activeCaptionLanguageHandler = () => {
+        setCurrentCaptionLanguage(captions.activeCaptionLanguage);
     }
 
-    const captionHandler = (captionData) => {
+    const captionsReceivedHandler = (captionData) => {
         let mri = '';
         if (captionData.speaker.identifier.kind === 'communicationUser') {
             mri = captionData.speaker.identifier.communicationUserId;
@@ -45,24 +64,77 @@ const CallCaption = ({ call, isTeamsUser }) => {
             mri = captionData.speaker.identifier.phoneNumber;
         }
 
+        let captionAreasContainer = document.getElementById('captionsArea');
+        const newClassName = `prefix${mri.replace(/:/g, '').replace(/-/g, '')}`;
         const captionText = `${captionData.timestamp.toUTCString()}
-                ${captionData.speaker.displayName}: ${captionData.text}`;
+            ${captionData.speaker.displayName}: ${captionData.captionText ?? captionData.spokenText}`;
 
-        console.log(mri, captionText);
-        if (captionData.resultType === 'Final' || captionData.resultType === 1) {
-            setCaptionHistory(oldCaptions => [...oldCaptions, captionText]);
+        let foundCaptionContainer = captionAreasContainer.querySelector(`.${newClassName}[isNotFinal='true']`);
+        if (!foundCaptionContainer) {
+            let captionContainer = document.createElement('div');
+            captionContainer.setAttribute('isNotFinal', 'true');
+            captionContainer.style['borderBottom'] = '1px solid';
+            captionContainer.style['whiteSpace'] = 'pre-line';
+            captionContainer.textContent = captionText;
+            captionContainer.classList.add(newClassName);
+            captionContainer.classList.add('caption-item')
+
+            captionAreasContainer.appendChild(captionContainer);
+
+        } else {
+            foundCaptionContainer.textContent = captionText;
+
+            if (captionData.resultType === 'Final') {
+                foundCaptionContainer.setAttribute('isNotFinal', 'false');
+            }
         }
-
     };
 
+    const spokenLanguageSelectionChanged = async (event, item) => {
+        const spokenLanguages = captions.supportedSpokenLanguages;
+        const language = spokenLanguages.find(language => { return language === item.key });
+        await captions.setSpokenLanguage(language);
+        setCurrentSpokenLanguage(language); 
+    };
+
+    const SpokenLanguageDropdown = () => { 
+        const keyedSupportedSpokenLanguages = captions.supportedSpokenLanguages.map(language => ({key: language, text: language}));
+        return <Dropdown
+                selectedKey={currentSpokenLanguage}
+                onChange={spokenLanguageSelectionChanged}
+                label={'Spoken Language'}
+                options={keyedSupportedSpokenLanguages}
+                styles={{ label: {color: '#edebe9'}, dropdown: { width: 100 } }}
+            />
+    }
+
+    const captionLanguageSelectionChanged = async (event, item) => {
+        const captionLanguages = captions.supportedCaptionLanguages;
+        const language = captionLanguages.find(language => { return language === item.key });
+        await captions.setCaptionLanguage(language);
+        setCurrentCaptionLanguage(language); 
+    };
+
+    const CaptionLanguageDropdown = () => {
+        const keyedSupportedCaptionLanguages = captions.supportedCaptionLanguages.map(language => ({key: language, text: language}));
+        return <Dropdown
+                selectedKey={currentCaptionLanguage}
+                onChange={captionLanguageSelectionChanged}
+                label={'Caption Language'}
+                options={keyedSupportedCaptionLanguages}
+                styles={{ label: {color: '#edebe9'}, dropdown: { width: 100, overflow: 'scroll' } }}
+            />
+    }
+
     return (
-        <div id="captionArea" className="caption-area">
-            {
-                captionHistory.map((caption, index) => (
-                    <div key={index}>{caption}</div>
-                ))
-            }
-        </div>
+        <>
+            {captions && <SpokenLanguageDropdown/>}
+            {captions && captions.captionsType === 'TeamsCaptions' && <CaptionLanguageDropdown/>}
+            <div className="scrollable-captions-container">
+                <div id="captionsArea" className="captions-area">
+                </div>
+            </div>
+        </>
     );
 };
 
