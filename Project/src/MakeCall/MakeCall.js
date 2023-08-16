@@ -26,6 +26,7 @@ export default class MakeCall extends React.Component {
         this.destinationGroup = null;
         this.meetingLink = null;
         this.meetingId = null;
+        this.passcode = null;
         this.roomsId = null;
         this.threadId = null;
         this.messageId = null;
@@ -311,8 +312,11 @@ export default class MakeCall extends React.Component {
             if (this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({ meetingLink: this.meetingLink.value }, callOptions);
 
-            } else if (this.meetingId.value && !this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
-                this.callAgent.join({ meetingId: this.meetingId.value }, callOptions);
+            } else if (this.meetingId.value  || this.passcode.value && !this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
+                this.callAgent.join({ 
+                    meetingId: this.meetingId.value,
+                    passcode: this.passcode.value 
+                }, callOptions);
             } else if (!this.meetingLink.value && this.messageId.value && this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({
                     messageId: this.messageId.value,
@@ -501,7 +505,7 @@ this.currentCall = this.callAgent.join({groupId: <GUID>}, this.callOptions);
 // open the participants roster, then click on the 'Share Invite' button and then click on 'Copy link meeting' button.
 this.currentCall = this.callAgent.join({meetingLink: <meeting link>}, this.callOptions);
 // Join a Teams meeting using a meeting id.
-this.currentCall = this.callAgent.join({meetingId: <meeting id>}, this.callOptions);
+this.currentCall = this.callAgent.join({meetingId: <meeting id> , passcode: <passcode>}, this.callOptions);
 // Join a Teams meeting using meeting coordinates. Coordinates can be derived from the meeting link
 // Teams meeting link example
 const meetingLink = 'https://teams.microsoft.com/l/meetup-join/19:meeting_NjNiNzE3YzMtYzcxNi00ZGQ3LTk2YmYtMjNmOTE1MTVhM2Jl@thread.v2/0?context=%7B%22Tid%22:%2272f988bf-86f1-41af-91ab-2d7cd011db47%22,%22Oid%22:%227e353a91-0f71-4724-853b-b30ee4ca6a42%22%7D'
@@ -944,11 +948,15 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                             disabled={this.state.call || !this.state.loggedIn}
                                             label="Meeting link"
                                             componentRef={(val) => this.meetingLink = val} />
-                                        <div>Or enter meeting id</div>
+                                        <div>Or enter meeting id (and) passcode</div>
                                         <TextField className="mb-3"
                                             disabled={this.state.call || !this.state.loggedIn}
                                             label="Meeting id"
                                             componentRef={(val) => this.meetingId = val} />
+                                        <TextField className="mb-3"
+                                            disabled={this.state.call || !this.state.loggedIn}
+                                            label="Meeting passcode"
+                                            componentRef={(val) => this.passcode = val} />
                                         <div> Or enter meeting coordinates (Thread Id, Message Id, Organizer Id, and Tenant Id)</div>
                                         <TextField disabled={this.state.call || !this.state.loggedIn}
                                             label="Thread Id"
