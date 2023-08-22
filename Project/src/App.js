@@ -16,8 +16,11 @@ function App() {
       <ToastContainer />
       <div className="header ms-Grid">
         <div className="ms-Grid-row">
-          <div className="ms-Grid-col ms-lg6">
-            <h1>
+          <div className="ms-Grid-col ms-lg6 inline-flex align-items-center">
+            <div className="inline-block">
+                <img className="nav-bar-icon" src="./assets/images/acsIcon.png"></img>
+            </div>
+            <h1 className="inline-block">
               Azure Communication Services - Calling SDK for Javascript - { VWebSdkVersion() }
             </h1>
           </div>

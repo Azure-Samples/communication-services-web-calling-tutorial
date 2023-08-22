@@ -11,7 +11,7 @@ body {
   padding-bottom: 1em;
   padding-right: 1em;
   padding-left: 1em;
-  zoom: 80%;
+  zoom: 90%;
 }
 
 /*********************************
@@ -41,11 +41,15 @@ h6 {
 }
 
 .header {
-  padding-top: 3em;
-  padding-bottom: 2em;
+  padding-top: 2em;
+  padding-bottom: 1em;
   margin-left: 1em;
   margin-right: 1em;
   border-bottom: 1px solid #414141;
+}
+
+.nav-bar-icon {
+  height: 6em;
 }
 
 .sdk-docs-header {
@@ -537,6 +541,10 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 .inline-block {
   display: inline-block;
   vertical-align: middle;
+}
+
+.inline-flex {
+  display: inline-flex;
 }
 
 /*********************************
