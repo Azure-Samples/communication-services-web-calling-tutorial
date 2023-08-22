@@ -1055,7 +1055,7 @@ export default class CallCard extends React.Component {
                             }
                         </span>
                         <span className="in-call-button"
-                            title={`${this.state.showDataChannel ? 'Turn off data channel' : 'Turn on data channel'}`}
+                            title={`${this.state.showDataChannel ? 'Turn data channel off' : 'Turn data channel on'}`}
                             variant="secondary"
                             onClick={() => { this.setState({ showDataChannel: !this.state.showDataChannel })}}>
                             {
@@ -1068,7 +1068,7 @@ export default class CallCard extends React.Component {
                             }
                         </span>
                         <span className="in-call-button"
-                            title={`${this.state.dominantSpeakersListActive ? 'Show dominant speakers list' : 'Hide dominant speakers list'} to call`}
+                            title={`${this.state.dominantSpeakersListActive ? 'Hide dominant speakers list' : 'Show dominant speakers list'}`}
                             variant="secondary"
                             onClick={() => this.handleDominantSpeakersListActive()}>
                             {
@@ -1081,7 +1081,7 @@ export default class CallCard extends React.Component {
                             }
                         </span>
                         <span className="in-call-button"
-                            title={`${this.state.dominantSpeakerMode ? 'Render most dominant speaker video only' : 'Render all participants videos'} to call`}
+                            title={`${this.state.dominantSpeakerMode ? 'Render all participants videos' : 'Render most dominant speaker video only'}`}
                             variant="secondary"
                             onClick={() => this.toggleDominantSpeakerMode()}>
                             {
