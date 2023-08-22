@@ -176,14 +176,14 @@ export default class VideoEffectsContainer extends React.Component {
                             styles={{ dropdown: { width: 300, color: 'black' } }}
                         />
                         <PrimaryButton
-                            className='primary-button mt-2'
+                            className='secondary-button mt-2'
                             onClick={() => this.startEffects()}
                         >
                             {this.state.startEffectsLoading ? <LoadingSpinner /> : 'Start Effects'}
                         </PrimaryButton>
 
                         <PrimaryButton
-                            className='primary-button mt-2'
+                            className='secondary-button mt-2'
                             onClick={() => this.stopEffects()}
                         >
                             {this.state.stopEffectsLoading ? <LoadingSpinner /> : 'Stop Effects'}

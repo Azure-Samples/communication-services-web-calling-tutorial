@@ -17,9 +17,9 @@ function App() {
       <div className="header ms-Grid">
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-lg6">
-            <h2>
+            <h1>
               Azure Communication Services - Calling SDK for Javascript - { VWebSdkVersion() }
-            </h2>
+            </h1>
           </div>
           <div className="ms-Grid-col ms-lg6">
             <div className="sdk-docs-header">

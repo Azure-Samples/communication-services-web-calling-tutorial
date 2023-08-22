@@ -565,12 +565,12 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                             <div className="ms-Grid-row">
                                 <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">User Identity Provisioning and Calling SDK Initialization</h2>
                                 <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
-                                    <PrimaryButton className="primary-button"
+                                    <PrimaryButton className="secondary-button"
                                         iconProps={{iconName: 'Settings', style: {verticalAlign: 'middle', fontSize: 'large'}}}
                                         text={`${this.state.showCallClientOptions ? 'Hide' : 'Show'} options`}
                                         onClick={() => this.setState({showCallClientOptions: !this.state.showCallClientOptions})}>
                                     </PrimaryButton>
-                                    <PrimaryButton className="primary-button"
+                                    <PrimaryButton className="secondary-button"
                                         iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
                                         text={`${this.state.showUserProvisioningAndSdkInitializationCode ? 'Hide' : 'Show'} code`}
                                         onClick={() => this.setState({showUserProvisioningAndSdkInitializationCode: !this.state.showUserProvisioningAndSdkInitializationCode})}>

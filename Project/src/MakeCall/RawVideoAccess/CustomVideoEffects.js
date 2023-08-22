@@ -178,7 +178,7 @@ export default class CustomVideoEffects extends React.Component {
                         return <div>
                             <PrimaryButton 
                                 key={`${idx}-abcd`} 
-                                className="primary-button" 
+                                className="secondary-button" 
                                 onClick={async (e) => this.addEffect(e)}
                                 disabled={this.state.buttons[obj].disabled}>
                                     {this.state.buttons[obj].label}
