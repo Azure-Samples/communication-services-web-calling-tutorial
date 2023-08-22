@@ -19,6 +19,7 @@ import CurrentCallInformation from "./CurrentCallInformation";
 import DataChannelCard from './DataChannelCard';
 import CallCaption from "./CallCaption";
 import { ParticipantMenuOptions } from './ParticipantMenuOptions';
+
 export default class CallCard extends React.Component {
     constructor(props) {
         super(props);
@@ -37,6 +38,7 @@ export default class CallCard extends React.Component {
         this.spotlightFeature = this.call.feature(Features.Spotlight);
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.capabilitiesFeature = this.call.feature(Features.Capabilities);
+        this.dominantSpeakersFeature = this.call.feature(Features.DominantSpeakers);
         this.identifier = props.identityMri;
         this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
@@ -78,7 +80,10 @@ export default class CallCard extends React.Component {
             mediaCollector: undefined,
             isSpotlighted: false,
             isHandRaised: false,
-            showParticipantsCard: true
+            dominantSpeakersListActive: false,
+            dominantSpeakers:[],
+            showDataChannel: false,
+            showAddParticipantPanel: false
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
@@ -102,6 +107,7 @@ export default class CallCard extends React.Component {
         this.call.feature(Features.Spotlight).off('spotlightChanged', this.spotlightStateChangedHandler);
         this.call.feature(Features.RaiseHand).off('raisedHandEvent', this.raiseHandChangedHandler);
         this.call.feature(Features.RaiseHand).off('loweredHandEvent', this.raiseHandChangedHandler);
+        this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged);
     }
 
     componentDidMount() {
@@ -392,6 +398,7 @@ export default class CallCard extends React.Component {
             this.raiseHandFeature.on("loweredHandEvent", this.raiseHandChangedHandler);
             this.raiseHandFeature.on("raisedHandEvent", this.raiseHandChangedHandler);
             this.capabilitiesFeature.on('capabilitiesChanged', this.capabilitiesChangedHandler);
+            this.dominantSpeakersFeature.on('dominantSeapkersChanged', this.dominantSpeakersChanged);
         }
     }
 
@@ -480,6 +487,16 @@ export default class CallCard extends React.Component {
                 continue;
             }
         }
+    }
+
+    dominantSpeakersChanged = () => {
+        const dominantSpeakersMris = this.dominantSpeakersFeature.dominantSpeakers.speakersList;
+        const remoteParticipants = dominantSpeakersMris.map(dominantSpeakerMri => {
+            const remoteParticipant = utils.getRemoteParticipantObjFromIdentifier(this.call, dominantSpeakerMri);
+            return remoteParticipant;
+        });
+
+        this.setState({dominantSpeakers: remoteParticipants});
     }
 
     async handleVideoOnOff() {
@@ -593,17 +610,24 @@ export default class CallCard extends React.Component {
         }));
     }
 
+    async handleDominantSpeakersListActive() {
+        if (this.state.dominantSpeakersListActive) {
+            this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged)
+        } else {
+            this.dominantSpeakersFeature.on('dominantSpeakersChanged', this.dominantSpeakersChanged)
+            this.dominantSpeakersChanged();
+        }
+
+        this.setState(prevState => ({
+            ...prevState,
+            dominantSpeakersListActive: !prevState.dominantSpeakersListActive
+        }));
+    }
+
     async handleMediaStatsLogState() {
         this.setState(prevState => ({
             ...prevState,
             logMediaStats: !prevState.logMediaStats
-        }));
-    }
-
-    async toggleParticipantsCard() {
-        this.setState(prevState => ({
-            ...prevState,
-            showParticipantsCard: !prevState.showParticipantsCard
         }));
     }
 
@@ -919,6 +943,19 @@ export default class CallCard extends React.Component {
                             }
                         </span>
                         <span className="in-call-button"
+                            title={`${this.state.showAddParticipantPanel ? 'Hide' : 'Show'} add participant panel`}
+                            variant="secondary"
+                            onClick={() => this.setState({showAddParticipantPanel: !this.state.showAddParticipantPanel})}>
+                            {
+                                this.state.showAddParticipantPanel &&
+                                <Icon iconName="AddFriend" />
+                            }
+                            {
+                                !this.state.showAddParticipantPanel &&
+                                <Icon iconName="AddFriend" />
+                            }
+                        </span>
+                        <span className="in-call-button"
                             title={`${this.state.incomingAudioMuted ? 'Unmute' : 'Mute'} incoming audio`}
                             variant="secondary"
                             onClick={() => this.handleIncomingAudioOnOff()}>
@@ -1005,6 +1042,58 @@ export default class CallCard extends React.Component {
                             }
                         </span>
                         <span className="in-call-button"
+                            title={`${this.state.captionOn ? 'Turn captions off' : 'Turn captions on'}`}
+                            variant="secondary"
+                            onClick={() => { this.setState({ captionOn: !this.state.captionOn })}}>
+                            {
+                                this.state.captionOn &&
+                                <Icon iconName="TextBox" />
+                            }
+                            {
+                                !this.state.captionOn &&
+                                <Icon iconName="TextBox" />
+                            }
+                        </span>
+                        <span className="in-call-button"
+                            title={`${this.state.showDataChannel ? 'Turn off data channel' : 'Turn on data channel'}`}
+                            variant="secondary"
+                            onClick={() => { this.setState({ showDataChannel: !this.state.showDataChannel })}}>
+                            {
+                                this.state.showDataChannel &&
+                                <Icon iconName="Send" />
+                            }
+                            {
+                                !this.state.showDataChannel &&
+                                <Icon iconName="Send" />
+                            }
+                        </span>
+                        <span className="in-call-button"
+                            title={`${this.state.dominantSpeakersListActive ? 'Show dominant speakers list' : 'Hide dominant speakers list'} to call`}
+                            variant="secondary"
+                            onClick={() => this.handleDominantSpeakersListActive()}>
+                            {
+                                this.state.dominantSpeakersListActive &&
+                                <Icon iconName="PeopleBlock" />
+                            }
+                            {
+                                !this.state.dominantSpeakersListActive &&
+                                <Icon iconName="People" />
+                            }
+                        </span>
+                        <span className="in-call-button"
+                            title={`${this.state.dominantSpeakerMode ? 'Render most dominant speaker video only' : 'Render all participants videos'} to call`}
+                            variant="secondary"
+                            onClick={() => this.toggleDominantSpeakerMode()}>
+                            {
+                                this.state.dominantSpeakerMode &&
+                                <Icon iconName="UserRemove" />
+                            }
+                            {
+                                !this.state.dominantSpeakerMode &&
+                                <Icon iconName="ReminderPerson" />
+                            }
+                        </span>
+                        <span className="in-call-button"
                             title={`${this.state.logMediaStats ? 'Stop' : 'Start'} logging MediaStats`}
                             variant="secondary"
                             onClick={() => this.handleMediaStatsLogState()}>
@@ -1015,19 +1104,6 @@ export default class CallCard extends React.Component {
                             {
                                 !this.state.logMediaStats &&
                                 <Icon iconName="NumberedListText" />
-                            }
-                        </span>
-                        <span className="in-call-button"
-                            title={`${!this.state.showParticipantsCard ? `Show Participants and Caption Panel` : `Hide Participants and Caption Panel`}`}
-                            variant="secondary"
-                            onClick={() => this.toggleParticipantsCard()}>
-                            {
-                                this.state.showParticipantsCard &&
-                                <Icon iconName="Hide3" />
-                            }
-                            {
-                                !this.state.showParticipantsCard &&
-                                <Icon iconName="People" />
                             }
                         </span>
                         <span className="in-call-button "
@@ -1138,7 +1214,8 @@ export default class CallCard extends React.Component {
                         </div>
                     </div>
                 }
-                {   this.state.localScreenSharingMode &&
+                {
+                    this.state.localScreenSharingMode &&
                     <div className="mt-5">
                         <div className="ms-Grid-row">
                             <h3>Local screen sharing preview</h3>
@@ -1183,85 +1260,92 @@ export default class CallCard extends React.Component {
                         </div>
                     </div>
                 }
-                {
-                    this.state.callState === 'Connected' && this.state.showParticipantsCard &&
-                    <div>
-                        <div className="participants-panel mt-5 mb-3">
-                            <Toggle label={
-                                <div>
-                                    Dominant Speaker mode{' '}
-                                    <TooltipHost content={`Render the most dominant speaker's video streams only or render all remote participant video streams`}>
-                                        <Icon iconName="Info" aria-label="Info tooltip" />
-                                    </TooltipHost>
-                                </div>
-                            }
-                                styles={{
-                                    text: { color: '#edebe9' },
-                                    label: { color: '#edebe9' },
-                                }}
-                                inlineLabel
-                                onText="On"
-                                offText="Off"
-                                onChange={() => { this.toggleDominantSpeakerMode() }}
-                            />
-                            {
-                                this.state.dominantSpeakerMode &&
-                                <div>
-                                    Current dominant speaker: {this.state.dominantRemoteParticipant ? utils.getIdentifierText(this.state.dominantRemoteParticipant.identifier) : `None`}
-                                </div>
-                            }
-                            <div className="participants-panel-title custom-row text-center">
-                                <AddParticipantPopover call={this.call} />
-                            </div>
-                            {
-                                this.state.remoteParticipants.length === 0 &&
-                                <p className="text-center">No other participants currently in the call</p>
-                            }
-                            <ul className="participants-panel-list">
-                                {
-                                    this.state.remoteParticipants.map(remoteParticipant =>
-                                        <RemoteParticipantCard
-                                            key={`${utils.getIdentifierText(remoteParticipant.identifier)}`}
-                                            remoteParticipant={remoteParticipant}
-                                            call={this.call}
-                                            menuOptionsHandler={this.getParticipantMenuCallBacks()}
-                                            onSelectionChanged={(identifier, isChecked) => this.remoteParticipantSelectionChanged(identifier, isChecked)}
-                                            />
-                                    )
-                                }
-                            </ul>
-                        </div>
-                        <div className="participants-panel mt-1 mb-3">
-                                <Toggle label={
-                                        <div>
-                                            Caption{' '}
-                                            <TooltipHost content={`Turn on Captions to see the conversation script`}>
-                                                <Icon iconName="Info" aria-label="Info tooltip" />
-                                            </TooltipHost>
-                                        </div>
-                                    }
-                                    styles={{
-                                        text : { color: '#edebe9' },
-                                        label: { color: '#edebe9' },
-                                    }}
-                                    inlineLabel
-                                    onText="On"
-                                    offText="Off"
-                                    defaultChecked={this.state.captionOn}
-                                    onChange={() => { this.setState({ captionOn: !this.state.captionOn })}}
-                                />
-
-                                {
-                                    this.state.captionOn &&
-                                    <CallCaption call={this.call} isTeamsUser={this.isTeamsUser}/>
-                                }
-                        </div>
+                {   this.state.dominantSpeakersListActive &&
+                    <div className="mt-5">
                         <div className="ms-Grid-row">
+                            <h3>Dominant Speakers</h3>
+                        </div>
+                        <div className="dominant-speakers-list">
+                           {
+                                this.state.dominantSpeakers.map((dominantSpeaker, index) =>
+                                    <div>
+                                        <div>
+                                            Index {index}
+                                        </div>
+                                        <div className="ml-3">
+                                            mri: {utils.getIdentifierText(dominantSpeaker.identifier)}
+                                        </div>
+                                        <div className="ml-3">
+                                            displayName: {dominantSpeaker.displayName ?? 'None'}
+                                        </div>
+                                    </div>
+                                )
+                           }
+                        </div>
+                    </div>
+                }
+                {
+                    this.state.captionOn &&
+                    <div className="mt-5">
+                        <div className="ms-Grid-row">
+                            <h3>Captions</h3>
+                        </div>
+                        <div className="md-grid-row">
+                            {
+                                this.state.captionOn &&
+                                <CallCaption call={this.call} isTeamsUser={this.isTeamsUser}/>
+                            }
+                        </div>
+                    </div>
+                }
+                {
+                    this.state.showDataChannel &&
+                    <div className="mt-5">
+                        <div className="ms-Grid-row">
+                            <h3>Data Channel</h3>
+                        </div>
+                        <div className="md-grid-row">
                         {
                             this.state.callState === 'Connected' &&
                                 <DataChannelCard call={this.call} ref={this.dataChannelRef} remoteParticipants={this.state.remoteParticipants} />
                         }
                         </div>
+                    </div>
+                }
+                {
+                    this.state.callState === 'Connected' &&
+                    <div className="mt-5">
+                        <div className="ms-Grid-row">
+                            <h3>Participants</h3>
+                        </div>
+                        <div>
+                            {   this.state.showAddParticipantPanel &&
+                                <AddParticipantPopover call={this.call} />
+                            }
+                        </div>
+                        {
+                            this.state.dominantSpeakerMode &&
+                            <div>
+                                Current dominant speaker: {this.state.dominantRemoteParticipant ? utils.getIdentifierText(this.state.dominantRemoteParticipant.identifier) : `None`}
+                            </div>
+                        }
+                        {
+                            this.state.remoteParticipants.length === 0 &&
+                            <p>No other participants currently in the call</p>
+                        }
+                        <ul className="">
+                            {
+                                this.state.remoteParticipants.map(remoteParticipant =>
+                                    <RemoteParticipantCard
+                                        key={`${utils.getIdentifierText(remoteParticipant.identifier)}`}
+                                        remoteParticipant={remoteParticipant}
+                                        call={this.call}
+                                        menuOptionsHandler={this.getParticipantMenuCallBacks()}
+                                        onSelectionChanged={(identifier, isChecked) => this.remoteParticipantSelectionChanged(identifier, isChecked)}
+                                        />
+                                )
+                            }
+                        </ul>
                     </div>
 
                 }

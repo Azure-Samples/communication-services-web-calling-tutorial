@@ -104,8 +104,7 @@ export default class DataChannelCard extends React.Component {
         return (
             <div className="ms-Grid">
                 <div className="ms-Grid-row mb-6 mt-6">
-                    <h3>DataChannel</h3>
-                    <div>when no remote participant checkbox is selected, message will broadcast in the channel</div>
+                    <div>When no remote participant checkbox is selected, message will broadcast in the channel</div>
                     <div className="ms-Grid-col ms-lg6 ms-sm6">
                         <TextField
                             label="message"
@@ -123,7 +122,7 @@ export default class DataChannelCard extends React.Component {
                             value={this.state.inputMessage}
                         />
                         <PrimaryButton
-                            className="primary-button"
+                            className="secondary-button"
                             iconProps={{ iconName: 'Send', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                             text="Send"
                             onClick={() => this.sendMessage()}>

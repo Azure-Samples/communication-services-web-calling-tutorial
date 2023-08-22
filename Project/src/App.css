@@ -34,15 +34,17 @@ h3,
 h4,
 h5,
 h6 {
-  font-weight: 500;
+  font-weight: 400;
   margin-top: 0;
   margin-bottom: .5rem;
 }
 
 .header {
-  padding-top: 2em;
+  padding-top: 3em;
+  padding-bottom: 2em;
   margin-left: 1em;
   margin-right: 1em;
+  border-bottom: 1px solid #414141;
 }
 
 .sdk-docs-header {
@@ -60,7 +62,7 @@ input:disabled {
 
 .loader {
   border: 5px solid #edebe9;
-  border-top: 5px solid #ca5010;
+  border-top: 5px solid #b9692f;
   border-radius: 50%;
   width: 20px;
   height: 20px;
@@ -69,7 +71,7 @@ input:disabled {
 
 .ringing-loader {
   border: 5px solid #edebe9;
-  border-top: 5px solid #ca5010;
+  border-top: 5px solid #b9692f;
   border-radius: 50%;
   width: 30px;
   height: 30px;
@@ -98,7 +100,7 @@ input:disabled {
 }
 
 .identity {
-  color: #ca5010
+  color: #b9692f
 }
 
 .ListGroup {
@@ -118,7 +120,7 @@ button:focus {
 .card {
   background-color: #201f1e;
   border: 1px solid #605e5c;
-  border-radius: 0px;
+  border-radius: 1em;
   padding: 3em;
   margin-top: 3em;
 }
@@ -129,12 +131,6 @@ button:focus {
 
 ul {
   list-style-type: none;
-}
-
-.participants-panel {
-  padding: 1em;
-  border: 1px solid #605e5c;
-  width: fit-content;
 }
 
 .pre-call-grid-container {
@@ -162,15 +158,11 @@ ul {
   width: 8em
 }
 
-/* Dominant Speaker switch*/
-.ms-Toggle-background[aria-checked="true"],
-.ms-Toggle-background[aria-checked="true"]:hover {
-  background-color: #ca5010
-}
-
-.participants-panel-title {
-  margin-top: 1em;
-  ;
+.participants-panel {
+  max-height: 60em;
+  overflow-y: auto;
+  padding: 1em;
+  width: fit-content;
 }
 
 .participants-panel-list {
@@ -253,17 +245,18 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 }
 
 .primary-button {
+  height: 2.75em;
   color: #edebe9;
-  background-color: #ca5010;
-  border: 1px solid #ca5010;
+  background-color: #201f1e;
+  border: 1px solid #916546;
   outline: none;
   margin-right: 1em;
   margin-bottom: 1em;
 }
 
 .primary-button:hover {
-  background-color: #8e562e;
-  border: 1px solid #8e562e;
+  background-color: #201f1e;
+  border: 1px solid #916546;
 }
 
 .primary-button:disabled {
@@ -271,6 +264,21 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
   border-color: #605e5c;
   outline: none;
   color: #000000;
+}
+
+.secondary-button {
+  height: 2.75em;
+  color: #edebe9;
+  background-color: #201f1e;
+  border: 1px solid #4b4a48;
+  outline: none;
+  margin-right: 1em;
+  margin-bottom: 1em;
+}
+
+.secondary-button:hover {
+  background-color: #201f1e;
+  border: 1px solid #4b4a48;
 }
 
 .call-input-panel {
@@ -282,7 +290,7 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
   padding-bottom: 0.4em;
   padding-right: 0.4em;
   padding-left: 0.4em;
-  font-size: x-large;
+  font-size: 2em;
 }
 
 .incoming-call-button,
@@ -360,11 +368,11 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 }
 
 .speaking-border-for-initials>.ms-Persona-coin>.ms-Persona-imageArea>.ms-Persona-initials {
-  box-shadow: 0px 0px 0px 3px #ca5010, 0px 0px 20px 5px #ca5010;
+  box-shadow: 0px 0px 0px 3px #b9692f, 0px 0px 20px 5px #b9692f;
 }
 
 .speaking-border-for-video {
-  box-shadow: 0px 0px 0px 3px #ca5010;
+  box-shadow: 0px 0px 0px 3px #b9692f;
 }
 
 .remote-video-container {
@@ -380,7 +388,7 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 .remote-video-loading-spinner {
   border: 12px solid #f3f3f3;
   border-radius: 50%;
-  border-top: 12px solid #ca5010;
+  border-top: 12px solid #b9692f;
   width: 100px;
   height: 100px;
   -webkit-animation: spin 2s linear infinite;
@@ -976,7 +984,7 @@ div.callDebugInfoJSONStringDiv {
   .remote-video-loading-spinner {
     border: 8px solid #f3f3f3;
     border-radius: 50%;
-    border-top: 8px solid #ca5010;
+    border-top: 8px solid #b9692f;
     width: 60px;
     height: 60px;
     -webkit-animation: spin 2s linear infinite;
@@ -995,7 +1003,7 @@ div.callDebugInfoJSONStringDiv {
 .video-effects-loading-spinner {
   border: 8px solid #f3f3f3;
   border-radius: 50%;
-  border-top: 8px solid #ca5010;
+  border-top: 8px solid #b9692f;
   width: 50px;
   height: 50px;
   -webkit-animation: spin 2s linear infinite;
@@ -1058,7 +1066,7 @@ div.volumeVisualizer::before {
   bottom: 0;
   left: 0;
   width: var(--volume);
-  background-color: #ca5010;
+  background-color: #b9692f;
   transition: width 100ms linear;
 }
 
@@ -1118,7 +1126,7 @@ div.volumeVisualizer::before {
 }
 
 .spotlightEnabled {
-  border: 1px solid  #ca5010;
+  border: 1px solid  #b9692f;
 }
 
 .lobby-action{
@@ -1127,7 +1135,7 @@ div.volumeVisualizer::before {
 
 .lobby-action a{
   display: inline-block;
-  color: #ca5010;
+  color: #b9692f;
   text-decoration: none;
 }
 
@@ -1144,5 +1152,10 @@ div.volumeVisualizer::before {
 }
 
 .callFeatureEnabled, .callFeatureEnabled:hover {
-  color: #ca5010;
+  color: #b9692f;
+}
+
+.dominant-speakers-list {
+  max-height: 8em;
+  overflow-y: auto;
 }

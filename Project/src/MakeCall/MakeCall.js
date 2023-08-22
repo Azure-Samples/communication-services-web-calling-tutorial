@@ -792,19 +792,19 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </div>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
-                                    className="primary-button"
+                                    className="secondary-button"
                                     iconProps={{ iconName: 'Download', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`Get Logs`}
                                     onClick={this.downloadLog}>
                                 </PrimaryButton>
                                 <PrimaryButton
-                                    className="primary-button"
+                                    className="secondary-button"
                                     iconProps={{ iconName: 'Download', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`Get Debug Info Log Dump`}
                                     onClick={this.downloadDebugInfoLogDump}>
                                 </PrimaryButton>
                                 <PrimaryButton
-                                    className="primary-button"
+                                    className="secondary-button"
                                     iconProps={{ iconName: 'TransferCall', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showCallSampleCode ? 'Hide' : 'Show'} code`}
                                     onClick={() => this.setState({ showCallSampleCode: !this.state.showCallSampleCode })}>
@@ -1035,14 +1035,14 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Pre Call Diagnostics</h2>
                             <div className="ms-Grid-col ms-lg6 text-right">
                                 <PrimaryButton
-                                    className="primary-button"
+                                    className="secondary-button"
                                     iconProps={{ iconName: 'TestPlan', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`Run Pre Call Diagnostics`}
                                     disabled={this.state.call || !this.state.loggedIn}
                                     onClick={() => this.runPreCallDiagnostics()}>
                                 </PrimaryButton>
                                 <PrimaryButton
-                                    className="primary-button"
+                                    className="secondary-button"
                                     iconProps={{ iconName: 'TestPlan', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showPreCallDiagnosticsSampleCode ? 'Hide' : 'Show'} code`}
                                     onClick={() => this.setState({ showPreCallDiagnosticsSampleCode: !this.state.showPreCallDiagnosticsSampleCode })}>
@@ -1173,7 +1173,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Video, Screen sharing, and local video preview</h2>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
-                                    className="primary-button"
+                                    className="secondary-button"
                                     iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showStreamingSampleCode ? 'Hide' : 'Show'} code`}
                                     onClick={() => this.setState({ showStreamingSampleCode: !this.state.showStreamingSampleCode })}>
@@ -1211,7 +1211,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Mute / Unmute</h2>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
-                                    className="primary-button"
+                                    className="secondary-button"
                                     iconProps={{ iconName: 'Microphone', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showMuteUnmuteSampleCode ? 'Hide' : 'Show'} code`}
                                     onClick={() => this.setState({ showMuteUnmuteSampleCode: !this.state.showMuteUnmuteSampleCode })}>
@@ -1241,7 +1241,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Hold / Unhold</h2>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
-                                    className="primary-button"
+                                    className="secondary-button"
                                     iconProps={{ iconName: 'Play', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showHoldUnholdSampleCode ? 'Hide' : 'Show'} code`}
                                     onClick={() => this.setState({ showHoldUnholdSampleCode: !this.state.showHoldUnholdSampleCode })}>
@@ -1271,7 +1271,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             <h2 className="ms-Grid-col ms-lg6 ms-sm6 mb-4">Device Manager</h2>
                             <div className="ms-Grid-col ms-lg6 ms-sm6 text-right">
                                 <PrimaryButton
-                                    className="primary-button"
+                                    className="secondary-button"
                                     iconProps={{ iconName: 'Settings', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`${this.state.showDeviceManagerSampleCode ? 'Hide' : 'Show'} code`}
                                     onClick={() => this.setState({ showDeviceManagerSampleCode: !this.state.showDeviceManagerSampleCode })}>
