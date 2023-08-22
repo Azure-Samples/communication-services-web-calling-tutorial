@@ -847,7 +847,7 @@ export default class CallCard extends React.Component {
                 selectedParticipants.push(identifier);
             }
         });
-        this.dataChannelRef.current.setParticipants(selectedParticipants);
+        this.dataChannelRef?.current?.setParticipants(selectedParticipants);
     }
 
     render() {
