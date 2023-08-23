@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  font-size: 14px !important;
+  font-size: 11px !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif !important;
@@ -8,7 +8,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #161514;
   color: #edebe9 !important;
-  zoom: 90%;
   font-weight: 400;
   padding-left: 1em;
   padding-right: 1em;
@@ -63,11 +62,11 @@ input:disabled {
 }
 
 .loader {
-  border: 5px solid #edebe9;
-  border-top: 5px solid #75b6e7;
+  border: 2px solid #edebe9;
+  border-top: 2px solid #75b6e7;
   border-radius: 50%;
-  width: 20px;
-  height: 20px;
+  width: 14px;
+  height: 14px;
   animation: spin 0.75s linear infinite;
 }
 
@@ -206,10 +205,20 @@ ul {
   border-bottom: 1px solid #605e5c;
 }
 
+.ms-TextField-fieldGroup {
+  height:23px;
+}
+
 .ms-TextField-field {
+  font-size: 10px;
   background-color: #292827;
   color: #edebe9;
   outline: 1px solid #484644;
+  height: 23px;
+}
+
+.ms-TextField-field::placeholder {
+  font-size: 10px;
 }
 
 .ms-TextField-field:hover {
@@ -222,6 +231,12 @@ ul {
   background-color: #292827;
   color: #484644 !important;
   outline: 1px solid #292827;
+}
+
+.ms-TextField-wrapper>label {
+  color: #edebe9;
+  font-weight: 400;
+  font-size: 10px;
 }
 
 div.push-notification-options[disabled],
@@ -247,7 +262,8 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 }
 
 .primary-button {
-  height: 2.75em;
+  font-size: 11px;
+  height: 2.6em;
   color: #75b6e7;
   background-color: #201f1e;
   border: 1px solid #75b6e7;
@@ -270,7 +286,8 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 }
 
 .secondary-button {
-  height: 2.75em;
+  font-size: 11px;
+  height: 2.6em;
   color: #edebe9;
   background-color: #201f1e;
   border: 1px solid #4b4a48;
@@ -313,12 +330,6 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 .in-call-button>i,
 .incoming-call-button>i {
   vertical-align: middle;
-}
-
-.ms-TextField-wrapper>label {
-  color: #edebe9;
-  font-weight: 400;
-  font-size: 12px;
 }
 
 .video-grid-row {

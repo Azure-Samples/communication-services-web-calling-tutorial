@@ -943,30 +943,14 @@ export default class CallCard extends React.Component {
                             }
                         </span>
                         <span className="in-call-button"
-                            title={`${this.state.showAddParticipantPanel ? 'Hide' : 'Show'} add participant panel`}
-                            variant="secondary"
-                            onClick={() => this.setState({showAddParticipantPanel: !this.state.showAddParticipantPanel})}>
-                            {
-                                this.state.showAddParticipantPanel &&
-                                <Icon iconName="AddFriend" />
-                            }
-                            {
-                                !this.state.showAddParticipantPanel &&
-                                <Icon iconName="AddFriend" />
-                            }
+                            onClick={() => this.call.hangUp()}>
+                            <Icon iconName="DeclineCall" />
                         </span>
                         <span className="in-call-button"
-                            title={`${this.state.incomingAudioMuted ? 'Unmute' : 'Mute'} incoming audio`}
+                            title="Settings"
                             variant="secondary"
-                            onClick={() => this.handleIncomingAudioOnOff()}>
-                            {
-                                this.state.incomingAudioMuted &&
-                                <Icon iconName="VolumeDisabled" />
-                            }
-                            {
-                                !this.state.incomingAudioMuted &&
-                                <Icon iconName="Volume2" />
-                            }
+                            onClick={() => this.setState({ showSettings: true })}>
+                            <Icon iconName="Settings" />
                         </span>
                         <span className="in-call-button"
                             title={`${this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'ScreenSharing' ? 'Stop' : 'Start'} screen sharing a screen/tab/app`}
@@ -982,6 +966,45 @@ export default class CallCard extends React.Component {
                             {
                                 (!this.state.canShareScreen) || (this.state.screenSharingOn && this.state.localScreenSharingMode === 'StartWithNormal') &&
                                 <Icon iconName="CircleStop" />
+                            }
+                        </span>
+                        <span className="in-call-button"
+                            title={`${this.state.showAddParticipantPanel ? 'Hide' : 'Show'} add participant panel`}
+                            variant="secondary"
+                            onClick={() => this.setState({showAddParticipantPanel: !this.state.showAddParticipantPanel})}>
+                            {
+                                this.state.showAddParticipantPanel &&
+                                <Icon iconName="AddFriend" />
+                            }
+                            {
+                                !this.state.showAddParticipantPanel &&
+                                <Icon iconName="AddFriend" />
+                            }
+                        </span>
+                        <span className="in-call-button"
+                            title={`${this.state.logMediaStats ? 'Stop' : 'Start'} logging MediaStats`}
+                            variant="secondary"
+                            onClick={() => this.handleMediaStatsLogState()}>
+                            {
+                                this.state.logMediaStats &&
+                                <Icon iconName="NumberedList" />
+                            }
+                            {
+                                !this.state.logMediaStats &&
+                                <Icon iconName="NumberedListText" />
+                            }
+                        </span>
+                        <span className="in-call-button"
+                            title={`${this.state.incomingAudioMuted ? 'Unmute' : 'Mute'} incoming audio`}
+                            variant="secondary"
+                            onClick={() => this.handleIncomingAudioOnOff()}>
+                            {
+                                this.state.incomingAudioMuted &&
+                                <Icon iconName="VolumeDisabled" />
+                            }
+                            {
+                                !this.state.incomingAudioMuted &&
+                                <Icon iconName="Volume2" />
                             }
                         </span>
                         <span className="in-call-button"
@@ -1018,16 +1041,6 @@ export default class CallCard extends React.Component {
                                 }
                             </span>
                         }
-                        <span className="in-call-button"
-                            title="Settings"
-                            variant="secondary"
-                            onClick={() => this.setState({ showSettings: true })}>
-                            <Icon iconName="Settings" />
-                        </span>
-                        <span className="in-call-button"
-                            onClick={() => this.call.hangUp()}>
-                            <Icon iconName="DeclineCall" />
-                        </span>
                         <span className="in-call-button"
                             title={`${this.state.outgoingAudioMediaAccessActive ? 'Clear audio effect' : 'Apply outgoing audio effect'} to call`}
                             variant="secondary"
@@ -1091,19 +1104,6 @@ export default class CallCard extends React.Component {
                             {
                                 !this.state.dominantSpeakerMode &&
                                 <Icon iconName="ReminderPerson" />
-                            }
-                        </span>
-                        <span className="in-call-button"
-                            title={`${this.state.logMediaStats ? 'Stop' : 'Start'} logging MediaStats`}
-                            variant="secondary"
-                            onClick={() => this.handleMediaStatsLogState()}>
-                            {
-                                this.state.logMediaStats &&
-                                <Icon iconName="NumberedList" />
-                            }
-                            {
-                                !this.state.logMediaStats &&
-                                <Icon iconName="NumberedListText" />
                             }
                         </span>
                         <span className="in-call-button "
