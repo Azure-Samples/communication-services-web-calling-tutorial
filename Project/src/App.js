@@ -20,9 +20,9 @@ function App() {
             <div className="inline-block">
                 <img className="nav-bar-icon" src="./assets/images/acsIcon.png"></img>
             </div>
-            <h1 className="inline-block">
+            <h2 className="inline-block">
               Azure Communication Services - Calling SDK for Javascript - { VWebSdkVersion() }
-            </h1>
+            </h2>
           </div>
           <div className="ms-Grid-col ms-lg6">
             <div className="sdk-docs-header">

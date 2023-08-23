@@ -8,11 +8,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #161514;
   color: #edebe9 !important;
-  padding-bottom: 1em;
-  padding-right: 1em;
-  padding-left: 1em;
   zoom: 90%;
   font-weight: 400;
+  padding-left: 1em;
+  padding-right: 1em;
 }
 
 /*********************************
@@ -42,14 +41,12 @@ h6 {
 }
 
 .header {
-  padding-top: 2em;
-  padding-bottom: 1em;
-  margin-left: 1em;
-  margin-right: 1em;
+  padding-top: 1em;
+  padding-bottom: 0.5em;
 }
 
 .nav-bar-icon {
-  height: 6em;
+  height: 5em;
 }
 
 .sdk-docs-header {
@@ -67,7 +64,7 @@ input:disabled {
 
 .loader {
   border: 5px solid #edebe9;
-  border-top: 5px solid #b9692f;
+  border-top: 5px solid #75b6e7;
   border-radius: 50%;
   width: 20px;
   height: 20px;
@@ -76,7 +73,7 @@ input:disabled {
 
 .ringing-loader {
   border: 5px solid #edebe9;
-  border-top: 5px solid #b9692f;
+  border-top: 5px solid #75b6e7;
   border-radius: 50%;
   width: 30px;
   height: 30px;
@@ -105,7 +102,7 @@ input:disabled {
 }
 
 .identity {
-  color: #b9692f
+  color: #75b6e7
 }
 
 .ListGroup {
@@ -288,7 +285,7 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 }
 
 .call-input-panel {
-  padding: 0 2em;
+  padding: 0 0.6em;
 }
 
 .in-call-button,
@@ -374,11 +371,11 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 }
 
 .speaking-border-for-initials>.ms-Persona-coin>.ms-Persona-imageArea>.ms-Persona-initials {
-  box-shadow: 0px 0px 0px 3px #b9692f, 0px 0px 20px 5px #b9692f;
+  box-shadow: 0px 0px 0px 3px #75b6e7, 0px 0px 20px 5px #75b6e7;
 }
 
 .speaking-border-for-video {
-  box-shadow: 0px 0px 0px 3px #b9692f;
+  box-shadow: 0px 0px 0px 3px #75b6e7;
 }
 
 .remote-video-container {
@@ -394,7 +391,7 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 .remote-video-loading-spinner {
   border: 12px solid #f3f3f3;
   border-radius: 50%;
-  border-top: 12px solid #b9692f;
+  border-top: 12px solid #75b6e7;
   width: 100px;
   height: 100px;
   -webkit-animation: spin 2s linear infinite;
@@ -979,22 +976,14 @@ div.callDebugInfoJSONStringDiv {
     text-align: left;
   }
 
-  .card {
-    padding: 1.5em;
-  }
-
   .in-call-button {
     font-size: x-large;
-  }
-
-  .call-input-panel {
-    padding: 0;
   }
 
   .remote-video-loading-spinner {
     border: 8px solid #f3f3f3;
     border-radius: 50%;
-    border-top: 8px solid #b9692f;
+    border-top: 8px solid #75b6e7;
     width: 60px;
     height: 60px;
     -webkit-animation: spin 2s linear infinite;
@@ -1008,12 +997,20 @@ div.callDebugInfoJSONStringDiv {
     right: 0;
     transform: translate(-50%, -50%);
   }
+
+  .card {
+    border-top: 1px solid #605e5c;
+    padding-top: 1.5em;
+    padding-bottom: 1.5em;
+    padding-right: 0em;
+    padding-left: 0em;
+}
 }
 
 .video-effects-loading-spinner {
   border: 8px solid #f3f3f3;
   border-radius: 50%;
-  border-top: 8px solid #b9692f;
+  border-top: 8px solid #75b6e7;
   width: 50px;
   height: 50px;
   -webkit-animation: spin 2s linear infinite;
@@ -1076,7 +1073,7 @@ div.volumeVisualizer::before {
   bottom: 0;
   left: 0;
   width: var(--volume);
-  background-color: #b9692f;
+  background-color: #75b6e7;
   transition: width 100ms linear;
 }
 
@@ -1136,7 +1133,7 @@ div.volumeVisualizer::before {
 }
 
 .spotlightEnabled {
-  border: 1px solid  #b9692f;
+  border: 1px solid  #75b6e7;
 }
 
 .lobby-action{
@@ -1145,7 +1142,7 @@ div.volumeVisualizer::before {
 
 .lobby-action a{
   display: inline-block;
-  color: #b9692f;
+  color: #75b6e7;
   text-decoration: none;
 }
 
@@ -1162,10 +1159,10 @@ div.volumeVisualizer::before {
 }
 
 .callFeatureEnabled, .callFeatureEnabled:hover {
-  color: #b9692f;
+  color: #75b6e7;
 }
 
 .dominant-speakers-list {
-  max-height: 8em;
+  max-height: 12em;
   overflow-y: auto;
 }
