@@ -46,7 +46,6 @@ h6 {
   padding-bottom: 1em;
   margin-left: 1em;
   margin-right: 1em;
-  border-bottom: 1px solid #414141;
 }
 
 .nav-bar-icon {
@@ -124,15 +123,11 @@ button:focus {
 }
 
 .card {
-  background-color: #201f1e;
-  border: 1px solid #605e5c;
-  border-radius: 1em;
-  padding: 3em;
-  margin-top: 3em;
-}
-
-.card:first-child {
-  margin-top: 2em;
+  border-top: 1px solid #605e5c;
+  padding-top: 3em;
+  padding-bottom: 3em;
+  padding-right: 1em;
+  padding-left: 1em;
 }
 
 ul {
@@ -218,14 +213,18 @@ ul {
   background-color: #292827;
   color: #edebe9;
   outline: 1px solid #484644;
-  box-shadow: 0px 0px 0px 2px #484644;
+}
+
+.ms-TextField-field:hover {
+  background-color: #292827;
+  color: #edebe9;
+  outline: 1px solid #484644;
 }
 
 .ms-TextField-field:disabled {
   background-color: #292827;
   color: #484644 !important;
   outline: 1px solid #292827;
-  box-shadow: 0px 0px 0px 2px #292827;
 }
 
 div.push-notification-options[disabled],
@@ -252,17 +251,18 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 
 .primary-button {
   height: 2.75em;
-  color: #edebe9;
+  color: #75b6e7;
   background-color: #201f1e;
-  border: 1px solid #916546;
+  border: 1px solid #75b6e7;
   outline: none;
   margin-right: 1em;
   margin-bottom: 1em;
 }
 
 .primary-button:hover {
+  color: #278cda;
   background-color: #201f1e;
-  border: 1px solid #916546;
+  border: 1px solid #278cda;
 }
 
 .primary-button:disabled {
