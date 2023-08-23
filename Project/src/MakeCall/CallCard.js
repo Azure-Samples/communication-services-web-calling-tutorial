@@ -1273,10 +1273,10 @@ export default class CallCard extends React.Component {
                                             Index {index}
                                         </div>
                                         <div className="ml-3">
-                                            mri: {utils.getIdentifierText(dominantSpeaker.identifier)}
+                                            mri: {utils.getIdentifierText(dominantSpeaker?.identifier)}
                                         </div>
                                         <div className="ml-3">
-                                            displayName: {dominantSpeaker.displayName ?? 'None'}
+                                            displayName: {dominantSpeaker?.displayName ?? 'None'}
                                         </div>
                                     </div>
                                 )
