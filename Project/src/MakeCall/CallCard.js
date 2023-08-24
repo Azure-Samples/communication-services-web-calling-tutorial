@@ -88,6 +88,7 @@ export default class CallCard extends React.Component {
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
+        this.isSetCallConstraints = this.call.setConstraints !== undefined;
     }
 
     componentWillUnmount() {
@@ -1213,10 +1214,16 @@ export default class CallCard extends React.Component {
                                     }}
                                     isLocal={true}/>
 
-                                <h4>Video Send Constraints</h4>
-                                <MediaConstraint
-                                    onChange={this.handleMediaConstraint}
-                                    disabled={false}/>
+                                {
+                                    this.isSetCallConstraints &&
+                                    <div>
+                                        <h4>Video Send Constraints</h4>
+                                        <MediaConstraint
+                                            onChange={this.handleMediaConstraint}
+                                            disabled={false}/>
+                                    </div>
+                                }
+                                
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md5 md-lg6'>
                                 <VideoEffectsContainer call={this.call} />
