@@ -19,6 +19,7 @@ import CurrentCallInformation from "./CurrentCallInformation";
 import DataChannelCard from './DataChannelCard';
 import CallCaption from "./CallCaption";
 import { ParticipantMenuOptions } from './ParticipantMenuOptions';
+import MediaConstraint from './MediaConstraint';
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -850,6 +851,10 @@ export default class CallCard extends React.Component {
         this.dataChannelRef?.current?.setParticipants(selectedParticipants);
     }
 
+    handleMediaConstraint = (constraints) => {
+        this.call.setConstraints(constraints);
+    }
+
     render() {
         return (
             <div className="ms-Grid mt-2">
@@ -1207,6 +1212,11 @@ export default class CallCard extends React.Component {
                                         }
                                     }}
                                     isLocal={true}/>
+
+                                <h4>Video Send Constraints</h4>
+                                <MediaConstraint
+                                    onChange={this.handleMediaConstraint}
+                                    disabled={false}/>
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md5 md-lg6'>
                                 <VideoEffectsContainer call={this.call} />
