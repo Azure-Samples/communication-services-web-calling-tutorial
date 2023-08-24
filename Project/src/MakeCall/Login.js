@@ -644,9 +644,10 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                             </div>
                                         </div>
                                         <div className="ms-Grid-row">
-                                            <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
+                                            <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg3">
                                                 <TextField
                                                         defaultValue={undefined}
+                                                        placeholder="Display Name"
                                                         label="Optional - Display name"
                                                         onChange={(e) => { this.displayName = e.target.value }}/>
                                                 <TextField
@@ -654,10 +655,10 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                         label="Optinal - Usage tag for this session"
                                                         onChange={(e) => { this.clientTag = e.target.value }}/>
                                             </div>
-                                            <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
+                                            <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg3">
                                                 <TextField
                                                     placeholder="JWT Token"
-                                                    label="Optional - ACS communication user token. If no token is provided, then a random one will be generated"
+                                                    label="Optional - ACS token. If no token is entered, then a random one will be generated"
                                                     onChange={(e) => { this.state.token = e.target.value }}/>
                                                 <TextField
                                                         placeholder="8:acs:<ACS Resource ID>_<guid>"

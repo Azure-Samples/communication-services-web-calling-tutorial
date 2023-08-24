@@ -205,38 +205,42 @@ ul {
   border-bottom: 1px solid #605e5c;
 }
 
+.ms-TextField {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
 .ms-TextField-fieldGroup {
   height:23px;
+  border-bottom: 1px solid #605e5c !important;
+  border: 0px;
+  box-sizing: unset;
 }
 
 .ms-TextField-field {
-  font-size: 10px;
-  background-color: #292827;
+  font-size: 11px;
+  background-color: #161514;
   color: #edebe9;
-  outline: 1px solid #484644;
   height: 23px;
 }
 
 .ms-TextField-field::placeholder {
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .ms-TextField-field:hover {
-  background-color: #292827;
+  background-color: #161514;
   color: #edebe9;
-  outline: 1px solid #484644;
 }
 
 .ms-TextField-field:disabled {
-  background-color: #292827;
   color: #484644 !important;
-  outline: 1px solid #292827;
 }
 
 .ms-TextField-wrapper>label {
   color: #edebe9;
   font-weight: 400;
-  font-size: 10px;
+  font-size: 9px;
 }
 
 div.push-notification-options[disabled],
