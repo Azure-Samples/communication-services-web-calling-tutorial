@@ -987,6 +987,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                 </div>
                                 <div className="ms-Grid-row mt-3">
                                     <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                        <h3 className="mb-1">Video Send Constraints</h3>
                                         <MediaConstraint
                                             onChange={this.handleMediaConstraint}
                                             disabled={this.state.call || !this.state.loggedIn}
