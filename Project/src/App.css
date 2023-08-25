@@ -1,3 +1,46 @@
+/*********************************
+*         Small screen           *
+*********************************/
+@media (max-width: 575.98px) {
+  .sdk-docs-header {
+    text-align: left;
+  }
+
+  .in-call-button {
+    font-size: x-large;
+  }
+
+  .remote-video-loading-spinner {
+    border: 8px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 8px solid #75b6e7;
+    width: 60px;
+    height: 60px;
+    -webkit-animation: spin 2s linear infinite;
+    /* Safari */
+    animation: spin 2s linear infinite;
+    position: absolute;
+    margin: auto;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    transform: translate(-50%, -50%);
+  }
+
+  .card {
+    border-top: 1px solid #605e5c;
+    padding-top: 1.5em;
+    padding-bottom: 1.5em;
+    padding-right: 0em;
+    padding-left: 0em;
+  }
+
+  .login-pannel.teams{
+    margin-top:10px;
+  }
+}
+
 body {
   margin: 0;
   font-size: 11px !important;
@@ -8,7 +51,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #161514;
   color: #edebe9 !important;
-  font-weight: 400;
+  font-weight: 500;
   padding-left: 1em;
   padding-right: 1em;
 }
@@ -55,6 +98,10 @@ h6 {
 .sdk-docs-link {
   color: #edebe9;
   text-decoration: underline;
+}
+
+.login-pannel {
+  height:300px;
 }
 
 input:disabled {
@@ -266,11 +313,12 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 }
 
 .primary-button {
+  border-radius: 5px;
   font-size: 11px;
-  height: 2.6em;
-  color: #75b6e7;
+  height: 35px;
+  color: #edebe9;
   background-color: #201f1e;
-  border: 1px solid #75b6e7;
+  border: 1px solid #4b4a48;
   outline: none;
   margin-right: 1em;
   margin-bottom: 1em;
@@ -283,15 +331,16 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 }
 
 .primary-button:disabled {
-  background-color: #605e5c;
-  border-color: #605e5c;
+  background-color: #2f2f2f;
+  border-color: #4b4b4b;
   outline: none;
   color: #000000;
 }
 
 .secondary-button {
+  border-radius: 5px;
   font-size: 11px;
-  height: 2.6em;
+  height: 35px;
   color: #edebe9;
   background-color: #201f1e;
   border: 1px solid #4b4a48;
@@ -301,8 +350,9 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 }
 
 .secondary-button:hover {
+  color: #278cda;
   background-color: #201f1e;
-  border: 1px solid #4b4a48;
+  border: 1px solid #278cda;
 }
 
 .call-input-panel {
@@ -981,45 +1031,6 @@ div.callDebugInfoJSONStringDiv {
   max-height: 500px;
   overflow-y: auto;
   overflow-x: auto;
-}
-
-/*********************************
-*         Small screen           *
-*********************************/
-@media (max-width: 575.98px) {
-  .sdk-docs-header {
-    text-align: left;
-  }
-
-  .in-call-button {
-    font-size: x-large;
-  }
-
-  .remote-video-loading-spinner {
-    border: 8px solid #f3f3f3;
-    border-radius: 50%;
-    border-top: 8px solid #75b6e7;
-    width: 60px;
-    height: 60px;
-    -webkit-animation: spin 2s linear infinite;
-    /* Safari */
-    animation: spin 2s linear infinite;
-    position: absolute;
-    margin: auto;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    transform: translate(-50%, -50%);
-  }
-
-  .card {
-    border-top: 1px solid #605e5c;
-    padding-top: 1.5em;
-    padding-bottom: 1.5em;
-    padding-right: 0em;
-    padding-left: 0em;
-}
 }
 
 .video-effects-loading-spinner {
