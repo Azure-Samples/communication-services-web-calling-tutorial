@@ -619,6 +619,51 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                 </div>
                             }
                             {
+                                this.state.showCallClientOptions &&
+                                <div>
+                                    <div className="ms-Grid-row mt-4">
+                                        <h3 className="ms-Grid-col ms-sm12 ms-md12 ms-lg12">Options</h3>
+                                    </div>
+                                    <div className="ms-Grid-row mt-1">
+                                        <div className="ms-Grid-col ms-sm12 ms-md4 ms-lg4"
+                                            disabled={
+                                                !this.state.initializedOneSignal ||
+                                                !this.state.subscribedForPushNotifications ||
+                                                this.isSafari
+                                            }>
+                                            Push Notifications options
+                                            <Checkbox
+                                                className="mt-2"
+                                                label="Initialize Call Agent"
+                                                disabled={
+                                                    !this.state.initializedOneSignal ||
+                                                    !this.state.subscribedForPushNotifications ||
+                                                    this.isSafari
+                                                }
+                                                checked={this.state.initializeCallAgentAfterPushRegistration}
+                                                onChange={(e, isChecked) => { this.setState({ initializeCallAgentAfterPushRegistration: isChecked })}}/>
+                                        </div>
+                                        <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                                            <TurnConfiguration
+                                                customTurn={this.state.customTurn}
+                                                handleCustomTurnChecked={this.handleCustomTurnChecked}
+                                                handleAddTurnConfig={this.handleAddTurnConfig}
+                                                handleTurnUrlResetToDefault={this.handleTurnUrlResetToDefault}
+                                                handleTurnUrlReset={this.handleTurnUrlReset}
+                                            />
+                                        </div>
+                                        <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                                            <ProxyConfiguration 
+                                                proxy={this.state.proxy}
+                                                handleProxyChecked={this.handleProxyChecked}
+                                                handleAddProxyUrl={this.handleAddProxyUrl}
+                                                handleProxyUrlReset={this.handleProxyUrlReset}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            {
                                 this.state.loggedIn && !this.state.isTeamsUser &&
                                     <div>
                                         <br></br>
@@ -717,51 +762,6 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                                 onClick={() => this.teamsUserOAuthLogin()}>
                                                                     Login Teams user and Initialize SDK
                                                             </PrimaryButton>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                }
-                                                {
-                                                    this.state.showCallClientOptions &&
-                                                    <div>
-                                                        <div className="ms-Grid-row mt-4">
-                                                            <h3 className="ms-Grid-col ms-sm12 ms-md12 ms-lg12">Options</h3>
-                                                        </div>
-                                                        <div className="ms-Grid-row mt-1">
-                                                            <div className="ms-Grid-col ms-sm12 ms-md4 ms-lg4"
-                                                                disabled={
-                                                                    !this.state.initializedOneSignal ||
-                                                                    !this.state.subscribedForPushNotifications ||
-                                                                    this.isSafari
-                                                                }>
-                                                                Push Notifications options
-                                                                <Checkbox
-                                                                    className="mt-2"
-                                                                    label="Initialize Call Agent"
-                                                                    disabled={
-                                                                        !this.state.initializedOneSignal ||
-                                                                        !this.state.subscribedForPushNotifications ||
-                                                                        this.isSafari
-                                                                    }
-                                                                    checked={this.state.initializeCallAgentAfterPushRegistration}
-                                                                    onChange={(e, isChecked) => { this.setState({ initializeCallAgentAfterPushRegistration: isChecked })}}/>
-                                                            </div>
-                                                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
-                                                                <TurnConfiguration
-                                                                    customTurn={this.state.customTurn}
-                                                                    handleCustomTurnChecked={this.handleCustomTurnChecked}
-                                                                    handleAddTurnConfig={this.handleAddTurnConfig}
-                                                                    handleTurnUrlResetToDefault={this.handleTurnUrlResetToDefault}
-                                                                    handleTurnUrlReset={this.handleTurnUrlReset}
-                                                                />
-                                                            </div>
-                                                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
-                                                                <ProxyConfiguration 
-                                                                    proxy={this.state.proxy}
-                                                                    handleProxyChecked={this.handleProxyChecked}
-                                                                    handleAddProxyUrl={this.handleAddProxyUrl}
-                                                                    handleProxyUrlReset={this.handleProxyUrlReset}
-                                                                />
                                                             </div>
                                                         </div>
                                                     </div>
