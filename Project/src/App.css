@@ -93,6 +93,7 @@ h6 {
 
 .sdk-docs-header {
   text-align: right;
+  font-weight: 300;
 }
 
 .sdk-docs-link {
@@ -313,9 +314,8 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 }
 
 .primary-button {
-  border-radius: 5px;
   font-size: 11px;
-  height: 35px;
+  height: 32px;
   color: #edebe9;
   background-color: #201f1e;
   border: 1px solid #4b4a48;
@@ -338,9 +338,8 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 }
 
 .secondary-button {
-  border-radius: 5px;
   font-size: 11px;
-  height: 35px;
+  height: 32px;
   color: #edebe9;
   background-color: #201f1e;
   border: 1px solid #4b4a48;

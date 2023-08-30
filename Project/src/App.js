@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import MakeCall from './MakeCall/MakeCall'
 import { initializeIcons } from '@uifabric/icons';
@@ -6,11 +6,13 @@ import { ToastContainer } from 'react-toastify';
 
 initializeIcons();
 
-function VWebSdkVersion() {
-  return require('../package.json').dependencies['@azure/communication-calling'];
-}
-
 function App() {
+  let [users, setUsers] = useState([<MakeCall/>]);
+
+  function VWebSdkVersion() {
+    return require('../package.json').dependencies['@azure/communication-calling'];
+  }
+
   return (
     <div className="App">
       <ToastContainer />
@@ -18,7 +20,7 @@ function App() {
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-lg6 inline-flex align-items-center">
             <div className="inline-block">
-                <img className="nav-bar-icon" src="./assets/images/acsIcon.png"></img>
+                <img onClick={() => {setUsers([...users, <MakeCall/>]) }} className="nav-bar-icon" src="./assets/images/acsIcon.png"></img>
             </div>
             <h2 className="inline-block">
               Azure Communication Services - Calling SDK for Javascript - { VWebSdkVersion() }
@@ -34,7 +36,9 @@ function App() {
           </div>
         </div>
       </div>
-      <MakeCall/>
+      <div id="user-div">
+        {users}
+      </div>
     </div>
   );
 }
