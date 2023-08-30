@@ -677,7 +677,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                 !this.state.showSpinner && !this.state.loggedIn &&
                                 <div>
                                     <div className="ms-Grid-row">
-                                        <div className="ms-Grid-col ms-sm12 ms-md12 ms-lg6 ms-xl6 ms-xxl6">
+                                        <div className="ms-Grid-col ms-sm12 ms-md12 ms-lg12 ms-xl6 ms-xxl6">
                                             <div className="login-pannel">
                                                 <div className="ms-Grid-row">
                                                     <div className="ms-Grid-col">
@@ -724,7 +724,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="ms-Grid-col ms-sm12 ms-md12 ms-lg6 ms-xl6 ms-xxl6">
+                                        <div className="ms-Grid-col ms-sm12 ms-md12 ms-lg12 ms-xl6 ms-xxl6">
                                             <div className="login-pannel teams">
                                                 <div className="ms-Grid-row">
                                                     <div className="ms-Grid-col">
