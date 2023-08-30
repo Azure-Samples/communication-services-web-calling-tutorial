@@ -349,10 +349,11 @@ export default class CallCard extends React.Component {
                             const streamsToRender = [];
                             for (const streamTuple of this.state.allRemoteParticipantStreams) {
                                 if (streamTuple.participant === newDominantRemoteParticipant && streamTuple.stream.isAvailable) {
-                                    streamsToRender.push(streamTuple);
+                                    let view;
                                     if (!streamTuple.streamRendererComponentRef.current.getRenderer()) {
-                                        await streamTuple.streamRendererComponentRef.current.createRenderer();
+                                        view = await streamTuple.streamRendererComponentRef.current.createRenderer();
                                     };
+                                    streamsToRender.push({streamTuple, view});
                                 }
                             }
 
@@ -369,8 +370,8 @@ export default class CallCard extends React.Component {
                             }
 
                             // Render the new dominany speaker's streams
-                            streamsToRender.forEach(streamTuple => {
-                                streamTuple.streamRendererComponentRef.current.attachRenderer();
+                            streamsToRender.forEach((x) => {
+                                x.streamTuple.streamRendererComponentRef.current.attachRenderer(x.view);
                             })
 
                         } else {

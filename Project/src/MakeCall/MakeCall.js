@@ -867,7 +867,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                             </div>
                                         </div>
                                         <div className="ms-Grid-row">
-                                            <div className="md-Grid-col ml-2 mt-0 ms-sm12 ms-md9 ms-lg9 ms-xl10 ms-xxl10">
+                                            <div className="md-Grid-col ml-2 mt-0 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                 <TextField
                                                     className="mt-0"
                                                     disabled={this.state.call || !this.state.loggedIn}
@@ -907,7 +907,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                             </div>
                                         </div>
                                         <div className="ms-Grid-row">
-                                            <div className="md-Grid-col ml-2 ms-sm12 ms-md9 ms-lg9 ms-xl10 ms-xxl10">
+                                            <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                 <div>Enter meeting link</div>
                                                 <div className="ml-3">
                                                     <TextField
@@ -971,7 +971,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                         <div>
                                             <h2 className="mb-0">Join a group call</h2>
                                             <div className="ms-Grid-row">
-                                                <div className="md-Grid-col ml-2 ms-sm12 ms-md9 ms-lg9 ms-xl10 ms-xxl10">
+                                                <div className="ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                     <TextField
                                                         className="mb-3 mt-0"
                                                         disabled={this.state.call || !this.state.loggedIn}
@@ -999,7 +999,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                         <div className="mt-5">
                                             <h2 className="mb-0">Join a Rooms call</h2>
                                             <div className="ms-Grid-row">
-                                                <div className="md-Grid-col ml-2 ms-sm12 ms-md9 ms-lg9 ms-xl10 ms-xxl10">
+                                                <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl11 ms-xxl11">
                                                     <TextField className="mb-3 mt-0"
                                                         disabled={this.state.call || !this.state.loggedIn}
                                                         label="Rooms id"
