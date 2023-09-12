@@ -20,7 +20,7 @@ import DataChannelCard from './DataChannelCard';
 import CallCaption from "./CallCaption";
 import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 import MediaConstraint from './MediaConstraint';
-import CallCaption from "./CallCaption";
+//import CallCaption from "./CallCaption";
 import CommunicationAI from "./CommunicationAI/CommunicationAI"
 
 export default class CallCard extends React.Component {
