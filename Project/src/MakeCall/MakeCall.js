@@ -118,6 +118,7 @@ export default class MakeCall extends React.Component {
                 });
 
                 this.deviceManager = await this.callClient.getDeviceManager();
+
                 const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
                 this.setState({permissions: permissions});
 
@@ -129,6 +130,8 @@ export default class MakeCall extends React.Component {
 
                 window.callAgent = this.callAgent;
                 window.videoStreamRenderer = VideoStreamRenderer;
+                // Current user name
+                window.displayName = userDetails.displayName;
                 this.callAgent.on('callsUpdated', e => {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
 
@@ -314,9 +317,9 @@ export default class MakeCall extends React.Component {
                 this.callAgent.join({ meetingLink: this.meetingLink.value }, callOptions);
 
             } else if (this.meetingId.value  || this.passcode.value && !this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
-                this.callAgent.join({ 
+                this.callAgent.join({
                     meetingId: this.meetingId.value,
-                    passcode: this.passcode.value 
+                    passcode: this.passcode.value
                 }, callOptions);
             } else if (!this.meetingLink.value && this.messageId.value && this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({

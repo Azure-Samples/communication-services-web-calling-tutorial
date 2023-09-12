@@ -1178,6 +1178,10 @@ div.volumeVisualizer::before {
   border: none;
   margin-right: 5px;
 }
+.caption-area {
+  max-height: 300px;
+  overflow: auto;
+}
 .participantMenu .ms-Icon {
   font-size: 30px;
   border: none;

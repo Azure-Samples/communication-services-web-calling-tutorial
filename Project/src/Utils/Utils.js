@@ -9,9 +9,35 @@ import { PublicClientApplication } from "@azure/msal-browser";
 import { authConfig, authScopes } from "../../oAuthConfig"
 import axios from 'axios';
 
+export const acsOpenAiPromptsApi = {
+    base: 'https://acsopenaigateway.azurewebsites.net/api/',
+    summary: 'getSummary',
+    feedback: 'getPersonalFeedback'
+}
+
 export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
+    },
+    sendCaptionsDataToAcsOpenAI: async (apiEndpoint, participantName, lastResponse, newCaptionsData) => {
+        let response = await axios({
+            url: acsOpenAiPromptsApi.base + apiEndpoint,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': "*",
+                'x-functions-key': 'PUT_FUNCTION_KEY'
+            },
+            data: {
+                "CurrentParticipant": participantName,
+                "Captions": JSON.stringify(newCaptionsData),
+                "LastSummary": JSON.stringify(lastResponse)
+
+            }
+        });
+        if (response.status === 200) {
+            return response.data;
+        }
     },
     getCommunicationUserToken: async (communicationUserId) => {
         let response = await axios({
@@ -134,7 +160,7 @@ export const utils = {
         if (!participantId || !spotlightState) { return false }
         let rtn = spotlightState.find(element => this.getIdentifierText(element.identifier) === this.getIdentifierText(participantId));
         return !!rtn
-        
+
     },
     isParticipantHandRaised(participantId, raisedHandState) {
         if (!participantId || !raisedHandState) { return false }

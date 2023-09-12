@@ -20,6 +20,8 @@ import DataChannelCard from './DataChannelCard';
 import CallCaption from "./CallCaption";
 import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 import MediaConstraint from './MediaConstraint';
+import CallCaption from "./CallCaption";
+import CommunicationAI from "./CommunicationAI/CommunicationAI"
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -55,6 +57,7 @@ export default class CallCard extends React.Component {
             canShareScreen: true,
             canRaiseHands: true,
             canSpotlight: true,
+            captionOn: false,
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
@@ -68,11 +71,11 @@ export default class CallCard extends React.Component {
             selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id,
             selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id,
             showSettings: false,
+            communicationAI: false,
             // StartWithNormal or StartWithDummy
             localScreenSharingMode: undefined,
             callMessage: undefined,
             dominantSpeakerMode: false,
-            captionOn: false,
             dominantRemoteParticipant: undefined,
             logMediaStats: false,
             sentResolution: '',
@@ -1224,7 +1227,7 @@ export default class CallCard extends React.Component {
                                             disabled={false}/>
                                     </div>
                                 }
-                                
+
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md5 md-lg6'>
                                 <VideoEffectsContainer call={this.call} />
@@ -1314,7 +1317,33 @@ export default class CallCard extends React.Component {
                                 <CallCaption call={this.call} isTeamsUser={this.isTeamsUser}/>
                             }
                         </div>
+                        <div className="participants-panel mt-1 mb-3">
+                                <Toggle label={
+                                        <div>
+                                            Communication AI{' '}
+                                            <TooltipHost content={`Turn on Communication AI`}>
+                                                <Icon iconName="Info" aria-label="Info tooltip" />
+                                            </TooltipHost>
+                                        </div>
+                                    }
+                                    styles={{
+                                        text : { color: '#edebe9' },
+                                        label: { color: '#edebe9' },
+                                    }}
+                                    inlineLabel
+                                    onText="On"
+                                    offText="Off"
+                                    defaultChecked={this.state.communicationAI}
+                                    onChange={() => { this.setState({ communicationAI: !this.state.communicationAI })}}
+                                />
+
+                                {
+                                    this.state.communicationAI &&
+                                    <CommunicationAI call={this.call} />
+                                }
+                        </div>
                     </div>
+
                 }
                 {
                     this.state.showDataChannel &&

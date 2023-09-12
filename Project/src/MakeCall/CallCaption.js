@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Features } from '@azure/communication-calling';
+import { Features, ResultType, CallKind  } from '@azure/communication-calling';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
 
 // CallCaption react function component
@@ -16,7 +16,7 @@ const CallCaption = ({ call }) => {
         catch(e) {
             console.log("Captions not configured for this release version")
         }
-        
+
         return () => {
             // cleanup
             captions.off('CaptionsActiveChanged', captionsActiveHandler);
@@ -94,10 +94,10 @@ const CallCaption = ({ call }) => {
         const spokenLanguages = captions.supportedSpokenLanguages;
         const language = spokenLanguages.find(language => { return language === item.key });
         await captions.setSpokenLanguage(language);
-        setCurrentSpokenLanguage(language); 
+        setCurrentSpokenLanguage(language);
     };
 
-    const SpokenLanguageDropdown = () => { 
+    const SpokenLanguageDropdown = () => {
         const keyedSupportedSpokenLanguages = captions.supportedSpokenLanguages.map(language => ({key: language, text: language}));
         return <Dropdown
                 selectedKey={currentSpokenLanguage}
@@ -112,7 +112,7 @@ const CallCaption = ({ call }) => {
         const captionLanguages = captions.supportedCaptionLanguages;
         const language = captionLanguages.find(language => { return language === item.key });
         await captions.setCaptionLanguage(language);
-        setCurrentCaptionLanguage(language); 
+        setCurrentCaptionLanguage(language);
     };
 
     const CaptionLanguageDropdown = () => {
