@@ -4,25 +4,21 @@ jobs:
   cypress-run:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
       # Install NPM dependencies, cache them correctly
       # and run all Cypress tests
-      - name: Cypress run
-        uses: cypress-io/github-action@v6
+      - uses: cypress-io/github-action@v6
         with:
           build: npm run build-local
           start: npm run start-local
           browser: chrome
-      - name: Upload screenshots
-        uses: actions/upload-artifact@v3
-          if: failure()
-          with:
-            name: cypress-screenshots
-            path: cypress/screenshots
-      - name: Upload videos
-        uses: actions/upload-artifact@v3
-          if: always()
-          with:
-            name: cypress-videos
-            path: cypress-videos
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: cypress-videos
+          path: cypress-videos
