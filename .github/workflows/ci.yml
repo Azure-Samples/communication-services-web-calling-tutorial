@@ -2,11 +2,6 @@ name: End-to-end tests
 on: [push]
 variables:
   connectionString: ${{ secrets.CONNECTION_STRING }}
-- task: FileTransform@2
-  inputs:
-    folderPath: '$(Build.ArtifactStagingDirectory)'
-    targetFiles: '**/serverConfig.json'
-    fileType: json
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
