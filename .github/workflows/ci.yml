@@ -4,6 +4,11 @@ jobs:
   cypress-run:
     runs-on: ubuntu-latest
     steps:
+      - name: Use Node v16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
       - name: Clone repo 
         uses: actions/checkout@v3
 
