@@ -31,11 +31,17 @@ jobs:
         if: failure()
         with:
           name: cypress-screenshots
-          path: ./cypress/screenshots
+          path: build
 
       - name: Upload videos
         uses: actions/upload-artifact@v3
         if: always()
         with:
           name: cypress-videos
-          path: ./cypress/videos
+          path: build
+
+      - name: Download the build folder
+        uses: actions/download-artifact@v3
+        with:
+          name: build
+          path: build
