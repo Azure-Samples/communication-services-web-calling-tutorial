@@ -13,6 +13,7 @@ jobs:
           files: './serverConfig.json'
         env:
           connectionString: ${{ secrets.CONNECTION_STRING }}
+
       - name: Install deps and run tests
         uses: cypress-io/github-action@v6
         with:
