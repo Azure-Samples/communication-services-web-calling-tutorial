@@ -361,7 +361,7 @@ MigrationBackup/
 /coverage
 
 # production
-/build
+# /build
 /dist
 
 # misc
