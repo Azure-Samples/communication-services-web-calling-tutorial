@@ -22,22 +22,14 @@ jobs:
       - name: Install deps and run tests
         uses: cypress-io/github-action@v6
         with:
+          runTests: false
           build: npm run build-local
-          start: npm run start-local
-          browser: chrome
-
-      - name: Upload screenshots
+      
+      - name: Save build folder
         uses: actions/upload-artifact@v3
-        if: failure()
         with:
-          name: cypress-screenshots
-          path: build
-
-      - name: Upload videos
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: cypress-videos
+          name: build
+          if-no-files-found: error
           path: build
 
       - name: Download the build folder
@@ -45,3 +37,9 @@ jobs:
         with:
           name: build
           path: build
+
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          start: npm run start-local
+          browser: chrome
