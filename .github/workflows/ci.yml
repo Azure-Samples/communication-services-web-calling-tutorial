@@ -6,18 +6,27 @@ jobs:
     steps:
       - name: Clone repo 
         uses: actions/checkout@v3
+
+      - name: Replace conn string
+        uses: microsoft/variable-substitution@v1
+        with:
+          files: './serverConfig.json'
+        env:
+          connectionString: ${{ secrets.CONNECTION_STRING }}
       - name: Install deps and run tests
         uses: cypress-io/github-action@v6
         with:
           build: npm run build-local
           start: npm run start-local
           browser: chrome
+
       - name: Upload screenshots
         uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cypress-screenshots
           path: cypress/screenshots
+
       - name: Upload videos
         uses: actions/upload-artifact@v3
         if: always()
