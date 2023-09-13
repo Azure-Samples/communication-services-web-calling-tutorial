@@ -1,25 +1,25 @@
 name: End-to-end tests
 on: [push]
-variables:
-  connectionString: ${{ secrets.CONNECTION_STRING }}
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      # Install NPM dependencies, cache them correctly
-      # and run all Cypress tests
-      - uses: cypress-io/github-action@v6
+      - name: Clone repo 
+        uses: actions/checkout@v3
+      - name: Install deps and run tests
+        uses: cypress-io/github-action@v6
         with:
           build: npm run build-local
           start: npm run start-local
           browser: chrome
-      - uses: actions/upload-artifact@v3
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cypress-screenshots
           path: cypress/screenshots
-      - uses: actions/upload-artifact@v3
+      - name: Upload videos
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: cypress-videos
