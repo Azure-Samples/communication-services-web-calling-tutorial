@@ -38,8 +38,8 @@ jobs:
       #     if-no-files-found: error
       #     path: build
 
-     - name: Download the build folder
-       uses: actions/download-artifact@v3
-       with:
-         name: build
-         path: build
+      - name: Download the build folder
+        uses: actions/download-artifact@v3
+        with:
+          name: build
+          path: build
