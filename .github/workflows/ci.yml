@@ -2,15 +2,15 @@ name: End-to-end tests
 on: [push]
 variables:
   connectionString: {{ $secrets.CONNECTION_STRING }}
-jobs:
-  cypress-run:
-    runs-on: ubuntu-latest
-    steps:
-      - task: FileTransform@2
+ - task: FileTransform@2
         inputs:
           folderPath: '$(Build.ArtifactStagingDirectory)'
           targetFiles: '**/serverConfig.json'
           fileType: json
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions/checkout@v3
       # Install NPM dependencies, cache them correctly
       # and run all Cypress tests
