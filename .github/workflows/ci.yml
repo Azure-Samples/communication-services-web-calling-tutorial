@@ -6,7 +6,7 @@ jobs:
   cypress-run:
     runs-on: ubuntu-latest
     steps:
-      - uses: FileTransform@1
+      - task: FileTransform@2
         inputs:
           folderPath: '$(Build.ArtifactStagingDirectory)'
           targetFiles: '**/serverConfig.json'
