@@ -31,15 +31,15 @@ jobs:
           start: npm run start-local
           browser: chrome
 
-      - name: Save build folder
-        uses: actions/upload-artifact@v3
-        with:
-          name: build
-          if-no-files-found: error
-          path: build
+      # - name: Save build folder
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: build
+      #     if-no-files-found: error
+      #     path: build
 
-#      - name: Download the build folder
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: build
-#          path: build
+     - name: Download the build folder
+       uses: actions/download-artifact@v3
+       with:
+         name: build
+         path: build
