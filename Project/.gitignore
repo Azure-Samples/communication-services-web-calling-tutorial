@@ -26,3 +26,5 @@ yarn-error.log*
 # build dropped
 sdk.bundle.js
 ./config.js
+./Project/serverConfig.json
+/serverConfig.json

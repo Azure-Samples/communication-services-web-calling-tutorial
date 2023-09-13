@@ -20,15 +20,15 @@ const CommunicationAI = ({ call }) => {
     ]
     let displayName = window.displayName;
     let captions;
-    useEffect(() => {
-        captions = call.kind === CallKind.TeamsCall || call.info?.context === 'teamsMeetingJoin' ? call.feature(Features.TeamsCaptions) : call.feature(Features.Captions);
-        startCaptions(captions);
+    // useEffect(() => {
+    //     captions = call.kind === CallKind.TeamsCall || call.info?.context === 'teamsMeetingJoin' ? call.feature(Features.TeamsCaptions) : call.feature(Features.Captions);
+    //     startCaptions(captions);
 
-        return () => {
-            // cleanup
-            captions.off('captionsReceived', captionHandler);
-        };
-    }, []);
+    //     return () => {
+    //         // cleanup
+    //         captions.off('captionsReceived', captionHandler);
+    //     };
+    // }, []);
 
     const startCaptions = async () => {
         try {
