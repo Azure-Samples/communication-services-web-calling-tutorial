@@ -19,13 +19,6 @@ jobs:
         env:
           connectionString: ${{ secrets.CONNECTION_STRING }}
 
-      - name: Save build folder
-        uses: actions/upload-artifact@v3
-        with:
-          name: build
-          if-no-files-found: error
-          path: build
-
       - name: Install deps and run tests
         uses: cypress-io/github-action@v6
         with:
@@ -41,5 +34,5 @@ jobs:
       - name: Download the build folder
         uses: actions/download-artifact@v3
         with:
-          name: build
-          path: build
+          name: cypress-videos
+          path: cypress/videos
