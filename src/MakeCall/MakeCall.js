@@ -39,7 +39,7 @@ export default class MakeCall extends React.Component {
         this.logInComponentRef = React.createRef();
 
         this.state = {
-            id: undefined,
+            componentId: props.componentId,
             loggedIn: false,
             isCallClientActiveInAnotherTab: false,
             call: undefined,
@@ -775,7 +775,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
         //       when toggling their show/hide code functionality, videos dissapear from DOM.
 
         return (
-            <div>
+            <div id={this.state.componentId}>
                 <Login onLoggedIn={this.handleLogIn} ref={this.logInComponentRef}/>
                 {
                     this.state?.callSurvey &&
