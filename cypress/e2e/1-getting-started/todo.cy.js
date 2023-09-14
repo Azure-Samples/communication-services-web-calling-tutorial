@@ -21,10 +21,11 @@ describe('example to-do app', () => {
   })
 
   it('1:1 audio call', () => {
-    cy.get('[id=user-0]')
-      .find('[id=login-button]')
-      .click();
-    cy.wait(10000);
+    const user0Div = cy.get('[id=user-0]');
+    user0Div.find('[id=login-button]').click();
+    cy.wait(15000);
+    user0Div.find('[id=acs-login-success-message]').should('contain', 'Congrats! You\'ve provisioned an ACS user identity');
+    cy.wait(5000);
   });
 
   // it('displays two todo items by default', () => {

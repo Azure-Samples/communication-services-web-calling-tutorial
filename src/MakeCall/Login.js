@@ -667,7 +667,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                         this.state.loggedIn && !this.state.isTeamsUser &&
                             <div>
                                 <br></br>
-                                <div>Congrats! You've provisioned an ACS user identity and initialized the ACS Calling Client Web SDK. You are ready to start making calls!</div>
+                                <div id="acs-login-success-message">Congrats! You've provisioned an ACS user identity and initialized the ACS Calling Client Web SDK. You are ready to start making calls!</div>
                                 <div>The Identity you've provisioned is: <span className="identity fontweight-700">{this.state.communicationUserId}</span></div>
                                 <div>Usage is tagged with: <span className="identity fontweight-700">{this.clientTag}</span></div>
                                 <div>Connection status: <span className="identity fontweight-700">{this.state.callAgentConnectionState}</span></div>
