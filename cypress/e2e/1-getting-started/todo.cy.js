@@ -23,11 +23,15 @@ describe('example to-do app', () => {
   it('1:1 audio call', () => {
     cy.get('[id=user-0]')
       .find('[id=login-button]')
-      .click()
-      .wait(15000)
+      .click();
+
+    cy.wait(15000);
+
+    cy.get('[id=user-0]')
       .find('[id=acs-login-success-message]')
-      .should('contain', 'Congrats! You\'ve provisioned an ACS user identity')
-      .wait(5000);
+      .should('contain', 'Congrats! You\'ve provisioned an ACS user identity');
+
+      cy.wait(5000);
   });
 
   // it('displays two todo items by default', () => {
