@@ -24,6 +24,7 @@ describe('example to-do app', () => {
     cy.get('[id=user-0]')
       .find('[id=login-button]')
       .click();
+    cy.wait(10000);
   });
 
   // it('displays two todo items by default', () => {
@@ -145,5 +146,5 @@ describe('example to-do app', () => {
   //     // Finally, make sure that the clear button no longer exists.
   //     cy.contains('Clear completed').should('not.exist')
   //   })
-  })
+  //})
 })
