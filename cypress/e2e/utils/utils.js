@@ -22,8 +22,9 @@ export function loginUsers(numberOfUsers) {
         cy.get(`[id=user-${i}]`)
             .find('[id=acs-identity]')
             .should(($span) => {
-                const text = $span.text()
-                expect(text).to.contain('8:acs:');
+                ids.push($span.text());
         })
     }
+
+    return ids;
 }

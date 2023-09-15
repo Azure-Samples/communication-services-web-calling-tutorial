@@ -22,7 +22,15 @@ describe('example to-do app', () => {
   })
 
   it('1:1 audio call', () => {
-    loginUsers(2);
+    const ids = loginUsers(2);
+  
+    cy.get(`[id=user-0]`)
+      .find('[id=callee-input]')
+      .type(ids[1]);
+
+    cy.get(`[id=user-0]`)
+      .find('[id=place-call-button]')
+      .click();
   });
 
   // it('displays two todo items by default', () => {

@@ -869,6 +869,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                         <div className="ms-Grid-row">
                                             <div className="md-Grid-col ml-2 mt-0 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                 <TextField
+                                                    id="callee-input"
                                                     className="mt-0"
                                                     disabled={this.state.call || !this.state.loggedIn}
                                                     label={`Enter an Identity to make a call to. You can specify multiple Identities to call by using \",\" separated values."`}
@@ -884,6 +885,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                             </div>
                                         </div>
                                         <PrimaryButton
+                                            id="place-call-button"
                                             className="primary-button"
                                             iconProps={{ iconName: 'Phone', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                             text="Place call"
@@ -891,6 +893,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                             onClick={() => this.placeCall(false)}>
                                         </PrimaryButton>
                                         <PrimaryButton
+                                            id="place-call-with-video-button"
                                             className="primary-button"
                                             iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                             text="Place call with video"
