@@ -21,8 +21,8 @@ describe('example to-do app', () => {
     cy.visit('http://localhost:5000')
   })
 
-  it('1:1 audio call', () => {
-    const ids = loginUsers(2);
+  it('1:1 audio call', async () => {
+    const ids = await loginUsers(2);
   
     cy.get(`[id=user-0]`)
       .find('[id=callee-input]')
