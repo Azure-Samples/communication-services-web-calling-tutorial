@@ -31,6 +31,10 @@ describe('example to-do app', () => {
     cy.get(`[id=user-0]`)
       .find('[id=place-call-button]')
       .click();
+
+    cy.log(ids[0], 'is calling ', ids[1]);
+
+    cy,wait(10000);
   });
 
   // it('displays two todo items by default', () => {
