@@ -22,7 +22,7 @@ describe('example to-do app', () => {
   })
 
   it('1:1 audio call', () => {
-    loginUsers();
+    loginUsers(2);
   });
 
   // it('displays two todo items by default', () => {
