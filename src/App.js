@@ -7,10 +7,16 @@ import { ToastContainer } from 'react-toastify';
 initializeIcons();
 
 function App() {
-  let [users, setUsers] = useState([<MakeCall/>]);
+  let [users, setUsers] = useState([<MakeCall componentId={`user-0`}/>]);
+  let [userIndex, setUserIndex] = useState(1);
 
   function VWebSdkVersion() {
     return require('../package.json').dependencies['@azure/communication-calling'];
+  }
+
+  function addUser() {
+    setUsers([...users, <MakeCall componentId={`user-${userIndex}`}/>]);
+    setUserIndex(userIndex + 1);
   }
 
   return (
@@ -20,7 +26,7 @@ function App() {
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-lg6 inline-flex align-items-center">
             <div className="inline-block">
-                <img onClick={() => {setUsers([...users, <MakeCall/>]) }} className="nav-bar-icon" src="./assets/images/acsIcon.png"></img>
+                <img id="acs-icon" onClick={() => addUser()} className="nav-bar-icon" src="./assets/images/acsIcon.png"></img>
             </div>
             <h2 className="inline-block">
               Azure Communication Services - Calling SDK for Javascript - { VWebSdkVersion() }
@@ -36,7 +42,7 @@ function App() {
           </div>
         </div>
       </div>
-      <div id="user-div">
+      <div>
         {users}
       </div>
     </div>

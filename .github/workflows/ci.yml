@@ -1,0 +1,40 @@
+name: End-to-end tests
+on: [push]
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use Node v16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Clone repo 
+        uses: actions/checkout@v3
+
+      - name: Inject conn string
+        uses: microsoft/variable-substitution@v1
+        with:
+          files: './serverConfig.json'
+        env:
+          connectionString: ${{ secrets.CONNECTION_STRING }}
+      
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
+        with:
+          start: npm run start-local
+          browser: chrome
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+
+      - name: Upload videos
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: cypress-videos
+          path: cypress/videos
