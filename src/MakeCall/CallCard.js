@@ -1,7 +1,5 @@
 import React from "react";
 import { MessageBar, MessageBarType, DefaultButton } from 'office-ui-fabric-react'
-import { Toggle } from '@fluentui/react/lib/Toggle';
-import { TooltipHost } from '@fluentui/react/lib/Tooltip';
 import { FunctionalStreamRenderer as StreamRenderer } from "./FunctionalStreamRenderer";
 import AddParticipantPopover from "./AddParticipantPopover";
 import RemoteParticipantCard from "./RemoteParticipantCard";
@@ -9,7 +7,7 @@ import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
 import { Icon } from '@fluentui/react/lib/Icon';
 import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
-import { LocalVideoStream, Features, LocalAudioStream, VideoStreamRenderer } from '@azure/communication-calling';
+import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
@@ -40,7 +38,6 @@ export default class CallCard extends React.Component {
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.capabilitiesFeature = this.call.feature(Features.Capabilities);
         this.dominantSpeakersFeature = this.call.feature(Features.DominantSpeakers);
-        this.identifier = props.identityMri;
         this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
         this.state = {
@@ -859,7 +856,7 @@ export default class CallCard extends React.Component {
 
     render() {
         return (
-            <div className="ms-Grid mt-2">
+            <div id="call-card" className="ms-Grid mt-2">
                 <div className="ms-Grid-row">
                     {
                         this.state.callMessage &&
@@ -888,8 +885,8 @@ export default class CallCard extends React.Component {
                 <div className="video-grid-row">
                     {
                         (this.state.callState === 'Connected' ||
-                            this.state.callState === 'LocalHold' ||
-                            this.state.callState === 'RemoteHold') &&
+                        this.state.callState === 'LocalHold' ||
+                        this.state.callState === 'RemoteHold') &&
                         this.state.allRemoteParticipantStreams.map(v =>
                             <StreamRenderer
                                 key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`}
@@ -1196,6 +1193,7 @@ export default class CallCard extends React.Component {
                         <div className="ms-Grid-row">
                             <div className="ms-Grid-col ms-sm12 ms-md4 ms-lg4">
                                 <LocalVideoPreviewCard
+                                    identifier={this.identifier}
                                     stream={this.localVideoStream}/>
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md2 md-lg2'>
@@ -1241,6 +1239,7 @@ export default class CallCard extends React.Component {
                             {
                                 <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
                                     <LocalVideoPreviewCard
+                                        identifier={this.identifier}
                                         stream={this.localScreenSharingStream}/>
                                 </div>
                             }

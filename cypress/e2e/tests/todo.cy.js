@@ -1,7 +1,10 @@
 /// <reference types="cypress" />
-import 'cypress-wait-until';
 import { loginUsers } from '../utils/utils.js';
-import { INCOMING_CALL_TIMEOUT, CONNECTED_STATE_TIMEOUT } from '../utils/constants.js';
+import {
+    INCOMING_CALL_TIMEOUT,
+    CONNECTED_STATE_TIMEOUT,
+    CALL_CARD_HIDDEN_TIMEOUT
+} from '../utils/constants.js';
 
 // Welcome to Cypress!
 //
@@ -55,7 +58,13 @@ describe('example to-do app', () => {
                 .find('[id=hangup-button]')
                 .click();
 
-            
+            cy.get('[id=user-0]')
+                .find('[id=call-card]', { timeout: CALL_CARD_HIDDEN_TIMEOUT })
+                .should('not.exist');
+
+            cy.get('[id=user-1]')
+                .find('[id=call-card]', { timeout: CALL_CARD_HIDDEN_TIMEOUT })
+                .should('not.exist');
         });
     });
 
