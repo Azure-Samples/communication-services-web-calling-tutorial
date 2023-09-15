@@ -22,21 +22,20 @@ describe('example to-do app', () => {
   })
 
   it('1:1 audio call', () => {
-    (async() => {
-      const ids = await loginUsers(2);
-  
-      cy.get(`[id=user-0]`)
+      loginUsers(2);
+      cy.get('@ids').then(ids => {
+        cy.get(`[id=user-0]`)
         .find('[id=callee-input]')
         .type(ids[1]);
   
-      cy.get(`[id=user-0]`)
-        .find('[id=place-call-button]')
-        .click();
-  
-      cy.log(ids[0], 'is calling ', ids[1]);
-  
-      cy.wait(10000);
-    })();
+        cy.get(`[id=user-0]`)
+          .find('[id=place-call-button]')
+          .click();
+    
+        cy.log(ids[0], 'is calling ', ids[1]);
+    
+        cy.wait(10000);
+      });
   });
 
   // it('displays two todo items by default', () => {
