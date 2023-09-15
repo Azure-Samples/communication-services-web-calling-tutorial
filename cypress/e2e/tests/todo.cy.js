@@ -22,7 +22,7 @@ describe('example to-do app', () => {
   })
 
   it('1:1 audio call', () => {
-    cy.find('[id=acs-icon]')
+    cy.get('[id=acs-icon]')
       .click();
 
     // Make user0 login
