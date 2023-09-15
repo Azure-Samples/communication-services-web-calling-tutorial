@@ -19,13 +19,10 @@ export async function loginUsers(numberOfUsers) {
             .find('[id=acs-login-success-message]')
             .should('contain', 'Congrats! You\'ve provisioned an ACS user identity');
 
-        cy.get(`[id=user-${i}]`)
+        const text = await cy.get(`[id=user-${i}]`)
             .find('[id=acs-identity]')
-            .invoke('text')
-            .then(text => {
-                cy.log('The val text', text);
-                ids.push(text)
-            });
+            .invoke('text');
+        ids.push(text)
     }
 
     cy.log('The ids:', ids[0], ids[1]);
