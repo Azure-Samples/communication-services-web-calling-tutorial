@@ -19,12 +19,11 @@ export function loginUsers(numberOfUsers) {
             .find('[id=acs-login-success-message]')
             .should('contain', 'Congrats! You\'ve provisioned an ACS user identity');
 
-        cy.get(`[id=user-${i}]`)
+        const id = cy.get(`[id=user-${i}]`)
             .find('[id=acs-identity]')
-            .should(($span) => {
-                console.error('TEXT', $span.text);
-                ids.push($span.text());
-        })
+            .invoke('text');
+
+        ids.push(id);
     }
 
     return ids;
