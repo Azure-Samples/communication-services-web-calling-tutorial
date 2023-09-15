@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Features, ResultType, CallKind } from '@azure/communication-calling';
+import { Features, ResultType, Captions, CallKind, CaptionsResultType  } from '@azure/communication-calling';
 import { Dropdown } from '@fluentui/react/lib/Dropdown';
 import { utils, acsOpenAiPromptsApi } from "../../Utils/Utils";
+import HtmlParser from "react-html-parser";
 
 
 const CommunicationAI = ({ call }) => {
@@ -14,25 +15,47 @@ const CommunicationAI = ({ call }) => {
     const [captionsFeedbackIndex, setCaptionsFeedbackIndex] = useState(0);
     const [promptResponse, setPromptResponse] = useState("")
     const [dropDownLabel, setDropDownLabel] = useState("")
+    const [isSpeaking, setIsSpeaking] = useState(true);
+    const [feedBackMessage, setFeedBackMessage] = useState("");
+    const [debounceCounterRunning, setDebounceCounterRunning] = useState(false);
+
     const options = [
         { key: 'getSummary', text: 'Get Summary' },
         { key: 'getPersonalFeedBack', text: 'Get Personal Feedback' },
+        { key: 'getSentiments', text: 'Get Sentiment Feedback' },
+        { key: 'getSuggestionForXBoxSupportAgent', text: 'Get Suggestion for Agent' },
     ]
     let displayName = window.displayName;
     let captions;
-    // useEffect(() => {
-    //     captions = call.kind === CallKind.TeamsCall || call.info?.context === 'teamsMeetingJoin' ? call.feature(Features.TeamsCaptions) : call.feature(Features.Captions);
-    //     startCaptions(captions);
+    useEffect(() => {
+        captions = call.kind === CallKind.TeamsCall || call.info?.context === 'teamsMeetingJoin' ? call.feature(Features.TeamsCaptions) : call.feature(Features.Captions);
+        startCaptions(captions);
 
-    //     return () => {
-    //         // cleanup
-    //         captions.off('captionsReceived', captionHandler);
-    //     };
-    // }, []);
+        return () => {
+            // cleanup
+            captions.off('captionsReceived', captionHandler);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (dropDownLabel == 'getPersonalFeedBack' && !isSpeaking) {
+            debounceCounterRunning && clearTimeout(debounceTimeout);
+            console.log(`Starting debounce timer`);
+            setDebounceCounterRunning(true);
+            debounceTimeout = setTimeout(() => {
+                setDebounceCounterRunning(false);
+                getPersonalFeedback()}, 5000);
+             return () => {
+                clearTimeout(debounceTimeout);
+              };
+        } else {
+            setFeedBackMessage('FeedBack will be retrieved after you finish talking')
+        }
+    }, [isSpeaking]);
 
     const startCaptions = async () => {
         try {
-            if (!captions.isCaptionsActive || !captionsStarted) {
+            if (!captions.isCaptionsFeatureActive || !captionsStarted) {
                 await captions.startCaptions({ spokenLanguage: 'en-us' });
                 setCaptionsStarted(!captionsStarted);
             }
@@ -51,13 +74,13 @@ const CommunicationAI = ({ call }) => {
         } else if (captionData.speaker.identifier.kind === 'phoneNumber') {
             mri = captionData.speaker.identifier.phoneNumber;
         }
-
+        mri == window.mri && setIsSpeaking(true)
         const captionText = `${captionData.speaker.displayName}: ${captionData.text}`;
 
-        if (captionData.resultType === ResultType.Final) {
+        if (captionData.resultType === 'Final') {
             setCaptionHistory(oldCaptions => [...oldCaptions, captionText]);
+            mri == window.mri && setIsSpeaking(false)
         }
-
     };
 
 
@@ -83,7 +106,8 @@ const CommunicationAI = ({ call }) => {
         let communicationAiOption = item.key;
         setDropDownLabel(item.text);
         setShowSpinner(true);
-        switch (communicationAiOption) {
+        switch (communicationAiOption) 
+        {
             case "getSummary":
                 getSummary().finally(() => setShowSpinner(false));
                 break;
@@ -111,10 +135,16 @@ const CommunicationAI = ({ call }) => {
                     showSpinner &&
                     <div>
                         <div className="loader inline-block"> </div>
-                        <div className="ml-2 inline-block">Waiting for the AI response...</div>
+                        <div className="ml-2 inline-block">
+                            {
+                                (dropDownLabel == "getPersonalFeedBack") ?
+                                    feedBackMessage :
+                                    "Waiting for the AI response..."
+                            }
+                            </div>
                     </div>
                 }
-                <p>{showSpinner ? '' : promptResponse}</p>
+                {showSpinner ? '' : HtmlParser(promptResponse)}
             </div>
         </>
     );

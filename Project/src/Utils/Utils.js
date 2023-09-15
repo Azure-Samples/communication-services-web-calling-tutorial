@@ -10,18 +10,24 @@ import { authConfig, authScopes } from "../../oAuthConfig"
 import axios from 'axios';
 
 export const acsOpenAiPromptsApi = {
-    base: 'https://acsopenaigateway.azurewebsites.net/api/',
+    base: 'https://openaigatewayacs20230914162310.azurewebsites.net/api/',
     summary: 'getSummary',
-    feedback: 'getPersonalFeedback'
+    feedback: 'getPersonalFeedback',
+    sentiment: 'GetSentiments',
+    supportAgent: 'GetSuggestionForXBoxSupportAgent',
+}
+
+export const acsOpenAiPromptsApiV2 = {  
+    
 }
 
 export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    sendCaptionsDataToAcsOpenAI: async (apiEndpoint, participantName, lastResponse, newCaptionsData) => {
+    sendCaptionsDataToAcsOpenAI: async (apiEndpoint, participantName, lastResponse, newCaptionsData, isVersion2 = false) => {
         let response = await axios({
-            url: acsOpenAiPromptsApi.base + apiEndpoint,
+            url: isVersion2 ? acsOpenAiPromptsApiV2.base + apiEndpoint : acsOpenAiPromptsApi.base + apiEndpoint,
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

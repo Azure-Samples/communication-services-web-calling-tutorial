@@ -87,7 +87,8 @@ export default class CallCard extends React.Component {
             dominantSpeakersListActive: false,
             dominantSpeakers:[],
             showDataChannel: false,
-            showAddParticipantPanel: false
+            showAddParticipantPanel: false,
+            enableSupportAgent: false
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
@@ -1394,8 +1395,32 @@ export default class CallCard extends React.Component {
                             }
                         </ul>
                     </div>
-
                 }
+                <div className="participants-panel mt-1 mb-3">
+                    <Toggle label={
+                            <div>
+                                Enable Support Agent{' '}
+                                <TooltipHost content={`Turn on AI Support Agent`}>
+                                    <Icon iconName="Info" aria-label="Info tooltip" />
+                                </TooltipHost>
+                            </div>
+                        }
+                        styles={{
+                            text : { color: '#edebe9' },
+                            label: { color: '#edebe9' },
+                        }}
+                        inlineLabel
+                        onText="On"
+                        offText="Off"
+                        defaultChecked={this.state.enableSupportAgent}
+                        onChange={() => { this.setState({ enableSupportAgent: !this.state.enableSupportAgent })}}
+                    />
+                    
+                    {
+                        this.state.enableSupportAgent &&
+                        <CommunicationAI call={this.call} />
+                    }
+                </div>
             </div>
         );
     }

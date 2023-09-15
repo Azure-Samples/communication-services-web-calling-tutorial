@@ -16,7 +16,8 @@
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
     "react-onesignal": "^2.0.4",
-    "react-toastify": "9.0.1"
+    "react-toastify": "9.0.1",
+    "react-html-parser": "^2.0.2"
   },
   "scripts": {
     "start-local": "webpack-dev-server --port 5000 --mode development",
