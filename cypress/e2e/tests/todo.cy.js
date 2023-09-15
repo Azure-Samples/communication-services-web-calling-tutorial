@@ -1,4 +1,5 @@
 /// <reference types="cypress" />
+import * as utils from '../utils/utils.js';
 
 // Welcome to Cypress!
 //
@@ -21,6 +22,9 @@ describe('example to-do app', () => {
   })
 
   it('1:1 audio call', () => {
+    cy.find('[id=acs-icon]')
+      .click();
+
     // Make user0 login
     cy.get('[id=user-0]')
       .find('[id=login-button]')

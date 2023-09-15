@@ -26,7 +26,7 @@ function App() {
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-lg6 inline-flex align-items-center">
             <div className="inline-block">
-                <img onClick={() => addUser()} className="nav-bar-icon" src="./assets/images/acsIcon.png"></img>
+                <img id="acs-icon" onClick={() => addUser()} className="nav-bar-icon" src="./assets/images/acsIcon.png"></img>
             </div>
             <h2 className="inline-block">
               Azure Communication Services - Calling SDK for Javascript - { VWebSdkVersion() }
