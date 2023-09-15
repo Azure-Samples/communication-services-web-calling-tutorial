@@ -1,4 +1,4 @@
-export async function loginUsers(numberOfUsers) {
+export function loginUsers(numberOfUsers) {
     const ids = [];
 
     for (let i = 0; i < numberOfUsers - 1; i++) {
