@@ -21,7 +21,7 @@ export function loginUsers(numberOfUsers) {
 
         const id = cy.get(`[id=user-${i}]`)
             .find('[id=acs-identity]')
-            .invoke('text');
+            .invoke('val');
 
         ids.push(id);
     }
