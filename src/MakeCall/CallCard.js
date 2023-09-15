@@ -876,11 +876,9 @@ export default class CallCard extends React.Component {
                     <div className="ms-Grid-col ms-lg6">
                         {
                             this.state.callState !== 'Connected' &&
-                            <div>
-                                <div className="inline-block ringing-loader mr-2"></div>
-                                <h2 className="inline-block">{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
-                            </div>
+                            <div className="inline-block ringing-loader mr-2"></div>
                         }
+                        <h2 id="call-state" className="inline-block">{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
                     </div>
                     {
                         this.call &&
@@ -949,7 +947,8 @@ export default class CallCard extends React.Component {
                                 <Icon iconName="MicOff2" />
                             }
                         </span>
-                        <span className="in-call-button"
+                        <span id="hangup-button"
+                            className="in-call-button"
                             onClick={() => this.call.hangUp()}>
                             <Icon iconName="DeclineCall" />
                         </span>

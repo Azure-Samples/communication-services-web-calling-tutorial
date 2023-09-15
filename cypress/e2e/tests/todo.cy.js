@@ -1,5 +1,7 @@
 /// <reference types="cypress" />
+import 'cypress-wait-until';
 import { loginUsers } from '../utils/utils.js';
+import { INCOMING_CALL_TIMEOUT, CONNECTED_STATE_TIMEOUT } from '../utils/constants.js';
 
 // Welcome to Cypress!
 //
@@ -13,30 +15,49 @@ import { loginUsers } from '../utils/utils.js';
 // https://on.cypress.io/introduction-to-cypress
 
 describe('example to-do app', () => {
-  beforeEach(() => {
-    // Cypress starts out with a blank slate for each test
-    // so we must tell it to visit our website with the `cy.visit()` command.
-    // Since we want to visit the same URL at the start of all our tests,
-    // we include it in our beforeEach function so that it runs before each test
-    cy.visit('http://localhost:5000')
-  })
+    beforeEach(() => {
+        // Cypress starts out with a blank slate for each test
+        // so we must tell it to visit our website with the `cy.visit()` command.
+        // Since we want to visit the same URL at the start of all our tests,
+        // we include it in our beforeEach function so that it runs before each test
+        cy.visit('http://localhost:5000')
+    })
 
-  it('1:1 audio call', () => {
-      loginUsers(2);
-      cy.get('@ids').then(ids => {
-        cy.get(`[id=user-0]`)
-        .find('[id=callee-input]')
-        .type(ids[1]);
-  
-        cy.get(`[id=user-0]`)
-          .find('[id=place-call-button]')
-          .click();
-    
-        cy.log(ids[0], 'is calling ', ids[1]);
-    
-        cy.wait(10000);
-      });
-  });
+    it('1:1 video call', () => {
+        loginUsers(2);
+        cy.get('@ids').then(ids => {
+            cy.get(`[id=user-0]`)
+                .find('[id=callee-input]')
+                .type(ids[1]);
+
+            cy.get(`[id=user-0]`)
+                .find('[id=place-call-with-video-button]')
+                .click();
+
+            cy.get(`[id=user-1]`)
+                .find('[id=accept-call-unmuted-and-video-on]', { timeout: INCOMING_CALL_TIMEOUT })
+                .click();
+
+            cy.get('[id=user-0]')
+                .find('[id=call-state]', { timeout: CONNECTED_STATE_TIMEOUT })
+                // The find() timeout also applies to the should(). So basically wait at most CONNECTED_STATE_TIMEOUT seconds for Connected state to show up.
+                .should('contain', 'Connected');
+
+            cy.get('[id=user-1]')
+                .find('[id=call-state]', { timeout: CONNECTED_STATE_TIMEOUT })
+                // The find() timeout also applies to the should(). So basically wait at most CONNECTED_STATE_TIMEOUT seconds for Connected state to show up.
+                .should('contain', 'Connected');
+
+            // Let the call go for 10 seconds
+            cy.wait(10000);
+
+            cy.get('[id=user-0]')
+                .find('[id=hangup-button]')
+                .click();
+
+            
+        });
+    });
 
   // it('displays two todo items by default', () => {
   //   // We use the `cy.get()` command to get all elements that match the selector.

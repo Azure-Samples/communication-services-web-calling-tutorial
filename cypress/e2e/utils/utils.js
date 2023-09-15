@@ -1,3 +1,5 @@
+import { LOGIN_TIMEOUT, ACS_LOGIN_SUCCESS_MESSAGE } from './constants.js';
+
 export function loginUsers(numberOfUsers) {
     const ids = [];
 
@@ -10,21 +12,15 @@ export function loginUsers(numberOfUsers) {
         cy.get(`[id=user-${i}]`)
             .find('[id=login-button]')
             .click();
-        cy.wait(15000);
 
         cy.get(`[id=user-${i}]`)
-            .find('[id=acs-login-success-message]')
-            .should('contain', 'Congrats! You\'ve provisioned an ACS user identity');
-
-        cy.get(`[id=user-${i}]`)
-            .find('[id=acs-login-success-message]')
-            .should('contain', 'Congrats! You\'ve provisioned an ACS user identity');
+            .find('[id=acs-login-success-message]', { timeout: LOGIN_TIMEOUT })
+            .should('contain', ACS_LOGIN_SUCCESS_MESSAGE);
 
         cy.get(`[id=user-${i}]`)
             .find('[id=acs-identity]')
             .invoke('text')
             .then(text => {
-                cy.log('The val text', text);
                 ids.push(text)
                 if (i == numberOfUsers - 1) {
                     cy.wrap(ids).as('ids');
