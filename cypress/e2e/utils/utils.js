@@ -21,7 +21,7 @@ export function loginUsers(numberOfUsers) {
 
         cy.get(`[id=user-${i}]`)
             .find('[id=acs-identity]')
-            .invoke('val')
+            .invoke('text')
             .then(text => {
                 cy.log('The val text', text);
                 ids.push(text)
