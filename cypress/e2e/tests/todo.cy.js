@@ -34,7 +34,7 @@ describe('example to-do app', () => {
 
     cy.log(ids[0], 'is calling ', ids[1]);
 
-    cy,wait(10000);
+    cy.wait(10000);
   });
 
   // it('displays two todo items by default', () => {
