@@ -4,10 +4,8 @@ import { Dropdown } from '@fluentui/react/lib/Dropdown';
 import { utils, acsOpenAiPromptsApi } from "../../Utils/Utils";
 
 
-const CommunicationAI = ({ call }) => {
-    const [captionsStarted, setCaptionsStarted] = useState(false);
+const CommunicationAI = ({ captionHistory }) => {
     const [showSpinner, setShowSpinner] = useState(false);
-    const [captionHistory, setCaptionHistory] = useState([]);
     const [lastSummary, setLastSummary] = useState("");
     const [captionsSummaryIndex, setCaptionsSummaryIndex] = useState(0);
     const [lastFeedBack, setLastFeedBack] = useState("");
@@ -17,48 +15,8 @@ const CommunicationAI = ({ call }) => {
     const options = [
         { key: 'getSummary', text: 'Get Summary' },
         { key: 'getPersonalFeedBack', text: 'Get Personal Feedback' },
-    ]
-    let displayName = window.displayName;
-    let captions;
-    // useEffect(() => {
-    //     captions = call.kind === CallKind.TeamsCall || call.info?.context === 'teamsMeetingJoin' ? call.feature(Features.TeamsCaptions) : call.feature(Features.Captions);
-    //     startCaptions(captions);
-
-    //     return () => {
-    //         // cleanup
-    //         captions.off('captionsReceived', captionHandler);
-    //     };
-    // }, []);
-
-    const startCaptions = async () => {
-        try {
-            if (!captions.isCaptionsActive || !captionsStarted) {
-                await captions.startCaptions({ spokenLanguage: 'en-us' });
-                setCaptionsStarted(!captionsStarted);
-            }
-            captions.on('captionsReceived', captionHandler);
-        } catch (e) {
-            console.error('startCaptions failed', e);
-        }
-    };
-
-    const captionHandler = (captionData) => {
-        let mri = '';
-        if (captionData.speaker.identifier.kind === 'communicationUser') {
-            mri = captionData.speaker.identifier.communicationUserId;
-        } else if (captionData.speaker.identifier.kind === 'microsoftTeamsUser') {
-            mri = captionData.speaker.identifier.microsoftTeamsUserId;
-        } else if (captionData.speaker.identifier.kind === 'phoneNumber') {
-            mri = captionData.speaker.identifier.phoneNumber;
-        }
-
-        const captionText = `${captionData.speaker.displayName}: ${captionData.text}`;
-
-        if (captionData.resultType === ResultType.Final) {
-            setCaptionHistory(oldCaptions => [...oldCaptions, captionText]);
-        }
-
-    };
+        { key: 'getSentiments', text: 'Get Sentiments'}
+    ];
 
 
     const getSummary = async () => {
@@ -79,6 +37,15 @@ const CommunicationAI = ({ call }) => {
         setPromptResponse(content);
     }
 
+    const getSentiments = async () => {
+        const currentCaptionsData = captionHistory.join(" ");
+        let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.sentiments, displayName, lastFeedBack, currentCaptionsData)
+        const content = response;
+        setLastFeedBack(content);
+        setCaptionsFeedbackIndex(captionHistory.length);
+        setPromptResponse(content);
+    }
+
     const onChangeHandler = (e, item) => {
         let communicationAiOption = item.key;
         setDropDownLabel(item.text);
@@ -89,6 +56,9 @@ const CommunicationAI = ({ call }) => {
                 break;
             case "getPersonalFeedBack":
                 getPersonalFeedback().finally(() => setShowSpinner(false));
+                break;
+            case "getSentiments":
+                getSentiments().finally(() => setShowSpinner(false));
                 break;
         }
 
