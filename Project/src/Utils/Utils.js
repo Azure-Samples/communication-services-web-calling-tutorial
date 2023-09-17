@@ -10,10 +10,12 @@ import { authConfig, authScopes } from "../../oAuthConfig"
 import axios from 'axios';
 
 export const acsOpenAiPromptsApi = {
-    base: 'https://openaigatewayacs20230914162310.azurewebsites.net/api/',
-    summary: 'getSummary',
+    base: 'https://fhlopenaicalling.azurewebsites.net/api/',
+    summary: 'GetSuggestionForXBoxSupportAgent',
     feedback: 'getPersonalFeedback',
-    sentiments: 'getSentiments'
+    sentiments: 'getSentiments',
+    supportXBoxSupportAgent: 'GetSuggestionForXBoxSupportAgent',
+    callInsight: 'callInsights'
 }
 
 export const utils = {
@@ -27,17 +29,21 @@ export const utils = {
             headers: {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': "*",
-                'x-functions-key': 'PUT_FUNCTION_KEY'
+                'X-Requested-With': 'XMLHttpRequest',
+                'x-functions-key': 'Yw2JNDU3ztoi4XMy1QofF8-oAV3ZfXiHAYLnKIDfA4DWAzFunp0nfg=='
             },
             data: {
-                "CurrentParticipant": participantName,
-                "Captions": JSON.stringify(newCaptionsData),
-                "LastSummary": JSON.stringify(lastResponse)
+       //         "CurrentParticipant": participantName,
+                "transcript": JSON.stringify(newCaptionsData),
+      //          "LastSummary": JSON.stringify(lastResponse)
 
             }
         });
         if (response.status === 200) {
             return response.data;
+        } else {
+            console.log("Error message");
+            console.log(response);
         }
     },
     getCommunicationUserToken: async (communicationUserId) => {

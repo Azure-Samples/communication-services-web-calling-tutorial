@@ -18,6 +18,16 @@ const CommunicationAI = ({ captionHistory }) => {
         { key: 'getSentiments', text: 'Get Sentiments'}
     ];
 
+    const supportXBoxSupportAgent = async () => {
+        const currentCaptionsData = captionHistory.slice(captionsSummaryIndex);
+        let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.supportXBoxSupportAgent, displayName, lastSummary, currentCaptionsData);
+        console.log("response received from supportXBoxSupportAgent");
+        console.log(response);
+        const content = response.choices[0].message.content;
+        setLastSummary(content);
+        setCaptionsSummaryIndex(captionHistory.length);
+        setPromptResponse(content);
+    }
 
     const getSummary = async () => {
         const currentCaptionsData = captionHistory.slice(captionsSummaryIndex);
