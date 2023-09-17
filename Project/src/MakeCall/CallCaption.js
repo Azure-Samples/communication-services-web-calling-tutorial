@@ -1,6 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Features, ResultType, CallKind  } from '@azure/communication-calling';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
+import CommunicationAI from "./CommunicationAI/CommunicationAI";
+import { Toggle } from '@fluentui/react/lib/Toggle';
+import { TooltipHost } from '@fluentui/react/lib/Tooltip';
+import { Icon } from '@fluentui/react/lib/Icon';
 
 // CallCaption react function component
 const CallCaption = ({ call }) => {
@@ -8,6 +12,8 @@ const CallCaption = ({ call }) => {
     const [captions, setCaptions] = useState(captionsFeature.captions);
     const [currentSpokenLanguage, setCurrentSpokenLanguage] = useState(captions.activeSpokenLanguage);
     const [currentCaptionLanguage, setCurrentCaptionLanguage] = useState(captions.activeCaptionLanguage);
+    const [captionHistory, setCaptionHistory] = useState([]);
+    const [communicationAI, setCommunicationAI] = useState(false);
 
     useEffect(() => {
         try {
@@ -86,6 +92,7 @@ const CallCaption = ({ call }) => {
 
             if (captionData.resultType === 'Final') {
                 foundCaptionContainer.setAttribute('isNotFinal', 'false');
+                setCaptionHistory(oldCaptions => [...oldCaptions, `${captionData.speaker.displayName}: ${captionData.captionText ?? captionData.spokenText}`]);
             }
         }
     };
@@ -133,6 +140,31 @@ const CallCaption = ({ call }) => {
             <div className="scrollable-captions-container">
                 <div id="captionsArea" className="captions-area">
                 </div>
+            </div>
+            <div className="participants-panel mt-1 mb-3">
+                    <Toggle label={
+                            <div>
+                                Communication AI{' '}
+                                <TooltipHost content={`Turn on Communication AI`}>
+                                    <Icon iconName="Info" aria-label="Info tooltip" />
+                                </TooltipHost>
+                            </div>
+                        }
+                        styles={{
+                            text : { color: '#edebe9' },
+                            label: { color: '#edebe9' },
+                        }}
+                        inlineLabel
+                        onText="On"
+                        offText="Off"
+                        defaultChecked={communicationAI}
+                        onChange={() => { setCommunicationAI(oldValue => !oldValue)}}
+                    />
+
+                    {
+                        communicationAI &&
+                        <CommunicationAI captionHistory={captionHistory} />
+                    }
             </div>
         </>
     );

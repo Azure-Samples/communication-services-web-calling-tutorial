@@ -10,9 +10,10 @@ import { authConfig, authScopes } from "../../oAuthConfig"
 import axios from 'axios';
 
 export const acsOpenAiPromptsApi = {
-    base: 'https://acsopenaigateway.azurewebsites.net/api/',
+    base: 'https://openaigatewayacs20230914162310.azurewebsites.net/api/',
     summary: 'getSummary',
-    feedback: 'getPersonalFeedback'
+    feedback: 'getPersonalFeedback',
+    sentiments: 'getSentiments'
 }
 
 export const utils = {
