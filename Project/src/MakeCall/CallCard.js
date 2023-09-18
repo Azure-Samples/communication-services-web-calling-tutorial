@@ -564,6 +564,14 @@ export default class CallCard extends React.Component {
         }
     }
 
+    async handleMuteAllRemoteParticipants() {
+        try {
+            await this.call.muteAllRemoteParticipants?.();
+        } catch (e) {
+            console.error('Failed to mute all other participants.', e);
+        }
+    }
+
     async handleRaiseHand() {
         try {
             this.state.isHandRaised ?
@@ -948,6 +956,12 @@ export default class CallCard extends React.Component {
                                 (!this.state.canUnMuteMic || this.state.micMuted) &&
                                 <Icon iconName="MicOff2" />
                             }
+                        </span>
+                        <span className="in-call-button"
+                            title={`Mute all other participants`}
+                            variant="secondary"
+                            onClick={() => this.handleMuteAllRemoteParticipants()}>
+                            <Icon iconName="VolumeDisabled" />
                         </span>
                         <span className="in-call-button"
                             onClick={() => this.call.hangUp()}>
