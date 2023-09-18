@@ -10,15 +10,12 @@ import { authConfig, authScopes } from "../../oAuthConfig"
 import axios from 'axios';
 
 export const acsOpenAiPromptsApi = {
-    base: 'https://openaigatewayacs20230914162310.azurewebsites.net/api/',
+    base: 'https://fhlopenaicalling.azurewebsites.net/api/',
     summary: 'getSummary',
     feedback: 'getPersonalFeedback',
     sentiment: 'GetSentiments',
     supportAgent: 'GetSuggestionForXBoxSupportAgent',
-}
-
-export const acsOpenAiPromptsApiV2 = {  
-    
+    callInsights: 'getCallInsights'
 }
 
 export const utils = {
@@ -26,20 +23,23 @@ export const utils = {
         return window.location.origin;
     },
     sendCaptionsDataToAcsOpenAI: async (apiEndpoint, participantName, lastResponse, newCaptionsData, isVersion2 = false) => {
+        console.log(`CHUK Captions data: ${newCaptionsData}`);
         let response = await axios({
-            url: isVersion2 ? acsOpenAiPromptsApiV2.base + apiEndpoint : acsOpenAiPromptsApi.base + apiEndpoint,
+            url: acsOpenAiPromptsApi.base + apiEndpoint,
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': "*",
-                'x-functions-key': 'PUT_FUNCTION_KEY'
             },
-            data: {
-                "CurrentParticipant": participantName,
-                "Captions": JSON.stringify(newCaptionsData),
-                "LastSummary": JSON.stringify(lastResponse)
-
-            }
+            data: isVersion2 ? 
+                {
+                    "transcript": newCaptionsData.join("")
+                } : 
+                {
+                    "CurrentParticipant": participantName,
+                    "Captions": JSON.stringify(newCaptionsData),
+                    "LastSummary": JSON.stringify(lastResponse),
+                }
         });
         if (response.status === 200) {
             return response.data;

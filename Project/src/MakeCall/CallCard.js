@@ -1306,7 +1306,7 @@ export default class CallCard extends React.Component {
                         </div>
                     </div>
                 }
-                {
+                {/* {
                     this.state.captionOn &&
                     <div className="mt-5">
                         <div className="ms-Grid-row">
@@ -1345,7 +1345,7 @@ export default class CallCard extends React.Component {
                         </div>
                     </div>
 
-                }
+                } */}
                 {
                     this.state.showDataChannel &&
                     <div className="mt-5">
