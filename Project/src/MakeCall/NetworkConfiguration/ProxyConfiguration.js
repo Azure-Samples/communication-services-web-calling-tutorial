@@ -9,18 +9,18 @@ export const ProxyConfiguration = (props) => {
     const [proxyUrl, setProxyUrl] = useState('');
 
     return (
-        <div className='pre-init-option proxy-configuration ms-Grid-col ms-lg4 ms-sm12'>
+        <div>
             Proxy configuration
             <Checkbox 
-                className='mt-2 ml-3'
+                className='mt-2'
                 label='Use proxy'
                 checked={props.proxy.useProxy}
                 onChange={props.handleProxyChecked}
                 disabled={!props.proxy.url}
             />
-            <div className='mt-2 ml-3'>{props.proxy.url}</div>
+            <div className='mt-2'>{props.proxy.url}</div>
             <TextField
-                className='mt-2 ml-3'
+                className='mt-2'
                 label='URL'
                 onChange={(e) => {
                     setProxyUrl(e.target.value);
@@ -28,7 +28,7 @@ export const ProxyConfiguration = (props) => {
                 value={proxyUrl}
             >
             </TextField>
-            <div className='button-group ms-Grid-row mt-2 ml-3'>
+            <div className='button-group ms-Grid-row mt-2'>
                 <div className='button-container ms-Grid-col ms-sm6'>
                     <PrimaryButton
                         text='Add URL'

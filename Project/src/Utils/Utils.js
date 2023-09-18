@@ -2,21 +2,25 @@ import {
     isCommunicationUserIdentifier,
     isPhoneNumberIdentifier,
     isMicrosoftTeamsUserIdentifier,
-    isUnknownIdentifier
+    isUnknownIdentifier,
+    createIdentifierFromRawId
 } from '@azure/communication-common';
+import { PublicClientApplication } from "@azure/msal-browser";
+import { authConfig, authScopes } from "../../oAuthConfig"
 import axios from 'axios';
 
 export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    getCommunicationUserToken: async () => {
+    getCommunicationUserToken: async (communicationUserId) => {
         let response = await axios({
             url: 'getCommunicationUserToken',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            data: communicationUserId ? JSON.stringify({communicationUserId}) : undefined
         })
         if (response.status === 200) {
             return response.data;
@@ -50,6 +54,41 @@ export const utils = {
             return response.data;
         }
         throw new Error('Failed to get ACS User Acccess token for the given OneSignal Registration Token');
+    },
+    teamsPopupLogin: async () => {
+        const oAuthObj = new PublicClientApplication(authConfig);
+        const popupLoginRespoonse = await oAuthObj.loginPopup({scopes: authScopes.popUpLogin});
+        const response = await axios({
+            url: 'teamsPopupLogin',
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json, text/plain, */*',
+                'Content-type': 'application/json'
+            },
+            data: JSON.stringify({
+                aadToken: popupLoginRespoonse.accessToken,
+                userObjectId: popupLoginRespoonse.uniqueId
+            })
+        });
+        if (response.status === 200) {
+            return response.data;
+        }
+        throw new Error('Failed to get Teams User Acccess token');
+    },
+    teamsM365Login: async (email, password) => {
+        const response = await axios({
+            url: 'teamsM365Login',
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json, text/plain, */*',
+                'Content-type': 'application/json'
+            },
+            data: JSON.stringify({email, password })
+        })
+        if (response.status === 200) {
+            return response.data;
+        }
+        throw new Error('Failed to get Teams User Acccess token');
     },
     getIdentifierText: (identifier) => {
         if (isCommunicationUserIdentifier(identifier)) {
@@ -90,5 +129,22 @@ export const utils = {
                 });
             }
         }
+    },
+    isParticipantSpotlighted(participantId, spotlightState) {
+        if (!participantId || !spotlightState) { return false }
+        let rtn = spotlightState.find(element => this.getIdentifierText(element.identifier) === this.getIdentifierText(participantId));
+        return !!rtn
+        
+    },
+    isParticipantHandRaised(participantId, raisedHandState) {
+        if (!participantId || !raisedHandState) { return false }
+        let rtn = raisedHandState.find(element => this.getIdentifierText(element.identifier) === this.getIdentifierText(participantId));
+        return !!rtn
+    },
+    getParticipantPublishStates(participantId, publishedStates) {
+        let states = {isSpotlighted: false, isHandRaised: false}
+        states.isSpotlighted = this.isParticipantSpotlighted(participantId, publishedStates.spotlight)
+        states.isHandRaised = this.isParticipantHandRaised(participantId, publishedStates.raiseHand)
+        return states
     }
 }

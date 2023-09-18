@@ -1,80 +1,41 @@
 import React from "react";
 import { PrimaryButton } from 'office-ui-fabric-react'
-import { LocalVideoStream } from "@azure/communication-calling";
 
 export default class CustomVideoEffects extends React.Component {
 
     constructor(props) {
         super(props);
         this.call = props.call;
-        this.deviceManager = props.deviceManager;
-        this.remoteVideoElementId = props.videoContainerId;
+        this.stream = props.stream;
+        this.isLocal = props.isLocal;
+        this.bwStream = undefined;
+        this.bwVideoelem = undefined;
+        this.bwTimeout = undefined;
+        this.bwCtx = undefined;
+        this.dummyTimeout = undefined;
         this.remoteParticipantId = props.remoteParticipantId;
-        this.isOutgoingVideoComponent = !props.remoteParticipantId;
-        this.outgoingVideoBtns = {
-            add: {
-                label: "Set B/W effect on local video", 
-                disabled: false
-            },
-            remove: {
-                label: "Remove effect on local video", 
-                disabled: true
-            },
-            sendDummy: {
-                label: "Send dummy local video", 
-                disabled: false
-            }
-        };
-        this.incomingVideoBtns = {
-            add: {
-                label: "Set B/W effect on remote video", 
-                disabled: false
-            },
-            remove: {
-                label: "Remove effect on remote video", 
-                disabled: false
-            }
+
+        this.state = {
+            buttons: props.buttons ? props.buttons : undefined,
+            videoContainerId: props.videoContainerId
         };
     }
 
-    bwVideoStream(currentStream) { 
-        let width = 1280, height = 720;
-        const videoElem = document.createElement("video");
-        videoElem.srcObject = currentStream;
-        videoElem.height = height;
-        videoElem.width = width;
-        videoElem.play();
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d', {willReadFrequently: true});
-        canvas.width = width;
-        canvas.height = height;
-        
+    componentWillUnmount() {
+        if (this.dummyTimeout) {
+            clearTimeout(this.dummyTimeout);
+        }
 
-        const FPS = 30;
-        function processVideo() {
-            try {
-                let begin = Date.now();
-                // start processing.
-                ctx.filter = "grayscale(1)";
-                ctx.drawImage(videoElem, 0, 0, width, height);
-                const imageData = ctx.getImageData(0, 0, width, height);
-                ctx.putImageData(imageData, 0, 0);              
-                // schedule the next one.
-                let delay = Math.abs(1000/FPS - (Date.now() - begin));
-                setTimeout(processVideo, delay)
-                ;
-            } catch (err) {
-                console.error(err);
-            }
-        };
-
-        // schedule the first one.
-        setTimeout(processVideo, 0);
-        return canvas.captureStream(FPS);
+        if (this.bwVideoElem) {
+            this.bwCtx.clearRect(0, 0, this.bwVideoElem.width, this.bwVideoElem.height);
+            clearTimeout(this.bwTimeout);
+            this.bwVideoElem.srcObject.getVideoTracks().forEach((track) => { track.stop(); });
+            this.bwVideoElem.srcObject = null;
+        }
     }
 
-    setSourceObject(mediaStream, videoContainerId) {
-        const target = document.getElementById(videoContainerId)
+    setRemoteVideoElementSourceObject(mediaStream) {
+        const target = document.getElementById(this.state.videoContainerId)
         const video = target.querySelector("video");
         if(video) {
             try {
@@ -84,6 +45,94 @@ export default class CustomVideoEffects extends React.Component {
                 console.error('There was an issue setting the source', err);
             }   
         }
+    }
+
+    async addEffect(e) {
+        switch (e.currentTarget.children[0].textContent) {
+            case this.isLocal && this.state.buttons?.add?.label: {
+                //add filters to outgoing video  
+                const localVideoStreamRawStream = await this.stream.getMediaStream();
+                const { bwStream, bwVideoElem } = this.bwVideoStream(localVideoStreamRawStream);
+                this.bwStream = bwStream;
+                this.bwVideoElem = bwVideoElem;
+                if(bwStream) {
+                    this.stream.setMediaStream(bwStream);
+                }
+                break;
+            }
+            case this.isLocal && this.state.buttons?.sendDummy?.label: {
+                // send a dummy video
+                const dummyStream = this.dummyStream();
+                if(dummyStream) {
+                    this.stream.setMediaStream(dummyStream);
+                }
+                break;
+            }
+            case !this.isLocal && this.state.buttons?.add?.label: {
+                const remoteVideoStreamRawStream = await this.stream.getMediaStream();
+                const { bwStream, bwVideoElem } = this.bwVideoStream(remoteVideoStreamRawStream);
+                if (bwStream) {
+                    this.setRemoteVideoElementSourceObject(bwStream);
+                }
+                break;
+            }
+            case !this.isLocal && this.state.buttons?.remove?.label:{
+                const originalRemoteVideoStream = await this.stream.getMediaStream();
+                if(originalRemoteVideoStream) {
+                    //render original unfiltered video
+                    this.setRemoteVideoElementSourceObject(originalRemoteVideoStream);
+                }
+                break;
+            }
+        }
+
+        if (this.isLocal) {
+            this.setState({ buttons: {
+                add: {
+                    label: "Set B/W effect",
+                    disabled: true
+                },
+                sendDummy: {
+                    label: "Set dummy effect", 
+                    disabled: true
+                }
+            }});
+        }
+    }
+
+    bwVideoStream(stream) {
+        let width = 1280, height = 720;
+        const bwVideoElem = document.createElement("video");
+        bwVideoElem.srcObject = stream;
+        bwVideoElem.height = height;
+        bwVideoElem.width = width;
+        bwVideoElem.play();
+        const canvas = document.createElement('canvas');
+        this.bwCtx = canvas.getContext('2d', { willReadFrequently: true });
+        canvas.width = width;
+        canvas.height = height;
+
+        const FPS = 30;
+        const processVideo = function () {
+            try {
+                let begin = Date.now();
+                // start processing.
+                this.bwCtx.filter = "grayscale(1)";
+                this.bwCtx.drawImage(bwVideoElem, 0, 0, width, height);
+                const imageData = this.bwCtx.getImageData(0, 0, width, height);
+                this.bwCtx.putImageData(imageData, 0, 0);
+                // schedule the next one.
+                let delay = Math.abs(1000/FPS - (Date.now() - begin));
+                this.bwTimeout = setTimeout(processVideo, delay);
+            } catch (err) {
+                console.error(err);
+            }
+        }.bind(this);
+
+        // schedule the first one.
+        this.bwTimeout = setTimeout(processVideo, 0);
+        const bwStream = canvas.captureStream(FPS);
+        return { bwStream, bwVideoElem };
     }
 
     dummyStream() {
@@ -109,126 +158,33 @@ export default class CustomVideoEffects extends React.Component {
                 }            
                 // schedule the next one.
                 let delay = Math.abs(1000/FPS - (Date.now() - begin));
-                setTimeout(createShapes, delay);
+                this.dummyTimeout = setTimeout(createShapes, delay);
             } catch (err) {
                 console.error(err);
             }
         };
 
         // schedule the first one.
-        setTimeout(createShapes, 0);
+        this.dummyTimeout = setTimeout(createShapes, 0);
         return canvas.captureStream(FPS);
     }
 
-    async addEffect(e) {
-        const identifierTable = {
-            communicationUser: ["communicationUserId"],
-            phoneNumber: ["rawId", "phoneNumber"],
-            microsoftTeamsUser: ["rawId", "microsoftTeamsUserId", "isAnonymous", "cloud"],
-            unknown: ["id"],
-            videocontainerid: e.currentTarget.dataset.videocontainerid
-
-        };
-        switch (e.currentTarget.children[0].textContent) {
-            case this.outgoingVideoBtns.add.label:
-                //add filters to outgoing video  
-                const _addLocalVideoStream = this.call.localVideoStreams[0];
-                const _localVideoStreamRawStream = await _addLocalVideoStream.getMediaStream();
-                const bwStream = this.bwVideoStream(_localVideoStreamRawStream);
-                if(bwStream) {
-                    this.outgoingVideoBtns.add.disabled = true;
-                    this.outgoingVideoBtns.remove.disabled = false;
-                    this.call.localVideoStreams[0].setMediaStream(bwStream);
-                }
-                break;
-            case this.outgoingVideoBtns.remove.label:
-                //remove filters from outgoing video
-                const cameras = await this.deviceManager.getCameras();
-                const localVideoStream = new LocalVideoStream(cameras[0]);
-                const mediaStream = await localVideoStream.getMediaStream();
-                this.call.localVideoStreams[0].setMediaStream(mediaStream);
-                this.outgoingVideoBtns.add.disabled = false;
-                this.outgoingVideoBtns.remove.disabled = true;
-                break;
-            case this.outgoingVideoBtns.sendDummy.label:
-                // send a dummy video
-                const _dummyStream = this.dummyStream();
-                if(_dummyStream) {
-                    this.call.localVideoStreams[0].setMediaStream(_dummyStream);
-                    this.outgoingVideoBtns.remove.disabled = false;
-                }
-                break;
-            case this.incomingVideoBtns.add.label:
-                //add filters to incoming video
-                this.call.remoteParticipants.forEach((participant) => {
-                    identifierTable[participant.identifier.kind].forEach(async (prop) => {
-                        if(participant.identifier[prop] === e.currentTarget.dataset[prop.toLowerCase()]) {
-                            const _addRemoteVideoStream = await participant.videoStreams[0].getMediaStream();
-                            const bwRemoteStream = this.bwVideoStream(_addRemoteVideoStream);
-                            if(bwRemoteStream) {
-                                //render the filtered video
-                                this.setSourceObject(bwRemoteStream, identifierTable.videocontainerid);
-                            }
-                        }
-                    })
-                });
-                break;
-            case this.incomingVideoBtns.remove.label:
-                //remove filters from incoming video
-                this.call.remoteParticipants.forEach((participant) => {
-                    identifierTable[participant.identifier.kind].forEach(async (prop) => {
-                        if(participant.identifier[prop] === e.currentTarget.dataset[prop.toLowerCase()]) {
-                            const _removeRemoteVideoStream = await participant.videoStreams[0].getMediaStream();
-                            if(_removeRemoteVideoStream) {
-                                //render original unfiltered video
-                                this.setSourceObject(_removeRemoteVideoStream, identifierTable.videocontainerid);
-                            }
-                        }
-                    })
-                });
-                break;
-        }       
-    }
-
-    renderElm() {
-        return this.isOutgoingVideoComponent 
-            ?
-                Object.keys(this.outgoingVideoBtns).map((obj, idx) => {
-                    return <PrimaryButton 
-                                key={`${idx}-abcd`} 
-                                className="primary-button mt-3" 
-                                onClick={async (e) => this.addEffect(e)}
-                                disabled={this.outgoingVideoBtns[obj].disabled}>
-                                    {this.outgoingVideoBtns[obj].label}
-                            </PrimaryButton>
-                })
-            :
-                Object.keys(this.incomingVideoBtns).map((obj, idx) => {
-                    const dataProps = {
-                        "data-videocontainerid": this.props.videoContainerId
-                    };
-                    for (const id in this.props.remoteParticipantId) {
-                        dataProps[`data-${id.toLowerCase()}`] = this.props.remoteParticipantId[id];
-                    }
-                    return <PrimaryButton 
-                                key={`${idx}-abcd`} 
-                                data-videocontainerid={this.props.videoContainerId}
-                                {...dataProps}
-                                className="primary-button mt-3" onClick={async (e) => this.addEffect(e)}
-                                disabled={this.incomingVideoBtns[obj].disabled}>
-                                    {this.incomingVideoBtns[obj].label}
-                            </PrimaryButton>
-                })
-    }
-
- 
-
     render() {
-
         return(
-            <div className={`custom-video-effects-buttons ${this.isOutgoingVideoComponent ? 'outgoing' : 'incoming'}`}>
+            <div className={`custom-video-effects-buttons ${this.isLocal ? 'outgoing' : 'incoming'} inline-block`}>
                 {
-                    this.renderElm()
+                    this.state.buttons &&
+                    Object.keys(this.state.buttons).map((obj, idx) => {
+                        return <div>
+                            <PrimaryButton 
+                                key={`${idx}-abcd`} 
+                                className="secondary-button" 
+                                onClick={async (e) => this.addEffect(e)}
+                                disabled={this.state.buttons[obj].disabled}>
+                                    {this.state.buttons[obj].label}
+                            </PrimaryButton>
+                        </div>
+                    })
                 }
             </div>
         )

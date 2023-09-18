@@ -45,12 +45,13 @@ export default class VideoEffectsContainer extends React.Component {
     }
 
     initLocalVideoStreamFeatureApi() {
-        if (this.call.localVideoStreams.length < 1) {
+        const localVideoStream =  this.call.localVideoStreams.find(v => { return v.mediaStreamType === 'Video'});
+
+        if (!localVideoStream) {
             this.logError('No local video streams found.');
             return;
         }
-
-        const lvsFeatureApi = this.call.localVideoStreams[0].feature && this.call.localVideoStreams[0].feature(Features?.VideoEffects);
+        const lvsFeatureApi = localVideoStream.feature && localVideoStream.feature(Features?.VideoEffects);
         if (!lvsFeatureApi) {
             this.logError('Could not get local video stream feature API.');
             return;
@@ -164,42 +165,36 @@ export default class VideoEffectsContainer extends React.Component {
 
     render() {
         return (
-            <div className='ms-Grid-row' id='video-effects-container'>
-                {this.state.supportedVideoEffectsPopulated ? 
-                    <>
-                        <div className='video-effects-selector'>
-                            <Dropdown
-                                onChange={(e, item) => this.effectSelectionChanged(e, item)}
-                                options={this.state.videoEffectsList}
-                                label={'Select video effect'}
-                                placeHolder={this.state.supportedVideoEffects.length === 0 ? 'No video effects available' : 'Select an option'}
-                                styles={{ dropdown: { width: 300, color: 'black' } }}
-                            />
-                            <div className='effect-buttons-container'>
-                                <PrimaryButton
-                                    className='primary-button'
-                                    disabled={!this.state.supportedVideoEffectsPopulated || this.state.supportedVideoEffects.length === 0}
-                                    onClick={() => this.startEffects()}
-                                >
-                                    {this.state.startEffectsLoading ? <LoadingSpinner /> : 'Start Effects'}
-                                </PrimaryButton>
+            <div>
+                <h4>Video effects</h4>
+                {this.state.supportedVideoEffects.length > 0 ?
+                    <div>
+                        <Dropdown
+                            onChange={(e, item) => this.effectSelectionChanged(e, item)}
+                            options={this.state.videoEffectsList}
+                            placeHolder={'Select an option'}
+                            styles={{ dropdown: { width: 300, color: 'black' } }}
+                        />
+                        <PrimaryButton
+                            className='secondary-button mt-2'
+                            onClick={() => this.startEffects()}
+                        >
+                            {this.state.startEffectsLoading ? <LoadingSpinner /> : 'Start Effects'}
+                        </PrimaryButton>
 
-                                <PrimaryButton
-                                    className='primary-button'
-                                    disabled={!this.state.supportedVideoEffectsPopulated || this.state.supportedVideoEffects.length === 0}
-                                    onClick={() => this.stopEffects()}
-                                >
-                                    {this.state.stopEffectsLoading ? <LoadingSpinner /> : 'Stop Effects'}
-                                </PrimaryButton>
-                            </div>
-                        </div>
+                        <PrimaryButton
+                            className='secondary-button mt-2'
+                            onClick={() => this.stopEffects()}
+                        >
+                            {this.state.stopEffectsLoading ? <LoadingSpinner /> : 'Stop Effects'}
+                        </PrimaryButton>
                         <VideoEffectsImagePicker 
                             disabled={this.state.selectedVideoEffect.name !== 'BackgroundReplacement'}
                             handleImageClick={(imageLocation) => this.handleImageClick(imageLocation)}
                         />
-                    </>
+                    </div>
                     :
-                    <LoadingSpinner /> 
+                    <div>Background Blur/Replacement are only supported on Windows Chrome, Windows Edge, MacOS Chrome, MacOS Edge, and MacOS Safari</div>
                 }
             </div>
         );

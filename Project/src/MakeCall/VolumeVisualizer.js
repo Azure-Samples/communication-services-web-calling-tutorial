@@ -30,24 +30,25 @@ const VolumeVisualizer = ({ deviceManager, call }) => {
 
 const VolumeIndicator = ({ title, audioStream }) => {
     const [volumeLevel, setVolumeLevel] = useState(0);
-    const [volumeIndicator, setVolumeIndicator] = useState();
+    const [volume, setVolume] = useState();
 
     useEffect(() => {
-        const setVolume = async() => {
+        const setUpVolume = async() => {
             const volume = await audioStream?.getVolume();
-            setVolumeIndicator(volume);
+            setVolume(volume);
             volume?.on('levelChanged', () => {
                 setVolumeLevel(volume.level);
             });
+            setVolumeLevel(volume.level);
         };
-        setVolume();
+        setUpVolume();
     }, [audioStream]);
     
     useEffect(() => {
         return () => {
-            volumeIndicator?.off('levelChanged', () => {});
+            volume?.off('levelChanged', () => {});
         };
-    }, [volumeIndicator])
+    }, [volume])
 
     return (
         <div className="elements">
