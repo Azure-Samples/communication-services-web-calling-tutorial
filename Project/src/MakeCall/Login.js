@@ -7,7 +7,7 @@ import { Features } from "@azure/communication-calling";
 import { utils } from "../Utils/Utils";
 import { v4 as uuid } from 'uuid';
 import OneSignal from "react-onesignal";
-import * as config from '../../clientConfig.json';
+import config from '../../clientConfig.json';
 import { TurnConfiguration } from './NetworkConfiguration/TurnConfiguration';
 import { ProxyConfiguration } from './NetworkConfiguration/ProxyConfiguration';
 

@@ -4,7 +4,7 @@ import {
 } from 'office-ui-fabric-react'
 import StarRating from '../MakeCall/StarRating';
 import { Features } from '@azure/communication-calling';
-import * as config from '../../clientConfig.json';
+import config from '../../clientConfig.json';
 import { ApplicationInsights } from '@microsoft/applicationinsights-web';
 import { TextField } from 'office-ui-fabric-react';
 
