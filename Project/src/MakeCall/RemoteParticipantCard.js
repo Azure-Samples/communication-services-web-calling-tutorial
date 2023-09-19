@@ -87,6 +87,11 @@ export default class RemoteParticipantCard extends React.Component {
         this.call.removeParticipant(identifier).catch((e) => console.error(e))
     }
 
+    handleMuteParticipant(e, remoteParticipant) {
+        e.preventDefault();
+        remoteParticipant.mute?.().catch((e) => console.error('Failed to mute specific participant.', e))
+    }
+
     handleCheckboxChange(e) {
         this.props.onSelectionChanged(this.remoteParticipant.identifier, e.target.checked);
     }
@@ -139,6 +144,7 @@ export default class RemoteParticipantCard extends React.Component {
                         {
                             <span className="in-call-button"
                                 title={`${this.state.isMuted ?'Participant is muted': ``}`}
+                                onClick={e => this.handleMuteParticipant(e, this.remoteParticipant)}
                             >
                                 {<Icon 
                                     iconName={this.state.isMuted ? "MicOff2" : "Microphone"}
