@@ -4,6 +4,9 @@ import {
 } from 'office-ui-fabric-react'
 import StarRating from '../MakeCall/StarRating';
 import { Features } from '@azure/communication-calling';
+import * as config from '../../clientConfig.json';
+import { ApplicationInsights } from '@microsoft/applicationinsights-web';
+import { TextField } from 'office-ui-fabric-react';
 
 export default class CallSurvey extends React.Component {
     constructor(props) {
@@ -18,9 +21,21 @@ export default class CallSurvey extends React.Component {
             videoRating: 0,
             screenShareIssue: '',
             screenShareRating: 0,
-            surveyError: ''
-
+            surveyError: '',
+            improvementSuggestion: ''
         };
+        
+        if (config.appInsightsConnectionString) {
+            // Typical application will have the app insights already initialized, so that can be used here.
+            this.appInsights = new ApplicationInsights({
+                config: {
+                    // Use atob function to decode only if the connection string is base64. To encode: btoa("connection string")
+                    connectionString: atob(config.appInsightsConnectionString)
+                }
+            });
+            this.appInsights.loadAppInsights();
+        }
+
     }
 
     componentWillUnmount() {
@@ -62,7 +77,18 @@ export default class CallSurvey extends React.Component {
         if (this.state.audioRating !== 0) rating.audioRating = { score: this.state.audioRating, issues: [this.state.audioIssue] };
         if (this.state.videoRating !== 0) rating.videoRating = { score: this.state.videoRating, issues: [this.state.videoIssue] };
         if (this.state.screenShareRating !== 0) rating.screenshareRating = { score: this.state.screenShareRating, issues: [this.state.screenShareIssue] };
-        this.call.feature(Features.CallSurvey).submitSurvey(rating).then(() => {
+        this.call.feature(Features.CallSurvey).submitSurvey(rating).then((res) => {
+            if (this.appInsights && this.state.improvementSuggestion !== '') {
+                this.appInsights.trackEvent({
+                    name: "CallSurvey", properties: {
+                        // Survey ID to correlate the survey
+                        id: res.id,
+                        // Other custom properties as key value pair
+                        improvementSuggestion: this.state.improvementSuggestion
+                    }
+                });
+                this.appInsights.flush();
+            }
             this.props.onSubmitted();
         }).catch((e) => {
             console.error('Failed to submit survey', e);
@@ -136,6 +162,18 @@ export default class CallSurvey extends React.Component {
                                 onIssueSelected={(category, issue) => this.captureIssue(category, issue)}
                                 onRate={(category, score) => this.captureRating(category, score)}
                             /></div>
+                    </div>
+                </div>
+                <div className="ms-Grid">
+                    <div className="ms-Grid-row">
+                        <div className="ms-Grid-col ms-sm4 ms-md4 ms-lg2"><h3 className="m-0">How can we improve? <span>(optional)</span></h3></div>
+                        <div className="ms-Grid-col ms-sm4 ms-md8 ms-lg10">
+                            <TextField
+                                defaultValue={undefined}
+                                placeholder="Improvement suggestion"
+                                label="Improvement suggestion (optional)"
+                                onChange={(e) => { this.state.improvementSuggestion = e.target.value }}/>
+                        </div>
                     </div>
                 </div>
             </div>

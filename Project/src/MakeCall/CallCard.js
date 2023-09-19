@@ -882,13 +882,13 @@ export default class CallCard extends React.Component {
                 </div>
                 <div className="ms-Grid-row">
                     <div className="ms-Grid-col ms-lg6">
-                        {
-                            this.state.callState !== 'Connected' &&
-                            <div>
+                        <div>
+                            {
+                                this.state.callState !== 'Connected' &&
                                 <div className="inline-block ringing-loader mr-2"></div>
-                                <h2 className="inline-block">{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
-                            </div>
-                        }
+                            }                            
+                            <h2 className="inline-block">{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
+                        </div>
                     </div>
                     {
                         this.call &&
