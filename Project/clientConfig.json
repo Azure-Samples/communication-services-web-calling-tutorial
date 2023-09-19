@@ -1,4 +1,5 @@
 {
     "oneSignalAppId": "",
-    "oneSignalSafariWebId": ""
+    "oneSignalSafariWebId": "",
+    "appInsightsConnectionString": ""
 }
