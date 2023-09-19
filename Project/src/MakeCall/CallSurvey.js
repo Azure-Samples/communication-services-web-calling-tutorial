@@ -29,7 +29,7 @@ export default class CallSurvey extends React.Component {
             // Typical application will have the app insights already initialized, so that can be used here.
             this.appInsights = new ApplicationInsights({
                 config: {
-                    // Use atob function to decode only if the connection string is base64. To encoded btoa("connection string")
+                    // Use atob function to decode only if the connection string is base64. To encode: btoa("connection string")
                     connectionString: atob(config.appInsightsConnectionString)
                 }
             });
