@@ -958,12 +958,6 @@ export default class CallCard extends React.Component {
                             }
                         </span>
                         <span className="in-call-button"
-                            title={`Mute all other participants`}
-                            variant="secondary"
-                            onClick={() => this.handleMuteAllRemoteParticipants()}>
-                            <Icon iconName="VolumeDisabled" />
-                        </span>
-                        <span className="in-call-button"
                             onClick={() => this.call.hangUp()}>
                             <Icon iconName="DeclineCall" />
                         </span>
@@ -1027,6 +1021,12 @@ export default class CallCard extends React.Component {
                                 !this.state.incomingAudioMuted &&
                                 <Icon iconName="Volume2" />
                             }
+                        </span>
+                        <span className="in-call-button"
+                            title={`Mute all other participants`}
+                            variant="secondary"
+                            onClick={() => this.handleMuteAllRemoteParticipants()}>
+                            <Icon iconName="VolumeDisabled" />
                         </span>
                         <span className="in-call-button"
                             title={`${this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'RawMedia' ? 'Stop' : 'Start'} screen sharing a dummy stream`}
