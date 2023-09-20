@@ -17,6 +17,7 @@ const CallCaption = ({ call }) => {
 
     useEffect(() => {
         try {
+            window.captionHistory = [];
             startCaptions(captions);
         }
         catch(e) {
@@ -92,7 +93,7 @@ const CallCaption = ({ call }) => {
 
             if (captionData.resultType === 'Final') {
                 foundCaptionContainer.setAttribute('isNotFinal', 'false');
-                setCaptionHistory(oldCaptions => [...oldCaptions, `${captionData.speaker.displayName}: ${captionData.captionText ?? captionData.spokenText}`]);
+                window.captionHistory.push(`${captionData.speaker.displayName}: ${captionData.captionText ?? captionData.spokenText}`);
             }
         }
     };
@@ -163,7 +164,7 @@ const CallCaption = ({ call }) => {
 
                     {
                         communicationAI &&
-                        <CommunicationAI captionHistory={captionHistory} />
+                        <CommunicationAI call={call} />
                     }
             </div>
         </>

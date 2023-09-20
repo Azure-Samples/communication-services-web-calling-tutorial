@@ -15,14 +15,19 @@ export const acsOpenAiPromptsApi = {
     feedback: 'getPersonalFeedback',
     sentiments: 'getSentiments',
     supportXBoxSupportAgent: 'GetSuggestionForXBoxSupportAgent',
-    callInsight: 'callInsights'
+    callInsight: 'CallInsights'
 }
 
 export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    sendCaptionsDataToAcsOpenAI: async (apiEndpoint, participantName, lastResponse, newCaptionsData) => {
+    sendCaptionsDataToAcsOpenAI: async (apiEndpoint, participantName, lastResponse, newCaptionsData, callId) => {
+        const data = { "transcript": JSON.stringify(newCaptionsData) };
+        if(apiEndpoint === acsOpenAiPromptsApi.callInsight) {
+            data.callId = callId;
+        }
+
         let response = await axios({
             url: acsOpenAiPromptsApi.base + apiEndpoint,
             method: 'POST',
@@ -32,12 +37,7 @@ export const utils = {
                 'X-Requested-With': 'XMLHttpRequest',
                 'x-functions-key': 'Yw2JNDU3ztoi4XMy1QofF8-oAV3ZfXiHAYLnKIDfA4DWAzFunp0nfg=='
             },
-            data: {
-       //         "CurrentParticipant": participantName,
-                "transcript": JSON.stringify(newCaptionsData),
-      //          "LastSummary": JSON.stringify(lastResponse)
-
-            }
+            data: data
         });
         if (response.status === 200) {
             return response.data;

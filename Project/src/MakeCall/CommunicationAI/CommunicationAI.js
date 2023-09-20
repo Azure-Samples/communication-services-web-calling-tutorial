@@ -4,7 +4,7 @@ import { Dropdown } from '@fluentui/react/lib/Dropdown';
 import { utils, acsOpenAiPromptsApi } from "../../Utils/Utils";
 
 
-const CommunicationAI = ({ captionHistory }) => {
+const CommunicationAI = ({call}) => {
     const [showSpinner, setShowSpinner] = useState(false);
     const [lastSummary, setLastSummary] = useState("");
     const [captionsSummaryIndex, setCaptionsSummaryIndex] = useState(0);
@@ -18,41 +18,54 @@ const CommunicationAI = ({ captionHistory }) => {
         { key: 'getSentiments', text: 'Get Sentiments'}
     ];
 
+    useEffect(() => {
+        call.on('stateChanged', () => {
+            if (call.state === 'Disconnected') {
+                callInsight(call.id);
+            }
+        });
+    }, []);
+
     const supportXBoxSupportAgent = async () => {
-        const currentCaptionsData = captionHistory.slice(captionsSummaryIndex);
+        const currentCaptionsData = window.captionHistory.slice(captionsSummaryIndex);
         let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.supportXBoxSupportAgent, displayName, lastSummary, currentCaptionsData);
         console.log("response received from supportXBoxSupportAgent");
         console.log(response);
         const content = response.choices[0].message.content;
         setLastSummary(content);
-        setCaptionsSummaryIndex(captionHistory.length);
+        setCaptionsSummaryIndex(window.captionHistory.length);
         setPromptResponse(content);
     }
 
+    const callInsight = async (callId) => {
+        const currentCaptionsData = window.captionHistory.join(" ");
+        await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.callInsight, 'displayName', 'lastFeedBack', currentCaptionsData, callId);
+    }
+
     const getSummary = async () => {
-        const currentCaptionsData = captionHistory.slice(captionsSummaryIndex);
+        const currentCaptionsData = window.captionHistory.slice(captionsSummaryIndex);
         let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.summary, displayName, lastSummary, currentCaptionsData);
         const content = response.choices[0].message.content;
         setLastSummary(content);
-        setCaptionsSummaryIndex(captionHistory.length);
+        setCaptionsSummaryIndex(window.captionHistory.length);
         setPromptResponse(content);
     }
 
     const getPersonalFeedback = async () => {
-        const currentCaptionsData = captionHistory.slice(captionsFeedbackIndex);
+        const currentCaptionsData = window.captionHistory.slice(captionsFeedbackIndex);
         let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.feedback, displayName, lastFeedBack, currentCaptionsData)
         const content = response.choices[0].message.content;
         setLastFeedBack(content);
-        setCaptionsFeedbackIndex(captionHistory.length);
+        setCaptionsFeedbackIndex(window.captionHistory.length);
         setPromptResponse(content);
     }
 
     const getSentiments = async () => {
-        const currentCaptionsData = captionHistory.join(" ");
+        const currentCaptionsData = window.captionHistory.join(" ");
         let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.sentiments, displayName, lastFeedBack, currentCaptionsData)
         const content = response;
         setLastFeedBack(content);
-        setCaptionsFeedbackIndex(captionHistory.length);
+        setCaptionsFeedbackIndex(window.captionHistory.length);
         setPromptResponse(content);
     }
 
