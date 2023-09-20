@@ -40,6 +40,7 @@ export default class CallCard extends React.Component {
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.capabilitiesFeature = this.call.feature(Features.Capabilities);
         this.dominantSpeakersFeature = this.call.feature(Features.DominantSpeakers);
+        this.meetingReaction = this.call.feature(Features.MeetingReaction);
         this.identifier = props.identityMri;
         this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
@@ -84,7 +85,8 @@ export default class CallCard extends React.Component {
             dominantSpeakersListActive: false,
             dominantSpeakers:[],
             showDataChannel: false,
-            showAddParticipantPanel: false
+            showAddParticipantPanel: false,
+            reactionRows:[]
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
@@ -109,6 +111,7 @@ export default class CallCard extends React.Component {
         this.call.feature(Features.Spotlight).off('spotlightChanged', this.spotlightStateChangedHandler);
         this.call.feature(Features.RaiseHand).off('raisedHandEvent', this.raiseHandChangedHandler);
         this.call.feature(Features.RaiseHand).off('loweredHandEvent', this.raiseHandChangedHandler);
+        this.call.feature(Features.MeetingReaction).off('reaction', this.reactionChangeHandler);
         this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged);
     }
 
@@ -402,6 +405,7 @@ export default class CallCard extends React.Component {
             this.raiseHandFeature.on("raisedHandEvent", this.raiseHandChangedHandler);
             this.capabilitiesFeature.on('capabilitiesChanged', this.capabilitiesChangedHandler);
             this.dominantSpeakersFeature.on('dominantSeapkersChanged', this.dominantSpeakersChanged);
+            this.meetingReaction.on('reaction', this.reactionChangeHandler);
         }
     }
 
@@ -465,6 +469,30 @@ export default class CallCard extends React.Component {
 
     raiseHandChangedHandler = (event) => {
         this.setState({isHandRaised: utils.isParticipantHandRaised(this.identifier, this.raiseHandFeature.getRaisedHands())})
+    }
+
+    reactionChangeHandler = (event) => {
+        let displayName = 'Local Participant';
+        let id = event.identifier;
+        const indexOfSecondColon = id.indexOf(':', id.indexOf(':') + 1);
+        id = id.substring(indexOfSecondColon + 1);
+        console.log(`Sender Identifier - ${event.identifier}`);
+        this.state.remoteParticipants.forEach(participant => {
+            
+            console.log('Remote id - ' + utils.getIdentifierText(participant.identifier) + " ::: Trimmed sender id - " + id + " ::: displaName - " + participant.displayName?.trim());
+            if(utils.getIdentifierText(participant.identifier) == id) {
+                displayName = participant.displayName?.trim();
+            }
+        });
+
+        const newEvent = {
+            participantIdentifier: displayName,
+            reaction: event.reactionMessage.name,
+            receiveTimestamp: new Date().toLocaleString(),
+        }
+        console.log(`reaction received - ${event.reactionMessage.name}`);
+
+        this.setState({reactionRows: [...this.state.reactionRows, newEvent].slice(-100)});
     }
 
     capabilitiesChangedHandler = (capabilitiesChangeInfo) => {
@@ -582,6 +610,36 @@ export default class CallCard extends React.Component {
         }
     }
 
+    async handleClickEmoji(index) {
+        var reaction;
+        switch(index) {
+            case 0: 
+                reaction = 'like';
+                break;
+            case 1:
+                reaction = 'heart';
+                break;
+            case 2:
+                reaction = 'laugh';
+                break;
+            case 3:
+                reaction = 'applause';
+                break;
+            case 4:
+                reaction = 'surprised';
+                break;
+            default:
+        }
+
+        const reactionMessage = {
+            reactionType: reaction
+        };
+        try {
+            this.meetingReaction.sendReaction(reactionMessage);
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
     async handleIncomingAudioOnOff() {
         try {
@@ -866,6 +924,8 @@ export default class CallCard extends React.Component {
     }
 
     render() {
+        const emojis = ['👍', '❤️', '😂', '👏', '😲'];
+
         return (
             <div className="ms-Grid mt-2">
                 <div className="ms-Grid-row">
@@ -1127,11 +1187,46 @@ export default class CallCard extends React.Component {
                                 <Icon iconName="ReminderPerson" />
                             }
                         </span>
-                        <span className="in-call-button "
+                        <span className="in-call-button"
                             title={`${this.state.isHandRaised  ? 'LowerHand' : 'RaiseHand'}`}
                             variant="secondary"
                             onClick={() => this.handleRaiseHand()}>
                             <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
+                        </span>
+                        <span className="in-call-button"
+                            title='Like Reaction'
+                            variant="secondary"
+                            onClick={() => this.handleClickEmoji(0)}
+                            style={{ cursor: 'pointer' }}>
+                                {emojis[0]}
+                        </span>
+                        <span className="in-call-button"
+                            title='Heart Reaction'
+                            variant="secondary"
+                            onClick={() => this.handleClickEmoji(1)}
+                            style={{ cursor: 'pointer' }}>
+                                {emojis[1]}
+                        </span>
+                        <span className="in-call-button"
+                            title='Laugh Reaction'
+                            variant="secondary"
+                            onClick={() => this.handleClickEmoji(2)}
+                            style={{ cursor: 'pointer' }}>
+                                {emojis[2]}
+                        </span>
+                        <span className="in-call-button"
+                            title='Applause Reaction'
+                            variant="secondary"
+                            onClick={() => this.handleClickEmoji(3)}
+                            style={{ cursor: 'pointer' }}>
+                                {emojis[3]}
+                        </span>
+                        <span className="in-call-button"
+                            title='Surprised Reaction'
+                            variant="secondary"
+                            onClick={() => this.handleClickEmoji(4)}
+                            style={{ cursor: 'pointer' }}>
+                                {emojis[4]}
                         </span>
                         <ParticipantMenuOptions
                             id={this.identifier}
@@ -1341,6 +1436,36 @@ export default class CallCard extends React.Component {
                             this.state.callState === 'Connected' &&
                                 <DataChannelCard call={this.call} ref={this.dataChannelRef} remoteParticipants={this.state.remoteParticipants} />
                         }
+                        </div>
+                    </div>
+                }
+                {
+                    this.state.callState === 'Connected' && 
+                    <div className="mt-5">
+                        <div className="ms-Grid-row">
+                            <h3>Meeting Reactions</h3>
+                        </div>
+                        <div className="ms-Grid-row>">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Identifier</th>
+                                        <th>Reaction</th>
+                                        <th>Receive TimeStamp</th>
+                                    </tr>
+                                </thead>
+                               <tbody>
+                                   {
+                                       this.state.reactionRows.map((row, index) => (
+                                           <tr key={index}>
+                                               <td>{row.participantIdentifier}</td>
+                                               <td>{row.reaction}</td>
+                                               <td>{row.receiveTimestamp}</td>
+                                           </tr>
+                                       ))
+                                   }
+                               </tbody>
+                            </table>
                         </div>
                     </div>
                 }
