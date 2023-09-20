@@ -472,12 +472,25 @@ export default class CallCard extends React.Component {
     }
 
     reactionChangeHandler = (event) => {
+        let displayName = 'Local Participant';
+        let id = event.identifier;
+        const indexOfSecondColon = id.indexOf(':', id.indexOf(':') + 1);
+        id = id.substring(indexOfSecondColon + 1);
+        console.log(`Sender Identifier - ${event.identifier}`);
+        this.state.remoteParticipants.forEach(participant => {
+            
+            console.log('Remote id - ' + utils.getIdentifierText(participant.identifier) + " ::: Trimmed sender id - " + id + " ::: displaName - " + participant.displayName?.trim());
+            if(utils.getIdentifierText(participant.identifier) == id) {
+                displayName = participant.displayName?.trim();
+            }
+        });
+
         const newEvent = {
-            participantIdentifier: event.identifier,
+            participantIdentifier: displayName,
             reaction: event.reactionMessage.name,
             receiveTimestamp: new Date().toLocaleString(),
         }
-        console.log('reaction received - ' + event.reactionMessage.name);
+        console.log(`reaction received - ${event.reactionMessage.name}`);
 
         this.setState({reactionRows: [...this.state.reactionRows, newEvent].slice(-100)});
     }
