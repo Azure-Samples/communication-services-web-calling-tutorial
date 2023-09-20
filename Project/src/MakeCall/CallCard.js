@@ -1,7 +1,5 @@
 import React from "react";
 import { MessageBar, MessageBarType, DefaultButton } from 'office-ui-fabric-react'
-import { Toggle } from '@fluentui/react/lib/Toggle';
-import { TooltipHost } from '@fluentui/react/lib/Tooltip';
 import { FunctionalStreamRenderer as StreamRenderer } from "./FunctionalStreamRenderer";
 import AddParticipantPopover from "./AddParticipantPopover";
 import RemoteParticipantCard from "./RemoteParticipantCard";
@@ -20,8 +18,6 @@ import DataChannelCard from './DataChannelCard';
 import CallCaption from "./CallCaption";
 import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 import MediaConstraint from './MediaConstraint';
-//import CallCaption from "./CallCaption";
-import CommunicationAI from "./CommunicationAI/CommunicationAI"
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -71,7 +67,6 @@ export default class CallCard extends React.Component {
             selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id,
             selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id,
             showSettings: false,
-            communicationAI: false,
             // StartWithNormal or StartWithDummy
             localScreenSharingMode: undefined,
             callMessage: undefined,
@@ -1306,7 +1301,7 @@ export default class CallCard extends React.Component {
                         </div>
                     </div>
                 }
-                {/* {
+                {
                     this.state.captionOn &&
                     <div className="mt-5">
                         <div className="ms-Grid-row">
@@ -1318,34 +1313,9 @@ export default class CallCard extends React.Component {
                                 <CallCaption call={this.call} isTeamsUser={this.isTeamsUser}/>
                             }
                         </div>
-                        <div className="participants-panel mt-1 mb-3">
-                                <Toggle label={
-                                        <div>
-                                            Communication AI{' '}
-                                            <TooltipHost content={`Turn on Communication AI`}>
-                                                <Icon iconName="Info" aria-label="Info tooltip" />
-                                            </TooltipHost>
-                                        </div>
-                                    }
-                                    styles={{
-                                        text : { color: '#edebe9' },
-                                        label: { color: '#edebe9' },
-                                    }}
-                                    inlineLabel
-                                    onText="On"
-                                    offText="Off"
-                                    defaultChecked={this.state.communicationAI}
-                                    onChange={() => { this.setState({ communicationAI: !this.state.communicationAI })}}
-                                />
-
-                                {
-                                    this.state.communicationAI &&
-                                    <CommunicationAI call={this.call} />
-                                }
-                        </div>
                     </div>
 
-                } */}
+                }
                 {
                     this.state.showDataChannel &&
                     <div className="mt-5">
@@ -1395,32 +1365,7 @@ export default class CallCard extends React.Component {
                             }
                         </ul>
                     </div>
-                }
-                <div className="participants-panel mt-1 mb-3">
-                    <Toggle label={
-                            <div>
-                                Enable Support Agent{' '}
-                                <TooltipHost content={`Turn on AI Support Agent`}>
-                                    <Icon iconName="Info" aria-label="Info tooltip" />
-                                </TooltipHost>
-                            </div>
-                        }
-                        styles={{
-                            text : { color: '#edebe9' },
-                            label: { color: '#edebe9' },
-                        }}
-                        inlineLabel
-                        onText="On"
-                        offText="Off"
-                        defaultChecked={this.state.enableSupportAgent}
-                        onChange={() => { this.setState({ enableSupportAgent: !this.state.enableSupportAgent })}}
-                    />
-                    
-                    {
-                        this.state.enableSupportAgent &&
-                        <CommunicationAI call={this.call} />
-                    }
-                </div>
+                }               
             </div>
         );
     }

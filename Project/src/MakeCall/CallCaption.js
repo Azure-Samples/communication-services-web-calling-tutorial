@@ -1,6 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Features, ResultType, CallKind  } from '@azure/communication-calling';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
+import CommunicationAI from "./CommunicationAI/CommunicationAI";
+import { Toggle } from '@fluentui/react/lib/Toggle';
+import { TooltipHost } from '@fluentui/react/lib/Tooltip';
+import { Icon } from '@fluentui/react/lib/Icon';
 
 // CallCaption react function component
 const CallCaption = ({ call }) => {
@@ -8,7 +12,13 @@ const CallCaption = ({ call }) => {
     const [captions, setCaptions] = useState(captionsFeature.captions);
     const [currentSpokenLanguage, setCurrentSpokenLanguage] = useState(captions.activeSpokenLanguage);
     const [currentCaptionLanguage, setCurrentCaptionLanguage] = useState(captions.activeCaptionLanguage);
+    const [captionHistory, setCaptionHistory] = useState([]);
+    const [communicationAI, setCommunicationAI] = useState(false);
 
+    const [isAgentSpeaking, setIsAgentSpeaking] = useState(false);
+    const [isUserSpeaking, setIsUserSpeaking] = useState(false);
+
+    let localMri = (call.kind === CallKind.Call) ? window.identityMri.communicationUserId : window.identityMri.rawId;
     useEffect(() => {
         try {
             startCaptions(captions);
@@ -63,6 +73,11 @@ const CallCaption = ({ call }) => {
         } else if (captionData.speaker.identifier.kind === 'phoneNumber') {
             mri = captionData.speaker.identifier.phoneNumber;
         }
+        if (mri.trim() == localMri &&  !isAgentSpeaking) {
+            setIsAgentSpeaking(true)
+        } else {
+            setIsUserSpeaking(true)
+        }
 
         let captionAreasContainer = document.getElementById('captionsArea');
         const newClassName = `prefix${mri.replace(/:/g, '').replace(/-/g, '')}`;
@@ -86,6 +101,8 @@ const CallCaption = ({ call }) => {
 
             if (captionData.resultType === 'Final') {
                 foundCaptionContainer.setAttribute('isNotFinal', 'false');
+                setCaptionHistory(oldCaptions => [...oldCaptions, `[${captionData.speaker.displayName}]: ${captionData.captionText ?? captionData.spokenText}`]);
+                mri == localMri ? setIsAgentSpeaking(false) : setIsUserSpeaking(false)
             }
         }
     };
@@ -133,6 +150,32 @@ const CallCaption = ({ call }) => {
             <div className="scrollable-captions-container">
                 <div id="captionsArea" className="captions-area">
                 </div>
+            </div>
+            <div className="participants-panel mt-1 mb-3">
+                    <Toggle label={
+                            <div>
+                                Communication AI{' '}
+                                <TooltipHost content={`Turn on Communication AI`}>
+                                    <Icon iconName="Info" aria-label="Info tooltip" />
+                                </TooltipHost>
+                            </div>
+                        }
+                        styles={{
+                            text : { color: '#edebe9' },
+                            label: { color: '#edebe9' },
+                        }}
+                        inlineLabel
+                        onText="On"
+                        offText="Off"
+                        defaultChecked={communicationAI}
+                        onChange={() => { setCommunicationAI(oldValue => !oldValue)}}
+                    />
+                    
+
+                    {
+                        communicationAI &&
+                        <CommunicationAI captionHistory={captionHistory} isAgentSpeaking={isAgentSpeaking} isUserSpeaking={isUserSpeaking} />
+                    }
             </div>
         </>
     );

@@ -43,6 +43,9 @@ export const utils = {
         });
         if (response.status === 200) {
             return response.data;
+        } else {
+            console.log("Error message");
+            console.log(response);
         }
     },
     getCommunicationUserToken: async (communicationUserId) => {

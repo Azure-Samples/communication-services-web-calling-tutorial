@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Features, ResultType, Captions, CallKind, CaptionsResultType  } from '@azure/communication-calling';
 import { Dropdown } from '@fluentui/react/lib/Dropdown';
 import { utils, acsOpenAiPromptsApi } from "../../Utils/Utils";
+import {SupportForm} from "./SupportForm"
 
 
-const CommunicationAI = ({ call }) => {
-    const [captionsFeature, setCaptionsFeature] = useState(call.feature(Features.Captions));
-    const [captions, setCaptions] = useState(captionsFeature.captions);
-
-    const [captionsStarted, setCaptionsStarted] = useState(false);
+const CommunicationAI = ({ captionHistory,isAgentSpeaking, isUserSpeaking }) => {
     const [showSpinner, setShowSpinner] = useState(false);
-    const [captionHistory, setCaptionHistory] = useState([]);
 
     // Summary
     const [lastSummary, setLastSummary] = useState("");
@@ -32,112 +27,80 @@ const CommunicationAI = ({ call }) => {
 
 
     const [dropDownLabel, setDropDownLabel] = useState("")
-    const [isSpeaking, setIsSpeaking] = useState(false);
     
-    const [debounceCounterRunning, setDebounceCounterRunning] = useState(false);
-    const [isUserSpeaking, setIsUserSpeaking] = useState(false);
+    const [agentDebounceCounterRunning, setAgentDebounceCounterRunning] = useState(false);
+    const [userDebounceCounterRunning, setUserDebounceCounterRunning] = useState(false);
+
+
+    const [userName, setUserName] = useState("");
+    const [address, setAddress] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [dateOfPurchase, setDateOfPurchase] = useState("");
+    const [issue, setIssue] = useState("");
+    const [productUnderWarranty, setProductUnderWarranty] = useState(false);
+    const [issueTicket, setIssueTicket] = useState("");
+
 
     const options = [
         { key: 'getSummary', text: 'Get Summary' },
         { key: 'getPersonalFeedBack', text: 'Get Personal Feedback' },
         { key: 'getSentiments', text: 'Get Sentiment Feedback' },
         { key: 'getSuggestionForXBoxSupportAgent', text: 'Get Suggestion for Agent' },
-        // { key: 'getCallInsights', text: 'Get Call Insights' },
     ]
-    // let displayName = window.displayName;
-    let localMri = (call.kind === CallKind.Call) ? window.identityMri.communicationUserId : window.identityMri.rawId;
-    let debounceTimeoutFn;
-    let role;
+    let agentDebounceTimeoutFn;
+    let userDebounceTimeoutFn;
+    let displayName = "Agent"
+
 
     useEffect(() => {
-        startCaptions(captions);
-
-        return () => {
-            // cleanup
-            captions.off('CaptionsActiveChanged', captionsActiveHandler);
-            captions.off('CaptionsReceived', captionsReceivedHandler);
-            captions.off('SpokenLanguageChanged', activeSpokenLanguageHandler);
-            if (captions.captionsType === 'TeamsCaptions') {
-                captions.off('CaptionLanguageChanged', activeCaptionLanguageHandler);
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        console.log(`useEffect dropdpwnLabel == ${dropDownLabel}. isSpeaking == ${isSpeaking} === isUserSpeaking == ${isUserSpeaking}`)
-        clearTimeout(debounceTimeoutFn)
         if (dropDownLabel == "") {
             setShowSpinner(false); 
             return
         }
-        if ((isSpeaking && dropDownLabel != "getSuggestionForXBoxSupportAgent" && !debounceCounterRunning) || 
-            (dropDownLabel == "getSuggestionForXBoxSupportAgent" && isUserSpeaking)) {
-            const message = "FeedBack will be retrieved after you finish talking";
-            !showSpinner && setShowSpinner(true)
+        clearTimeout(agentDebounceTimeoutFn);
+        if (dropDownLabel != "getSuggestionForXBoxSupportAgent") {
+            if (isAgentSpeaking && !agentDebounceCounterRunning) {
+                const message = "FeedBack will be retrieved after you finish talking";
+                !showSpinner && setShowSpinner(true);
+                setPromptMessage(message);
+            } else {
+                if (agentDebounceCounterRunning) {
+                    agentDebounceTimeoutFn = setTimeout(() => {
+                        setAgentDebounceCounterRunning(false);
+                    }, 5000);
+                } else {
+                    dropDownHandler();
+                }
+            }
+        }
+        return () => {
+            clearTimeout(agentDebounceTimeoutFn);
+        }
+    }, [isAgentSpeaking, agentDebounceCounterRunning, dropDownLabel]);
+
+    useEffect(() => {
+        if (dropDownLabel == "") {
+            setShowSpinner(false); 
+            return
+        }
+        clearTimeout(userDebounceTimeoutFn);
+        if (isUserSpeaking && dropDownLabel == "getSuggestionForXBoxSupportAgent" && !userDebounceCounterRunning) {
+            const message = "Support Suggestion will be retrieved after User finishes talking";
+            !showSpinner && setShowSpinner(true);
             setPromptMessage(message);
-            !debounceCounterRunning && setDebounceCounterRunning(true);
         } else {
-            if (debounceCounterRunning) {
-                debounceTimeoutFn = setTimeout(() => {
-                    debounceCounterRunning && setDebounceCounterRunning(false);
+            if (userDebounceCounterRunning) {
+                userDebounceTimeoutFn = setTimeout(() => {
+                    setUserDebounceCounterRunning(false);
                 }, 5000);
             } else {
                 dropDownHandler();
             }
         }
-    }, [isSpeaking, dropDownLabel, debounceCounterRunning,isUserSpeaking]);
-
-    const startCaptions = async () => {
-        try {
-            if (!captions.isCaptionsFeatureActive) {
-                await captions.startCaptions({ spokenLanguage: 'en-us' });
-                setCaptionsStarted(!captionsStarted);
-            }
-            captions.on('CaptionsActiveChanged', captionsActiveHandler);
-            captions.on('CaptionsReceived', captionsReceivedHandler);
-            captions.on('SpokenLanguageChanged', activeSpokenLanguageHandler);
-            if (captions.captionsType === 'TeamsCaptions') {
-                captions.on('CaptionLanguageChanged', activeCaptionLanguageHandler);
-            }
-        } catch (e) {
-            console.error('startCaptions failed', e);
+        return () => {
+            clearTimeout(userDebounceTimeoutFn);
         }
-    };
-
-    const captionsActiveHandler = () => {
-        console.log('CaptionsActiveChanged: ', captions.isCaptionsFeatureActive);
-    }
-    const activeSpokenLanguageHandler = () => {
-
-    }
-    const activeCaptionLanguageHandler = () => {
-
-    }
-
-    const captionsReceivedHandler  = (captionData) => {
-        let mri = '';
-        if (captionData.speaker.identifier.kind === 'communicationUser') {
-            mri = captionData.speaker.identifier.communicationUserId;
-        } else if (captionData.speaker.identifier.kind === 'microsoftTeamsUser') {
-            mri = captionData.speaker.identifier.microsoftTeamsUserId;
-        } else if (captionData.speaker.identifier.kind === 'phoneNumber') {
-            mri = captionData.speaker.identifier.phoneNumber;
-        }
-        if (mri.trim() == localMri &&  !isSpeaking) {
-            setIsSpeaking(true)
-            role = '[agent]'
-        } else if (!isUserSpeaking){
-            setIsUserSpeaking(true)
-            role = '[user]'
-        }
-        
-        const captionText = `${role}${captionData.captionText ?? captionData.spokenText}`;
-
-        if (captionData.resultType === 'Final') {
-            setCaptionHistory(oldCaptions => [...oldCaptions, captionText]);
-            mri == localMri ? setIsSpeaking(false) : setIsUserSpeaking(false)
-        }
-    };
+    }, [isUserSpeaking, userDebounceCounterRunning, dropDownLabel]);
 
     const dropDownHandler = async () => {
         dropDownLabel != "" && !showSpinner && setShowSpinner(true)
@@ -163,10 +126,10 @@ const CommunicationAI = ({ call }) => {
             const currentCaptionsData = captionHistory.slice(captionsSummaryIndex);
             let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.summary, displayName, lastSummary, currentCaptionsData);
             let content = response.choices[0].message.content;
-            console.log(`getSummary summary ===> ${JSON.stringify(content)}`)
-            displayResponse("Conversation Summary", content);
+            console.log(`getSummary summary ===> ${JSON.stringify(response)}`)
             setLastSummary(content);
             setCaptionsSummaryIndex(captionHistory.length);
+            displayResponse(content);
         } catch (error) {
             console.error(JSON.stringify(error))
         }
@@ -177,10 +140,10 @@ const CommunicationAI = ({ call }) => {
             const currentCaptionsData = captionHistory.slice(captionsFeedbackIndex);
             let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.feedback, displayName, lastFeedBack, currentCaptionsData)
             let content = response.choices[0].message.content;
-            console.log(`getPersonalFeedback ===> ${JSON.stringify(content)}`)
-            displayResponse("Speaking Personal Feedback", content);
+            console.log(`getPersonalFeedback ===> ${JSON.stringify(response)}`)
             setLastFeedBack(content);
             setCaptionsFeedbackIndex(captionHistory.length);
+            displayResponse(content);
         } catch(error) {
             console.error(JSON.stringify(error))
         }
@@ -199,10 +162,10 @@ const CommunicationAI = ({ call }) => {
                 content += "\nRecommended Action:\n"
                 content += callToAction;
             } 
-            console.log(`getSentimentt ===> ${JSON.stringify(content)}`)
-            displayResponse("Conversation Sentiment", content);
+            console.log(`getSentimentt ===> ${JSON.stringify(response)}`)
             setLastSentiment(content);
             setCaptionsSentimentIndex(captionHistory.length);
+            displayResponse(content);
         } catch(error) {
             console.error(JSON.stringify(error))
         }
@@ -214,58 +177,71 @@ const CommunicationAI = ({ call }) => {
             let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.supportAgent, 
                     displayName, lastSupportAgentResponse, currentCaptionsData, true)
             let content = response.suggested_reply;
-            console.log(`getSuggestionForXBoxSupportAgent ===> ${JSON.stringify(content)}`)
-            displayResponse("Agent Support Bot Suggestions", content);
+            console.log(`getSuggestionForXBoxSupportAgent ===> ${JSON.stringify(response)}`)
+            console.log(`form_data ===> ${JSON.stringify(response.form_data)}`)
+            retrieveFormData(response.form_data)
             setLastSupportAgentResponse(content);
             setCaptionsSupportAgentResponseIndex(captionHistory.length);
+            displayResponse(content);
         } catch(error) {
             console.error(JSON.stringify(error))
         }
     }
 
-    const getCallInsights = async () => {
-        let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.callInsights, 
-                displayName, "", captionHistory, true)
-        console.log(`getCallInsights ===> ${JSON.stringify(response)}`)
-    }
+    const retrieveFormData = (form_data) => {
+        if (form_data.name && form_data.name != 'N/A' && form_data.name != userName) {
+            setUserName(form_data.name)
+        }
 
+        if (form_data.address && form_data.address != 'N/A' && form_data.address != address) {
+            setAddress(form_data.address)
+        }
+
+        if (form_data.phone_number && form_data.phone_number != 'N/A' && form_data.phone_number != phoneNumber) {
+            setPhoneNumber(form_data.phone_number)
+        }
+
+        if (form_data.date_of_purchase && form_data.date_of_purchase != 'N/A' && form_data.date_of_purchase != dateOfPurchase) {
+            setDateOfPurchase(form_data.date_of_purchase)
+        }
+
+        if (form_data.issue_description && form_data.issue_description != 'N/A' && form_data.issue_description != issue) {
+            setIssue(form_data.issue_description)
+        }
+
+        if (form_data.product_under_warranty && form_data.product_under_warranty != 'N/A' && form_data.product_under_warranty != productUnderWarranty) {
+            setProductUnderWarranty(form_data.product_under_warranty)
+        }
+
+        if (form_data.support_ticket_number && form_data.support_ticket_number != 'N/A' && form_data.support_ticket_number != issueTicket) {
+            setIssueTicket(form_data.support_ticket_number)
+        }
+    }
     const onChangeHandler = (e, item) => {
         setDropDownLabel(item.key);
     }
 
-    const displayResponse = (responseType, responseText) => {
-        let captionAreasContainer = document.getElementById('captionsArea');
-        let aisResponse = document.createElement('div')
+    const displayResponse = (responseText) => {
+        let captionAreasContainer = document.getElementById(dropDownLabel);
 
         if(!responseText || !responseText.length) {return;}
 
-        let aiResponseType = document.createElement('div');
-        aiResponseType.style['padding'] = '5px';
-        aiResponseType.style['whiteSpace'] = 'pre-line';
-        aiResponseType.style['text-color'] = 'white';
-        aiResponseType.style['font-weight'] = 'bold';
-        aiResponseType.style['font-size'] = '16px';
-        aiResponseType.style['color'] = 'green';
-        aiResponseType.textContent = responseType;
-
-        let aiResponseContent = document.createElement('div');
-        aiResponseContent.style['borderBottom'] = '1px solid';
-        aiResponseContent.style['padding'] = '10px';
-        aiResponseContent.style['whiteSpace'] = 'pre-line';
-        aiResponseContent.style['color'] = 'white';
-        aiResponseContent.style['font-size'] = '12px';
-        aiResponseContent.textContent = responseText;
-
-        aisResponse.append(aiResponseType);
-        aisResponse.append(aiResponseContent);
-        captionAreasContainer.appendChild(aisResponse);
+        if (dropDownLabel == "getSuggestionForXBoxSupportAgent" || dropDownLabel == "getSentiments") {
+            captionAreasContainer.innerText  = responseText;
+        } else {
+            let aiResponseContent = document.createElement('div');
+            aiResponseContent.style['borderBottom'] = '1px solid';
+            aiResponseContent.style['padding'] = '10px';
+            aiResponseContent.style['whiteSpace'] = 'pre-line';
+            aiResponseContent.style['color'] = 'white';
+            aiResponseContent.style['font-size'] = '12px';
+            aiResponseContent.textContent = responseText;
+            captionAreasContainer.appendChild(aiResponseContent);
+        }
     }
 
     return (
         <>
-            {
-                (call.state === "Disconnected") && getCallInsights()
-            }
             <div id="" className="">
                 {
                     showSpinner &&
@@ -288,10 +264,51 @@ const CommunicationAI = ({ call }) => {
             </div>
 
             <div id="communicationResponse">
-                <div className="scrollable-captions-container">
-                    <div id="captionsArea" className="captions-area">
+                {
+                    dropDownLabel == "getSummary" && 
+                    <div className="scrollable-captions-container">
+                        <div id="getSummary" className="ai-captions-area">
+                        </div>
                     </div>
-                </div>
+                }
+
+                {
+                    dropDownLabel == "getSentimentt" && 
+                    <div className="scrollable-captions-container">
+                        <div id="getSentimentt" className="ai-captions-area">
+                        </div>
+                    </div>
+                }
+
+                {
+                    dropDownLabel == "getPersonalFeedback" && 
+                    <div className="scrollable-captions-container">
+                        <div id="getPersonalFeedback" className="ai-captions-area">
+                        </div>
+                    </div>
+                }
+
+                {
+                    dropDownLabel == "getSuggestionForXBoxSupportAgent" && 
+                    <div className="card">
+                        <div className="ms-Grid">
+                            <div className="ms-Grid-row">
+                                <div className="scrollable-captions-container ms-Grid-col ms-Grid-col ms-sm6 ms-md6 ms-lg6">
+                                    <div id="getSuggestionForXBoxSupportAgent" className="captions-area">
+                                    </div>
+                                </div>
+                                {lastSupportAgentResponse && <SupportForm 
+                                    name = {userName}
+                                    phoneNumber = {phoneNumber}
+                                    dateOfPurchase = {dateOfPurchase}
+                                    issue = {issue}
+                                    productUnderWarranty = {productUnderWarranty} 
+                                    issueTicket = {issueTicket}
+                                />}
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
         </>
     );
