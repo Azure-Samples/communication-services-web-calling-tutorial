@@ -4,7 +4,7 @@ import { utils, acsOpenAiPromptsApi } from "../../Utils/Utils";
 import {SupportForm} from "./SupportForm"
 
 
-const CommunicationAI = ({ captionHistory,isAgentSpeaking, isUserSpeaking }) => {
+const CommunicationAI = ({ isAgentSpeaking, isUserSpeaking }) => {
     const [showSpinner, setShowSpinner] = useState(false);
 
     // Summary
@@ -123,12 +123,12 @@ const CommunicationAI = ({ captionHistory,isAgentSpeaking, isUserSpeaking }) => 
 
     const getSummary = async () => {
         try {
-            const currentCaptionsData = captionHistory.slice(captionsSummaryIndex);
+            const currentCaptionsData = window.captionHistory.slice(captionsSummaryIndex);
             let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.summary, displayName, lastSummary, currentCaptionsData);
             let content = response.choices[0].message.content;
             console.log(`getSummary summary ===> ${JSON.stringify(response)}`)
             setLastSummary(content);
-            setCaptionsSummaryIndex(captionHistory.length);
+            setCaptionsSummaryIndex(window.captionHistory.length);
             displayResponse(content);
         } catch (error) {
             console.error(JSON.stringify(error))
@@ -137,12 +137,12 @@ const CommunicationAI = ({ captionHistory,isAgentSpeaking, isUserSpeaking }) => 
 
     const getPersonalFeedback = async () => {
         try {
-            const currentCaptionsData = captionHistory.slice(captionsFeedbackIndex);
+            const currentCaptionsData = window.captionHistory.slice(captionsFeedbackIndex);
             let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.feedback, displayName, lastFeedBack, currentCaptionsData)
             let content = response.choices[0].message.content;
             console.log(`getPersonalFeedback ===> ${JSON.stringify(response)}`)
             setLastFeedBack(content);
-            setCaptionsFeedbackIndex(captionHistory.length);
+            setCaptionsFeedbackIndex(window.captionHistory.length);
             displayResponse(content);
         } catch(error) {
             console.error(JSON.stringify(error))
@@ -151,7 +151,7 @@ const CommunicationAI = ({ captionHistory,isAgentSpeaking, isUserSpeaking }) => 
 
     const getSentiment = async () => {
         try {
-            const currentCaptionsData = captionHistory.slice(captionsSentimentIndex);
+            const currentCaptionsData = window.captionHistory.slice(captionsSentimentIndex);
             let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.sentiment, displayName, lastSentiment, currentCaptionsData)
             let content = response.emotions && response.emotions.join(", ")
             let callToAction = response.call_to_action;
@@ -164,7 +164,7 @@ const CommunicationAI = ({ captionHistory,isAgentSpeaking, isUserSpeaking }) => 
             } 
             console.log(`getSentimentt ===> ${JSON.stringify(response)}`)
             setLastSentiment(content);
-            setCaptionsSentimentIndex(captionHistory.length);
+            setCaptionsSentimentIndex(window.captionHistory.length);
             displayResponse(content);
         } catch(error) {
             console.error(JSON.stringify(error))
@@ -173,7 +173,7 @@ const CommunicationAI = ({ captionHistory,isAgentSpeaking, isUserSpeaking }) => 
 
     const getSuggestionForXBoxSupportAgent = async () => {
         try {
-            const currentCaptionsData = captionHistory.slice(captionsSupportAgentResponseIndex); 
+            const currentCaptionsData = window.captionHistory.slice(captionsSupportAgentResponseIndex); 
             let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.supportAgent, 
                     displayName, lastSupportAgentResponse, currentCaptionsData, true)
             let content = response.suggested_reply;
@@ -181,7 +181,7 @@ const CommunicationAI = ({ captionHistory,isAgentSpeaking, isUserSpeaking }) => 
             console.log(`form_data ===> ${JSON.stringify(response.form_data)}`)
             retrieveFormData(response.form_data)
             setLastSupportAgentResponse(content);
-            setCaptionsSupportAgentResponseIndex(captionHistory.length);
+            setCaptionsSupportAgentResponseIndex(window.captionHistory.length);
             displayResponse(content);
         } catch(error) {
             console.error(JSON.stringify(error))

@@ -15,25 +15,26 @@ export const acsOpenAiPromptsApi = {
     feedback: 'getPersonalFeedback',
     sentiment: 'GetSentiments',
     supportAgent: 'GetSuggestionForXBoxSupportAgent',
-    callInsights: 'getCallInsights'
+    callInsights: 'CallInsights'
 }
 
 export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    sendCaptionsDataToAcsOpenAI: async (apiEndpoint, participantName, lastResponse, newCaptionsData, isVersion2 = false) => {
-        console.log(`CHUK Captions data: ${newCaptionsData}`);
+    sendCaptionsDataToAcsOpenAI: async (apiEndpoint, participantName, lastResponse, newCaptionsData, callId = "", isTranscriptType = false) => {
         let response = await axios({
             url: acsOpenAiPromptsApi.base + apiEndpoint,
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': "*",
+                'X-Requested-With': 'XMLHttpRequest',
             },
-            data: isVersion2 ? 
+            data: (isTranscriptType || apiEndpoint === acsOpenAiPromptsApi.callInsight) ? 
                 {
-                    "transcript": newCaptionsData.join("")
+                    "transcript": newCaptionsData.join(""),
+                    "callId": callId
                 } : 
                 {
                     "CurrentParticipant": participantName,

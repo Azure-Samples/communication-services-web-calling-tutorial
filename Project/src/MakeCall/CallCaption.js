@@ -21,6 +21,7 @@ const CallCaption = ({ call }) => {
     let localMri = (call.kind === CallKind.Call) ? window.identityMri.communicationUserId : window.identityMri.rawId;
     useEffect(() => {
         try {
+            window.captionHistory = [];
             startCaptions(captions);
         }
         catch(e) {
@@ -101,7 +102,7 @@ const CallCaption = ({ call }) => {
 
             if (captionData.resultType === 'Final') {
                 foundCaptionContainer.setAttribute('isNotFinal', 'false');
-                setCaptionHistory(oldCaptions => [...oldCaptions, `[${captionData.speaker.displayName}]: ${captionData.captionText ?? captionData.spokenText}`]);
+                window.captionHistory.push(`${captionData.speaker.displayName}: ${captionData.captionText ?? captionData.spokenText}`);
                 mri == localMri ? setIsAgentSpeaking(false) : setIsUserSpeaking(false)
             }
         }
@@ -170,11 +171,10 @@ const CallCaption = ({ call }) => {
                         defaultChecked={communicationAI}
                         onChange={() => { setCommunicationAI(oldValue => !oldValue)}}
                     />
-                    
 
                     {
                         communicationAI &&
-                        <CommunicationAI captionHistory={captionHistory} isAgentSpeaking={isAgentSpeaking} isUserSpeaking={isUserSpeaking} />
+                        <CommunicationAI call={call} isAgentSpeaking={isAgentSpeaking} isUserSpeaking={isUserSpeaking}/>
                     }
             </div>
         </>
