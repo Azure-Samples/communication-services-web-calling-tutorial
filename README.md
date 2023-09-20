@@ -14,7 +14,7 @@ products:
 - An Azure account with an active subscription. [Create an account for free](https://azure.microsoft.com/free/?WT.mc_id=A261C142F). 
 - A deployed Communication Services resource. [Create a Communication Services resource](https://learn.microsoft.com/en-us/azure/communication-services/quickstarts/create-communication-resource?tabs=windows&pivots=platform-azp).
 - [NPM](https://www.npmjs.com/get-npm)
-- [Node.js v16](https://nodejs.org/download/release//v16.20.2/), you can use the msi installer for x64 or x86
+- You need to have [Node.js 18](https://nodejs.org/dist/v18.18.0/). You can use the msi installer to install it.
 
 ## Code structure
 * ./Project/src: client side source code

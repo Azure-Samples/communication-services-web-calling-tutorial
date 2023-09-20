@@ -929,13 +929,13 @@ export default class CallCard extends React.Component {
                 </div>
                 <div className="ms-Grid-row">
                     <div className="ms-Grid-col ms-lg6">
-                        {
-                            this.state.callState !== 'Connected' &&
-                            <div>
+                        <div>
+                            {
+                                this.state.callState !== 'Connected' &&
                                 <div className="inline-block ringing-loader mr-2"></div>
-                                <h2 className="inline-block">{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
-                            </div>
-                        }
+                            }                            
+                            <h2 className="inline-block">{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
+                        </div>
                     </div>
                     {
                         this.call &&
@@ -1005,12 +1005,6 @@ export default class CallCard extends React.Component {
                             }
                         </span>
                         <span className="in-call-button"
-                            title={`Mute all other participants`}
-                            variant="secondary"
-                            onClick={() => this.handleMuteAllRemoteParticipants()}>
-                            <Icon iconName="VolumeDisabled" />
-                        </span>
-                        <span className="in-call-button"
                             onClick={() => this.call.hangUp()}>
                             <Icon iconName="DeclineCall" />
                         </span>
@@ -1074,6 +1068,12 @@ export default class CallCard extends React.Component {
                                 !this.state.incomingAudioMuted &&
                                 <Icon iconName="Volume2" />
                             }
+                        </span>
+                        <span className="in-call-button"
+                            title={`Mute all other participants`}
+                            variant="secondary"
+                            onClick={() => this.handleMuteAllRemoteParticipants()}>
+                            <Icon iconName="VolumeDisabled" />
                         </span>
                         <span className="in-call-button"
                             title={`${this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'RawMedia' ? 'Stop' : 'Start'} screen sharing a dummy stream`}
