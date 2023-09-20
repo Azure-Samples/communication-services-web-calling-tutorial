@@ -1,4 +1,4 @@
 {
-    "connectionString": "endpoint=https://corertc-test-apps.unitedstates.communication.azure.com/;accesskey=Puur8u7n6t7YpLbiX8qbyg8Spr60QmS1CpyW8TWDmwse9NLw0Gav0vvEtkrjPs3MkdyyxmOe90l6GcxVT8jfsA==",
+    "connectionString": "REPLACE_WITH_CONNECTION_STRING",
     "functionAppOneSignalTokenRegistrationUrl": ""
 }
