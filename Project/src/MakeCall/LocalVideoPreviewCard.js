@@ -23,6 +23,11 @@ export default class LocalVideoPreviewCard extends React.Component {
         }
     }
 
+    async componentWillUnmount() {
+        this.view.dispose();
+        this.view = undefined;
+    }
+
     render() {
         return (
             <div>
