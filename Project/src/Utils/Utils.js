@@ -22,7 +22,7 @@ export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    sendCaptionsDataToAcsOpenAI: async (apiEndpoint, participantName, lastResponse, newCaptionsData, callId = "", isTranscriptType = false) => {
+    sendCaptionsDataToAcsOpenAI: async (apiEndpoint, participantName, lastResponse, newCaptionsData, isTranscriptType = false) => {
         let response = await axios({
             url: acsOpenAiPromptsApi.base + apiEndpoint,
             method: 'POST',
@@ -34,7 +34,6 @@ export const utils = {
             data: (isTranscriptType || apiEndpoint === acsOpenAiPromptsApi.callInsight) ? 
                 {
                     "transcript": newCaptionsData.join(""),
-                    "callId": callId
                 } : 
                 {
                     "CurrentParticipant": participantName,

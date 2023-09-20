@@ -4,12 +4,13 @@ import {
 } from 'office-ui-fabric-react'
 
 export const SupportForm = (props) => {
-    const [name, setName] = useState(props.name);
-    const [phoneNumber, setPhoneNumber] = useState(props.phoneNumber);
-    const [issueDescription, setIssueDescription] = useState(props.issueDescription);
-    const [dateOfPurchse, setDateOfPurchase] = useState(props.phoneNumber);
-    const [productUnderWarranty, setProductUnderWarranty] = useState(props.productUnderWarranty);
-    const [issueTicket, setIssueTicket] = useState(props.issueTicket);
+    const [name, setName] = useState("");
+    const [address, setAddress] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [dateOfPurchse, setDateOfPurchase] = useState("");
+    const [issueDescription, setIssueDescription] = useState("");
+    const [productUnderWarranty, setProductUnderWarranty] = useState(false);
+    const [issueTicket, setIssueTicket] = useState("");
 
     return <>
         <div className="ms-Grid-col ms-Grid-col ms-sm6 ms-md6 ms-lg6" >
@@ -21,23 +22,30 @@ export const SupportForm = (props) => {
                         onChange={(e) => { setName(e.target.value)}} 
                     />
                 </div>
+                <div className="">
+                    <TextField
+                        placeholder="Address"
+                        defaultValue={props.address}
+                        onChange={(e) => { setAddress(e.target.value)}} 
+                    />
+                </div>
                 <div className="ms-Grid-row">
                     <TextField
                         placeholder="PhoneNumber" 
-                        value={props.phoneNumber}
+                        defaultValue={props.phoneNumber}
                         onChange={(e) => { setPhoneNumber(e.target.value)}}  />
                 </div>
                 <div className="ms-Grid-row">
                     <TextField
                         placeholder="Date of Purchase" 
-                        value={props.dateOfPurchase}
+                        defaultValue={props.dateOfPurchase}
                         onChange={(e) => { setDateOfPurchase(e.target.value)}}  />
                 </div>
                 <div className="ms-Grid-row">
                     <TextField
                         placeholder="Issue Description" 
                         multiline rows={10}
-                        value={props.issue}
+                        defaultValue={props.issue}
                         onChange={(e) => { setIssueDescription(e.target.value)}}  />
                 </div>
                 <div className="ms-Grid-row">
@@ -47,7 +55,7 @@ export const SupportForm = (props) => {
                 <div className="ms-Grid-row">
                     <TextField
                         placeholder="Issue Ticket" 
-                        value={props.issueTicket}
+                        defaultValue={props.issueTicket}
                         onChange={(e) => { setIssueTicket(e.target.value)}}  />
                 </div>
             </div>

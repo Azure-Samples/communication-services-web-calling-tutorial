@@ -173,9 +173,9 @@ const CommunicationAI = ({ isAgentSpeaking, isUserSpeaking }) => {
 
     const getSuggestionForXBoxSupportAgent = async () => {
         try {
-            const currentCaptionsData = window.captionHistory.slice(captionsSupportAgentResponseIndex); 
+            // const currentCaptionsData = window.captionHistory.slice(captionsSupportAgentResponseIndex); 
             let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.supportAgent, 
-                    displayName, lastSupportAgentResponse, currentCaptionsData, true)
+                    displayName, lastSupportAgentResponse, window.captionHistory, true)
             let content = response.suggested_reply;
             console.log(`getSuggestionForXBoxSupportAgent ===> ${JSON.stringify(response)}`)
             console.log(`form_data ===> ${JSON.stringify(response.form_data)}`)
@@ -190,30 +190,37 @@ const CommunicationAI = ({ isAgentSpeaking, isUserSpeaking }) => {
 
     const retrieveFormData = (form_data) => {
         if (form_data.name && form_data.name != 'N/A' && form_data.name != userName) {
+            console.log(`CHUK_FORM == ${form_data.name} ==== ${userName}`)
             setUserName(form_data.name)
         }
 
         if (form_data.address && form_data.address != 'N/A' && form_data.address != address) {
+            console.log(`CHUK_FORM == ${form_data.address} ==== ${address}`)
             setAddress(form_data.address)
         }
 
         if (form_data.phone_number && form_data.phone_number != 'N/A' && form_data.phone_number != phoneNumber) {
+            console.log(`CHUK_FORM == ${form_data.phone_number} ==== ${phoneNumber}`)
             setPhoneNumber(form_data.phone_number)
         }
 
         if (form_data.date_of_purchase && form_data.date_of_purchase != 'N/A' && form_data.date_of_purchase != dateOfPurchase) {
+            console.log(`CHUK_FORM == ${form_data.date_of_purchase} ==== ${dateOfPurchase}`)
             setDateOfPurchase(form_data.date_of_purchase)
         }
 
         if (form_data.issue_description && form_data.issue_description != 'N/A' && form_data.issue_description != issue) {
+            console.log(`CHUK_FORM == ${form_data.issue_description} ==== ${issue}`)
             setIssue(form_data.issue_description)
         }
 
         if (form_data.product_under_warranty && form_data.product_under_warranty != 'N/A' && form_data.product_under_warranty != productUnderWarranty) {
+            console.log(`CHUK_FORM == ${form_data.product_under_warranty} ==== ${productUnderWarranty}`)
             setProductUnderWarranty(form_data.product_under_warranty)
         }
 
         if (form_data.support_ticket_number && form_data.support_ticket_number != 'N/A' && form_data.support_ticket_number != issueTicket) {
+            console.log(`CHUK_FORM == ${form_data.support_ticket_number} ==== ${issueTicket}`)
             setIssueTicket(form_data.support_ticket_number)
         }
     }
@@ -299,6 +306,7 @@ const CommunicationAI = ({ isAgentSpeaking, isUserSpeaking }) => {
                                 </div>
                                 {lastSupportAgentResponse && <SupportForm 
                                     name = {userName}
+                                    address = {address}
                                     phoneNumber = {phoneNumber}
                                     dateOfPurchase = {dateOfPurchase}
                                     issue = {issue}
