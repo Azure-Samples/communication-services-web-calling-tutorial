@@ -1,68 +1,121 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
-    TextField, PrimaryButton, Checkbox
+    TextField, PrimaryButton, Checkbox, MessageBar,
+    MessageBarType,
 } from 'office-ui-fabric-react'
+import { v4 as uuidv4 } from 'uuid';
 
-export const SupportForm = (props) => {
-    const [name, setName] = useState("");
-    const [address, setAddress] = useState("");
-    const [phoneNumber, setPhoneNumber] = useState("");
-    const [dateOfPurchse, setDateOfPurchase] = useState("");
-    const [issueDescription, setIssueDescription] = useState("");
-    const [productUnderWarranty, setProductUnderWarranty] = useState(false);
+export const SupportForm = ({name, address, phoneNumber, dateOfPurchase, issue, productUnderWarranty}) => {
+    const [userFullName, setUserFullName] = useState("");
+    const [userAddress, setUserAddress] = useState("");
+    const [userPhoneNumber, setUserPhoneNumber] = useState("");
+    const [userDateOfPurchase, setUserDateOfPurchase] = useState("");
+    const [IssueDescription, setIssueDescription] = useState("");
+    const [underWarranty, setUnderWarranty] = useState(false);
     const [issueTicket, setIssueTicket] = useState("");
+    const [isSubmitted, setIsSubmitted] = useState(false)
+
+    useEffect(()=> {
+        if (name !=  userFullName) {setUserFullName(name)}
+        if (address !=  userAddress) {setUserAddress(address)}
+        if (phoneNumber !=  userPhoneNumber) {setUserPhoneNumber(phoneNumber)}
+        if (dateOfPurchase !=  userDateOfPurchase) {setUserDateOfPurchase(dateOfPurchase)}
+        if (issue !=  IssueDescription) {setIssueDescription(issue)}
+        if (productUnderWarranty !=  underWarranty) {setUnderWarranty(productUnderWarranty)}
+
+
+        if (userFullName && userAddress && userPhoneNumber && userDateOfPurchase && IssueDescription) {
+            console.log(`CHUK_TICKET === Updating Ticket number`);
+            setIssueTicket(uuidv4())
+        } else {
+            console.log(`CHUK_TICKET === NOT Updating Ticket number`);
+        }
+    }, [name, address, phoneNumber, dateOfPurchase, issue, productUnderWarranty])
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        setIsSubmitted(true)
+        setUserFullName("");
+        setUserAddress("")
+        setUserPhoneNumber("")
+        setUserDateOfPurchase("")
+        setIssueDescription("")
+        setUnderWarranty(false)
+        setIssueTicket("")
+        setTimeout(() => {
+            setIsSubmitted(false)
+        }, 5000)
+    }
+
+    const FormSubmitted = () => {
+        return (<MessageBar
+          messageBarType={MessageBarType.success}
+          isMultiline={false}
+        >
+          Ticket created successfully
+        </MessageBar>)
+    };
 
     return <>
         <div className="ms-Grid-col ms-Grid-col ms-sm6 ms-md6 ms-lg6" >
+            {isSubmitted && FormSubmitted()}
             <div className="ms-Grid-row">
-                <div className="">
+                <div className="ms-Grid-row">
                     <TextField
                         placeholder="Username"
-                        defaultValue={props.name}
-                        onChange={(e) => { setName(e.target.value)}} 
+                        value={userFullName}
+                        className="text-left"
+                        onChange={(e) => { setUserFullName(e.target.value)}} 
                     />
                 </div>
-                <div className="">
+                <div className="ms-Grid-row">
                     <TextField
                         placeholder="Address"
-                        defaultValue={props.address}
-                        onChange={(e) => { setAddress(e.target.value)}} 
+                        value={userAddress}
+                        className="text-left"
+                        onChange={(e) => { setUserAddress(e.target.value)}} 
                     />
                 </div>
                 <div className="ms-Grid-row">
                     <TextField
                         placeholder="PhoneNumber" 
-                        defaultValue={props.phoneNumber}
-                        onChange={(e) => { setPhoneNumber(e.target.value)}}  />
+                        value={userPhoneNumber}
+                        className="text-left"
+                        onChange={(e) => { setUserPhoneNumber(e.target.value)}}  />
                 </div>
                 <div className="ms-Grid-row">
                     <TextField
                         placeholder="Date of Purchase" 
-                        defaultValue={props.dateOfPurchase}
-                        onChange={(e) => { setDateOfPurchase(e.target.value)}}  />
+                        value={dateOfPurchase}
+                        className="text-left"
+                        onChange={(e) => { setUserDateOfPurchase(e.target.value)}}  />
                 </div>
                 <div className="ms-Grid-row">
                     <TextField
                         placeholder="Issue Description" 
-                        multiline rows={10}
-                        defaultValue={props.issue}
+                        multiline rows={5}
+                        value={issue}
+                        className="text-left"
                         onChange={(e) => { setIssueDescription(e.target.value)}}  />
                 </div>
                 <div className="ms-Grid-row">
-                    <Checkbox label="Product under Warranty"  checked={props.productUnderWarranty} onChange={(e, checked) => {setProductUnderWarranty(checked)}} />
+                    <Checkbox label="Product under Warranty"  checked={productUnderWarranty} onChange={(e, checked) => {setProductUnderWarranty(checked)}} />
                 </div>
                 
                 <div className="ms-Grid-row">
                     <TextField
-                        placeholder="Issue Ticket" 
-                        defaultValue={props.issueTicket}
-                        onChange={(e) => { setIssueTicket(e.target.value)}}  />
+                        placeholder="Issue Ticket#"
+                        value={issueTicket}
+                        className="text-left"
+                        onChange={(e) => { setIssueTicket(e.target.value)}}
+                    />
                 </div>
             </div>
             <div className="ms-Grid-row">
                 <div className="ms-Grid-col">
-                    <PrimaryButton className="primary-button mt-5"
-                        onClick={() => {}}>
+                    <PrimaryButton className="primary-button mt-5 text-left"
+                    
+                        onClick={(e) => {handleSubmit(e)}}>
                             Submit Ticket
                     </PrimaryButton>
                 </div>

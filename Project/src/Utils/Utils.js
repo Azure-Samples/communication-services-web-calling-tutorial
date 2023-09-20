@@ -22,7 +22,7 @@ export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    sendCaptionsDataToAcsOpenAI: async (apiEndpoint, participantName, lastResponse, newCaptionsData, isTranscriptType = false) => {
+    sendCaptionsDataToAcsOpenAI: async (apiEndpoint, participantName, lastResponse, newCaptionsData, isTranscriptType = false, callId ="") => {
         let response = await axios({
             url: acsOpenAiPromptsApi.base + apiEndpoint,
             method: 'POST',
@@ -31,9 +31,10 @@ export const utils = {
                 'Access-Control-Allow-Origin': "*",
                 'X-Requested-With': 'XMLHttpRequest',
             },
-            data: (isTranscriptType || apiEndpoint === acsOpenAiPromptsApi.callInsight) ? 
+            data: (isTranscriptType || apiEndpoint === acsOpenAiPromptsApi.callInsights) ? 
                 {
                     "transcript": newCaptionsData.join(""),
+                    "callId": callId
                 } : 
                 {
                     "CurrentParticipant": participantName,

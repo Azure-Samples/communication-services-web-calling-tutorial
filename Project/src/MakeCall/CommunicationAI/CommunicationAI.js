@@ -4,7 +4,7 @@ import { utils, acsOpenAiPromptsApi } from "../../Utils/Utils";
 import {SupportForm} from "./SupportForm"
 
 
-const CommunicationAI = ({ isAgentSpeaking, isUserSpeaking }) => {
+const CommunicationAI = ({ call, isAgentSpeaking, isUserSpeaking }) => {
     const [showSpinner, setShowSpinner] = useState(false);
 
     // Summary
@@ -51,6 +51,13 @@ const CommunicationAI = ({ isAgentSpeaking, isUserSpeaking }) => {
     let userDebounceTimeoutFn;
     let displayName = "Agent"
 
+    useEffect(() => {
+        call.on('stateChanged', () => {
+            if (call.state === 'Disconnected') {
+                callInsight(call.id);
+            }
+        });
+    }, []);
 
     useEffect(() => {
         if (dropDownLabel == "") {
@@ -188,39 +195,36 @@ const CommunicationAI = ({ isAgentSpeaking, isUserSpeaking }) => {
         }
     }
 
+    const callInsight = async (callId) => {
+        await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.callInsights, displayName, '', window.captionHistory, true, callId);
+    }
+
     const retrieveFormData = (form_data) => {
         if (form_data.name && form_data.name != 'N/A' && form_data.name != userName) {
-            console.log(`CHUK_FORM == ${form_data.name} ==== ${userName}`)
             setUserName(form_data.name)
         }
 
         if (form_data.address && form_data.address != 'N/A' && form_data.address != address) {
-            console.log(`CHUK_FORM == ${form_data.address} ==== ${address}`)
             setAddress(form_data.address)
         }
 
         if (form_data.phone_number && form_data.phone_number != 'N/A' && form_data.phone_number != phoneNumber) {
-            console.log(`CHUK_FORM == ${form_data.phone_number} ==== ${phoneNumber}`)
             setPhoneNumber(form_data.phone_number)
         }
 
         if (form_data.date_of_purchase && form_data.date_of_purchase != 'N/A' && form_data.date_of_purchase != dateOfPurchase) {
-            console.log(`CHUK_FORM == ${form_data.date_of_purchase} ==== ${dateOfPurchase}`)
             setDateOfPurchase(form_data.date_of_purchase)
         }
 
         if (form_data.issue_description && form_data.issue_description != 'N/A' && form_data.issue_description != issue) {
-            console.log(`CHUK_FORM == ${form_data.issue_description} ==== ${issue}`)
             setIssue(form_data.issue_description)
         }
 
         if (form_data.product_under_warranty && form_data.product_under_warranty != 'N/A' && form_data.product_under_warranty != productUnderWarranty) {
-            console.log(`CHUK_FORM == ${form_data.product_under_warranty} ==== ${productUnderWarranty}`)
             setProductUnderWarranty(form_data.product_under_warranty)
         }
 
         if (form_data.support_ticket_number && form_data.support_ticket_number != 'N/A' && form_data.support_ticket_number != issueTicket) {
-            console.log(`CHUK_FORM == ${form_data.support_ticket_number} ==== ${issueTicket}`)
             setIssueTicket(form_data.support_ticket_number)
         }
     }
@@ -234,6 +238,7 @@ const CommunicationAI = ({ isAgentSpeaking, isUserSpeaking }) => {
         if(!responseText || !responseText.length) {return;}
 
         if (dropDownLabel == "getSuggestionForXBoxSupportAgent" || dropDownLabel == "getSentiments") {
+            captionAreasContainer.style['font-size'] = '13px';
             captionAreasContainer.innerText  = responseText;
         } else {
             let aiResponseContent = document.createElement('div');
@@ -302,6 +307,7 @@ const CommunicationAI = ({ isAgentSpeaking, isUserSpeaking }) => {
                             <div className="ms-Grid-row">
                                 <div className="scrollable-captions-container ms-Grid-col ms-Grid-col ms-sm6 ms-md6 ms-lg6">
                                     <div id="getSuggestionForXBoxSupportAgent" className="captions-area">
+                                        {lastSupportAgentResponse}
                                     </div>
                                 </div>
                                 {lastSupportAgentResponse && <SupportForm 
