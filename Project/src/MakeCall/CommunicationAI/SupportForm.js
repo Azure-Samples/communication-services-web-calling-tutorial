@@ -62,7 +62,7 @@ export const SupportForm = ({name, address, phoneNumber, dateOfPurchase, issue, 
             <div className="ms-Grid-row">
                 <div className="ms-Grid-row">
                     <TextField
-                        placeholder="Username"
+                        placeholder="FullName"
                         value={userFullName}
                         className="text-left"
                         onChange={(e) => { setUserFullName(e.target.value)}} 
@@ -86,7 +86,7 @@ export const SupportForm = ({name, address, phoneNumber, dateOfPurchase, issue, 
                 <div className="ms-Grid-row">
                     <TextField
                         placeholder="Date of Purchase" 
-                        value={dateOfPurchase}
+                        value={userDateOfPurchase}
                         className="text-left"
                         onChange={(e) => { setUserDateOfPurchase(e.target.value)}}  />
                 </div>
@@ -94,12 +94,12 @@ export const SupportForm = ({name, address, phoneNumber, dateOfPurchase, issue, 
                     <TextField
                         placeholder="Issue Description" 
                         multiline rows={5}
-                        value={issue}
+                        value={IssueDescription}
                         className="text-left"
                         onChange={(e) => { setIssueDescription(e.target.value)}}  />
                 </div>
                 <div className="ms-Grid-row">
-                    <Checkbox label="Product under Warranty"  checked={productUnderWarranty} onChange={(e, checked) => {setProductUnderWarranty(checked)}} />
+                    <Checkbox label="Product under Warranty"  checked={underWarranty} onChange={(e, checked) => {setUnderWarranty(checked)}} />
                 </div>
                 
                 <div className="ms-Grid-row">

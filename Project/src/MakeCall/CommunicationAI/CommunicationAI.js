@@ -228,6 +228,7 @@ const CommunicationAI = ({ call, isAgentSpeaking, isUserSpeaking }) => {
             setIssueTicket(form_data.support_ticket_number)
         }
     }
+    
     const onChangeHandler = (e, item) => {
         setDropDownLabel(item.key);
     }
