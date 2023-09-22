@@ -15,7 +15,8 @@ export const acsOpenAiPromptsApi = {
     feedback: 'getPersonalFeedback',
     sentiment: 'GetSentiments',
     supportAgent: 'GetSuggestionForXBoxSupportAgent',
-    callInsights: 'CallInsights'
+    callInsights: 'CallInsights',
+    getBriefSummary: 'GetBriefSummary'
 }
 
 export const utils = {
@@ -31,11 +32,11 @@ export const utils = {
                 'Access-Control-Allow-Origin': "*",
                 'X-Requested-With': 'XMLHttpRequest',
             },
-            data: (isTranscriptType || apiEndpoint === acsOpenAiPromptsApi.callInsights) ? 
+            data: (isTranscriptType || apiEndpoint === acsOpenAiPromptsApi.callInsights) ?
                 {
-                    "transcript": newCaptionsData.join(""),
+                    "transcript": newCaptionsData.join(' '),
                     "callId": callId
-                } : 
+                } :
                 {
                     "CurrentParticipant": participantName,
                     "Captions": JSON.stringify(newCaptionsData),

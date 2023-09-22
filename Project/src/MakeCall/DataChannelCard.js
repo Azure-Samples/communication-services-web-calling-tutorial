@@ -41,7 +41,7 @@ export default class DataChannelCard extends React.Component {
             const text = textDecoder.decode(message.data);
             toast.info(`${from}: ${text}`, {
                 position: "top-left",
-                autoClose: 5000,
+                autoClose: false,
                 hideProgressBar: true,
                 closeOnClick: true,
                 pauseOnHover: true,
@@ -84,19 +84,33 @@ export default class DataChannelCard extends React.Component {
         }
     }
 
+    attachSummary = async () => {
+        try {
+            const currentCaptionsData = window.captionHistory.join(' ');
+            let response = await utils.sendCaptionsDataToAcsOpenAI('getBriefSummary', 'agent', '', currentCaptionsData, true);
+            this.setState({ inputMessage: response });
+        } catch (error) {
+            console.error(JSON.stringify(error))
+        }
+    }
+
     sendMessage() {
-        if (this.state.inputMessage) {
+   //     if (this.state.inputMessage) {
             try {
-                this.messageSender.sendMessage((new TextEncoder()).encode(this.state.inputMessage)).then(() => {
-                    this.setState({
-                        inputMessage: ''
+
+                this.attachSummary().then(() => {
+                    console.log("Summary attached");
+                    this.messageSender.sendMessage((new TextEncoder()).encode("Call Summary: \n" + this.state.inputMessage)).then(() => {
+                        this.setState({
+                            inputMessage: ''
+                        });
+                    }).catch(e => {
+                        toast.error(`sendMessage: ${e.message}`, toastOptions);
                     });
-                }).catch(e => {
-                    toast.error(`sendMessage: ${e.message}`, toastOptions);
                 });
             } catch(e) {
                 toast.error(`sendMessage: ${e.message}`, toastOptions);
-            }
+  //          }
         }
     }
 
@@ -104,9 +118,9 @@ export default class DataChannelCard extends React.Component {
         return (
             <div className="ms-Grid">
                 <div className="ms-Grid-row mb-6 mt-6">
-                    <div>When no remote participant checkbox is selected, message will broadcast in the channel</div>
+                    {/* <div>When no remote participant checkbox is selected, message will broadcast in the channel</div> */}
                     <div className="ms-Grid-col ms-lg6 ms-sm6">
-                        <TextField
+                        {/* <TextField
                             label="message"
                             onKeyDown ={ev => {
                                 if (ev.key === 'Enter') {
@@ -120,11 +134,11 @@ export default class DataChannelCard extends React.Component {
                                 });
                             }}
                             value={this.state.inputMessage}
-                        />
+                        /> */}
                         <PrimaryButton
                             className="secondary-button"
                             iconProps={{ iconName: 'Send', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                            text="Send"
+                            text="Send Summary"
                             onClick={() => this.sendMessage()}>
                         </PrimaryButton>
                     </div>
