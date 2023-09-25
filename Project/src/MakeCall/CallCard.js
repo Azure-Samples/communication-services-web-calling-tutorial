@@ -40,8 +40,9 @@ export default class CallCard extends React.Component {
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.capabilitiesFeature = this.call.feature(Features.Capabilities);
         this.dominantSpeakersFeature = this.call.feature(Features.DominantSpeakers);
-        this.meetingReaction = this.call.feature(Features.Reaction);
-        this.identifier = props.identityMri;
+        if (Features.Reaction) {
+            this.meetingReaction = this.call.feature(Features.Reaction);
+        }
         this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
         this.state = {
@@ -111,7 +112,9 @@ export default class CallCard extends React.Component {
         this.call.feature(Features.Spotlight).off('spotlightChanged', this.spotlightStateChangedHandler);
         this.call.feature(Features.RaiseHand).off('raisedHandEvent', this.raiseHandChangedHandler);
         this.call.feature(Features.RaiseHand).off('loweredHandEvent', this.raiseHandChangedHandler);
-        this.call.feature(Features.Reaction).off('reaction', this.reactionChangeHandler);
+        if (Features.Reaction) {
+            this.call.feature(Features.Reaction).off('reaction', this.reactionChangeHandler);
+        }
         this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged);
     }
 
@@ -405,7 +408,7 @@ export default class CallCard extends React.Component {
             this.raiseHandFeature.on("raisedHandEvent", this.raiseHandChangedHandler);
             this.capabilitiesFeature.on('capabilitiesChanged', this.capabilitiesChangedHandler);
             this.dominantSpeakersFeature.on('dominantSeapkersChanged', this.dominantSpeakersChanged);
-            this.meetingReaction.on('reaction', this.reactionChangeHandler);
+            this.meetingReaction?.on('reaction', this.reactionChangeHandler);
         }
     }
 
@@ -643,7 +646,7 @@ export default class CallCard extends React.Component {
             reactionType: reaction
         };
         try {
-            this.meetingReaction.sendReaction(reactionMessage);
+            this.meetingReaction?.sendReaction(reactionMessage);
         } catch (error) {
             console.error(error);
         }
@@ -1314,6 +1317,7 @@ export default class CallCard extends React.Component {
                         <div className="ms-Grid-row">
                             <div className="ms-Grid-col ms-sm12 ms-md4 ms-lg4">
                                 <LocalVideoPreviewCard
+                                    identifier={this.identifier}
                                     stream={this.localVideoStream}/>
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md2 md-lg2'>
@@ -1359,6 +1363,7 @@ export default class CallCard extends React.Component {
                             {
                                 <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
                                     <LocalVideoPreviewCard
+                                        identifier={this.identifier}
                                         stream={this.localScreenSharingStream}/>
                                 </div>
                             }
