@@ -40,7 +40,7 @@ export default class CallCard extends React.Component {
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.capabilitiesFeature = this.call.feature(Features.Capabilities);
         this.dominantSpeakersFeature = this.call.feature(Features.DominantSpeakers);
-        this.meetingReaction = this.call.feature(Features.MeetingReaction);
+        this.meetingReaction = this.call.feature(Features.Reaction);
         this.identifier = props.identityMri;
         this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
@@ -111,7 +111,7 @@ export default class CallCard extends React.Component {
         this.call.feature(Features.Spotlight).off('spotlightChanged', this.spotlightStateChangedHandler);
         this.call.feature(Features.RaiseHand).off('raisedHandEvent', this.raiseHandChangedHandler);
         this.call.feature(Features.RaiseHand).off('loweredHandEvent', this.raiseHandChangedHandler);
-        this.call.feature(Features.MeetingReaction).off('reaction', this.reactionChangeHandler);
+        this.call.feature(Features.Reaction).off('reaction', this.reactionChangeHandler);
         this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged);
     }
 
