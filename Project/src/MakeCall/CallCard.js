@@ -41,7 +41,6 @@ export default class CallCard extends React.Component {
         this.capabilitiesFeature = this.call.feature(Features.Capabilities);
         this.dominantSpeakersFeature = this.call.feature(Features.DominantSpeakers);
         this.meetingReaction = this.call.feature(Features.Reaction);
-        this.identifier = props.identityMri;
         this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
         this.state = {
@@ -1314,6 +1313,7 @@ export default class CallCard extends React.Component {
                         <div className="ms-Grid-row">
                             <div className="ms-Grid-col ms-sm12 ms-md4 ms-lg4">
                                 <LocalVideoPreviewCard
+                                    identifier={this.identifier}
                                     stream={this.localVideoStream}/>
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md2 md-lg2'>
@@ -1359,6 +1359,7 @@ export default class CallCard extends React.Component {
                             {
                                 <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
                                     <LocalVideoPreviewCard
+                                        identifier={this.identifier}
                                         stream={this.localScreenSharingStream}/>
                                 </div>
                             }

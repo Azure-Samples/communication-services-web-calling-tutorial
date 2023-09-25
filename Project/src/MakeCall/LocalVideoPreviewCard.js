@@ -1,18 +1,22 @@
 import React from "react";
-import { LocalVideoStream, VideoStreamRenderer} from '@azure/communication-calling';
+import { VideoStreamRenderer} from '@azure/communication-calling';
+import { utils } from '../Utils/Utils';
+
 export default class LocalVideoPreviewCard extends React.Component {
     constructor(props) {
         super(props);
+        this.identifier = props.identifier;
         this.stream = props.stream;
         this.type = this.stream.mediaStreamType;
         this.view = undefined;
+        this.componentId = `${utils.getIdentifierText(this.identifier)}-local${this.type}Renderer`;
     }
 
     async componentDidMount() {
         try {
             this.renderer = new VideoStreamRenderer(this.stream);
             this.view = await this.renderer.createView();
-            const targetContainer = document.getElementById(`local${this.type}Renderer`);
+            const targetContainer = document.getElementById(this.componentId);
             if (this.type === 'ScreenSharing' || this.type === 'RawMedia') {
                 this.view.target.querySelector('video').style.width = targetContainer.style.width;
             }
@@ -29,7 +33,7 @@ export default class LocalVideoPreviewCard extends React.Component {
 
     render() {
         return (
-            <div style={{ width: '100%' }} id={ `local${this.type}Renderer` }></div>
+            <div style={{ width: '100%' }} id={this.componentId}></div>
         );
     }
 }
