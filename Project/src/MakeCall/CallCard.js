@@ -40,7 +40,9 @@ export default class CallCard extends React.Component {
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.capabilitiesFeature = this.call.feature(Features.Capabilities);
         this.dominantSpeakersFeature = this.call.feature(Features.DominantSpeakers);
-        this.meetingReaction = this.call.feature(Features.Reaction);
+        if (Features.Reaction) {
+            this.meetingReaction = this.call.feature(Features.Reaction);
+        }
         this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
         this.state = {
@@ -404,7 +406,7 @@ export default class CallCard extends React.Component {
             this.raiseHandFeature.on("raisedHandEvent", this.raiseHandChangedHandler);
             this.capabilitiesFeature.on('capabilitiesChanged', this.capabilitiesChangedHandler);
             this.dominantSpeakersFeature.on('dominantSeapkersChanged', this.dominantSpeakersChanged);
-            this.meetingReaction.on('reaction', this.reactionChangeHandler);
+            this.meetingReaction?.on('reaction', this.reactionChangeHandler);
         }
     }
 
@@ -642,7 +644,7 @@ export default class CallCard extends React.Component {
             reactionType: reaction
         };
         try {
-            this.meetingReaction.sendReaction(reactionMessage);
+            this.meetingReaction?.sendReaction(reactionMessage);
         } catch (error) {
             console.error(error);
         }
