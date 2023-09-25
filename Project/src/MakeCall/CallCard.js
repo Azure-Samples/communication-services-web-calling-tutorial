@@ -112,7 +112,9 @@ export default class CallCard extends React.Component {
         this.call.feature(Features.Spotlight).off('spotlightChanged', this.spotlightStateChangedHandler);
         this.call.feature(Features.RaiseHand).off('raisedHandEvent', this.raiseHandChangedHandler);
         this.call.feature(Features.RaiseHand).off('loweredHandEvent', this.raiseHandChangedHandler);
-        this.call.feature(Features.Reaction).off('reaction', this.reactionChangeHandler);
+        if (Features.Reaction) {
+            this.call.feature(Features.Reaction).off('reaction', this.reactionChangeHandler);
+        }
         this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged);
     }
 
