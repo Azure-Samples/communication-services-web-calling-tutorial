@@ -67,7 +67,7 @@ const CallCaption = ({ call }) => {
         let captionAreasContainer = document.getElementById('captionsArea');
         const newClassName = `prefix${mri.replace(/:/g, '').replace(/-/g, '').replace(/\+/g, '')}`;
         const captionText = `${captionData.timestamp.toUTCString()}
-            ${captionData.speaker.displayName ?? mri}: ${captionData.captionText ?? captionData.spokenText}`;
+            ${captionData.speaker.displayName}: ${captionData.captionText ?? captionData.spokenText}`;
 
         let foundCaptionContainer = captionAreasContainer.querySelector(`.${newClassName}[isNotFinal='true']`);
         if (!foundCaptionContainer) {
