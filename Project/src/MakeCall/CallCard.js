@@ -498,7 +498,7 @@ export default class CallCard extends React.Component {
 
         const newEvent = {
             participantIdentifier: displayName,
-            reaction: event.reactionMessage.name,
+            reaction: event.reactionMessage.reactionType,
             receiveTimestamp: new Date().toLocaleString(),
         }
         console.log(`reaction received - ${event.reactionMessage.name}`);
