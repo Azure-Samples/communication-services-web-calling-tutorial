@@ -30,8 +30,12 @@ export default class Login extends React.Component {
             environmentInfo: undefined,
             showCallClientOptions: false,
             initializedOneSignal: false,
+            askForMicrophone: true,
+            askForCamera: true,
             subscribedForPushNotifications: false,
             initializeCallAgentAfterPushRegistration: true,
+            initializeAndAskForMicrophone: true,
+            initializeAndAskForCamera: true,
             showUserProvisioningAndSdkInitializationCode: false,
             showSpinner: false,
             loginWarningMessage: undefined,
@@ -116,6 +120,8 @@ export default class Login extends React.Component {
                 displayName: this.displayName,
                 clientTag:this.clientTag,
                 proxy: this.state.proxy,
+                askForMicrophone: this.state.initializeAndAskForMicrophone,
+                askForCamera:this.state.initializeAndAskForCamera,                
                 customTurn: this.state.customTurn,
                 isTeamsUser: this.state.isTeamsUser
             });
@@ -642,6 +648,26 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                 }
                                                 checked={this.state.initializeCallAgentAfterPushRegistration}
                                                 onChange={(e, isChecked) => { this.setState({ initializeCallAgentAfterPushRegistration: isChecked })}}/>
+                                            
+                                            Ask for microphone permission
+                                            <Checkbox
+                                                className="mt-2"
+                                                label="As for microphone permission"
+                                                disabled={
+                                                    !this.state.askForMicrophone
+                                                }
+                                                checked={this.state.initializeAndAskForMicrophone}
+                                                onChange={(e, isChecked) => { this.setState({ initializeAndAskForMicrophone: isChecked })}}/>
+
+                                            Ask for camera permission
+                                            <Checkbox
+                                                className="mt-2"
+                                                label="Ask for camera permission"
+                                                disabled={
+                                                    !this.state.askForCamera
+                                                }
+                                                checked={this.state.initializeAndAskForCamera}
+                                                onChange={(e, isChecked) => { this.setState({ initializeAndAskForCamera: isChecked })}}/>
                                         </div>
                                         <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
                                             <TurnConfiguration

@@ -118,7 +118,7 @@ export default class MakeCall extends React.Component {
                 });
 
                 this.deviceManager = await this.callClient.getDeviceManager();
-                const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
+                const permissions = await this.deviceManager.askDevicePermission({ audio: userDetails.askForMicrophone, video: userDetails.askForCamera });
                 this.setState({permissions: permissions});
 
                 this.setState({ isTeamsUser: userDetails.isTeamsUser});
