@@ -894,7 +894,6 @@ export default class CallCard extends React.Component {
             },
             meetingAudioConferenceDetails:  async() => {
                 let messageBarText = "call in (audio only) details: \n";
-                let isErrorThrown = false;
                 try {
                     const audioConferencingfeature = this.call.feature(Features.TeamsMeetingAudioConferencing);
                     const audioConferenceDetails = 
@@ -908,7 +907,6 @@ export default class CallCard extends React.Component {
                         messageBarText += `Toll Free Number: ${audioConferenceDetails.phoneNumbers[0].tollFreePhoneNumber.phoneNumber}\n`;
                     }
                 } catch (error) {
-                    isErrorThrown = true
                     messageBarText += JSON.stringify(error);
                 }
                 console.log(`meetingAudioConferenceDetails MessageBarText = ${messageBarText}`)
