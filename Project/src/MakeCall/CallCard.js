@@ -892,6 +892,26 @@ export default class CallCard extends React.Component {
                     console.error(error)
                 }
             },
+            meetingAudioConferenceDetails:  async() => {
+                let messageBarText = "call in (audio only) details: \n";
+                try {
+                    const audioConferencingfeature = this.call.feature(Features.TeamsMeetingAudioConferencing);
+                    const audioConferenceDetails = 
+                        await audioConferencingfeature.getTeamsMeetingAudioConferencingDetails();
+                    console.log(`meetingAudioConferenceDetails: ${JSON.stringify(audioConferenceDetails)}`)
+                    messageBarText += `Conference Id: ${audioConferenceDetails.phoneConferenceId}\n`;
+                    if (audioConferenceDetails.phoneNumbers[0].tollPhoneNumber) { 
+                        messageBarText += `Toll Number: ${audioConferenceDetails.phoneNumbers[0].tollPhoneNumber.phoneNumber}\n`;
+                    }
+                    if (audioConferenceDetails.phoneNumbers[0].tollFreePhoneNumber) { 
+                        messageBarText += `Toll Free Number: ${audioConferenceDetails.phoneNumbers[0].tollFreePhoneNumber.phoneNumber}\n`;
+                    }
+                } catch (error) {
+                    messageBarText += JSON.stringify(error);
+                }
+                console.log(`meetingAudioConferenceDetails MessageBarText = ${messageBarText}`)
+                this.setState({ callMessage: messageBarText })
+            },
         }
     }
 
@@ -910,6 +930,12 @@ export default class CallCard extends React.Component {
                 text: 'Lower All Hands',
                 onClick: (e) => menuCallBacks.lowerAllHands(e)
             },
+            {
+                key: 'Teams Meeting Audio Dial-In Info',
+                iconProps: { iconName: 'HandsFree'},
+                text: 'Teams Meeting Audio Dial-In Info',
+                onClick: (e) => menuCallBacks.meetingAudioConferenceDetails(e)
+            }
         ]
         return menuItems.filter(item => item != 0)
     }
