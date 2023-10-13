@@ -562,13 +562,17 @@ export default class CallCard extends React.Component {
                 }
                 await this.watchForCallFinishConnecting();
                 if (this.state.videoOn) {
-                    await this.call.startVideo(this.localVideoStream);
+                    if (this.state.canOnVideo) {
+                        await this.call.startVideo(this.localVideoStream);
+                    }
                 } else {
                     await this.call.stopVideo(this.localVideoStream);
                 }
             } else {
                 if (!this.state.videoOn) {
-                    await this.call.startVideo(this.localVideoStream);
+                    if (this.state.canOnVideo) {
+                        await this.call.startVideo(this.localVideoStream);
+                    }
                 } else {
                     await this.call.stopVideo(this.localVideoStream);
                 }
@@ -624,7 +628,7 @@ export default class CallCard extends React.Component {
     async handleClickEmoji(index) {
         var reaction;
         switch(index) {
-            case 0: 
+            case 0:
                 reaction = 'like';
                 break;
             case 1:
@@ -983,7 +987,7 @@ export default class CallCard extends React.Component {
                             {
                                 this.state.callState !== 'Connected' &&
                                 <div className="inline-block ringing-loader mr-2"></div>
-                            }                            
+                            }
                             <h2 className="inline-block">{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
                         </div>
                     </div>
@@ -1371,7 +1375,7 @@ export default class CallCard extends React.Component {
                                             disabled={false}/>
                                     </div>
                                 }
-                                
+
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md5 md-lg6'>
                                 <VideoEffectsContainer call={this.call} />
@@ -1479,7 +1483,7 @@ export default class CallCard extends React.Component {
                     </div>
                 }
                 {
-                    this.state.callState === 'Connected' && 
+                    this.state.callState === 'Connected' &&
                     <div className="mt-5">
                         <div className="ms-Grid-row">
                             <h3>Meeting Reactions</h3>
