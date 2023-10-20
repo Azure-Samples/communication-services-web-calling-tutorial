@@ -39,6 +39,7 @@ export default class CallCard extends React.Component {
         this.spotlightFeature = this.call.feature(Features.Spotlight);
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.capabilitiesFeature = this.call.feature(Features.Capabilities);
+        this.capabilities = this.capabilitiesFeature.capabilities;
         this.dominantSpeakersFeature = this.call.feature(Features.DominantSpeakers);
         if (Features.Reaction) {
             this.meetingReaction = this.call.feature(Features.Reaction);
@@ -52,11 +53,11 @@ export default class CallCard extends React.Component {
             remoteParticipants: [],
             allRemoteParticipantStreams: [],
             remoteScreenShareStream: undefined,
-            canOnVideo: true,
-            canUnMuteMic: true,
-            canShareScreen: true,
-            canRaiseHands: true,
-            canSpotlight: true,
+            canOnVideo: this.capabilities.turnVideoOn.isPresent,
+            canUnMuteMic: this.capabilities.unmuteMic.isPresent,
+            canShareScreen: this.capabilities.shareScreen.isPresent,
+            canRaiseHands: this.capabilities.raiseHand.isPresent,
+            canSpotlight: this.capabilities.spotlightParticipant.isPresent,
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
@@ -739,11 +740,13 @@ export default class CallCard extends React.Component {
                 await this.call.stopScreenSharing();
                 this.setState({ localScreenSharingMode: undefined });
             } else {
-                await this.call.startScreenSharing();
-                this.localScreenSharingStream = this.call.localVideoStreams.find(ss => {
-                    return ss.mediaStreamType === 'ScreenSharing'
-                });
-                this.setState({ localScreenSharingMode: 'StartWithNormal'});
+                if (this.state.canShareScreen) {
+                    await this.call.startScreenSharing();
+                    this.localScreenSharingStream = this.call.localVideoStreams.find(ss => {
+                        return ss.mediaStreamType === 'ScreenSharing'
+                    });
+                    this.setState({ localScreenSharingMode: 'StartWithNormal'});
+                }
             }
         } catch (e) {
             console.error(e);
@@ -758,40 +761,42 @@ export default class CallCard extends React.Component {
                 this.dummyStreamTimeout = undefined;
                 this.setState({ localScreenSharingMode: undefined });
             } else {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d', {willReadFrequently: true});
-                canvas.width = 1280;
-                canvas.height = 720;
-                ctx.fillStyle = 'blue';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                if (this.state.canShareScreen) {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d', {willReadFrequently: true});
+                    canvas.width = 1280;
+                    canvas.height = 720;
+                    ctx.fillStyle = 'blue';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                const colors = ['red', 'yellow', 'green'];
-                const FPS = 30;
-                const createShapes = function () {
-                    try {
-                        let begin = Date.now();
-                        // start processing.
-                        if (ctx) {
-                            ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
-                            const x = Math.floor(Math.random() * canvas.width);
-                            const y = Math.floor(Math.random() * canvas.height);
-                            const size = 100;
-                            ctx.fillRect(x, y, size, size);
+                    const colors = ['red', 'yellow', 'green'];
+                    const FPS = 30;
+                    const createShapes = function () {
+                        try {
+                            let begin = Date.now();
+                            // start processing.
+                            if (ctx) {
+                                ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                                const x = Math.floor(Math.random() * canvas.width);
+                                const y = Math.floor(Math.random() * canvas.height);
+                                const size = 100;
+                                ctx.fillRect(x, y, size, size);
+                            }
+                            // schedule the next one.
+                            let delay = Math.abs(1000/FPS - (Date.now() - begin));
+                            this.dummyStreamTimeout = setTimeout(createShapes, delay);
+                        } catch (err) {
+                            console.error(err);
                         }
-                        // schedule the next one.
-                        let delay = Math.abs(1000/FPS - (Date.now() - begin));
-                        this.dummyStreamTimeout = setTimeout(createShapes, delay);
-                    } catch (err) {
-                        console.error(err);
-                    }
-                }.bind(this);
+                    }.bind(this);
 
-                // schedule the first one.
-                this.dummyStreamTimeout = setTimeout(createShapes, 0);
-                const dummyStream = canvas.captureStream(FPS);
-                this.localScreenSharingStream = new LocalVideoStream(dummyStream);
-                await this.call.startScreenSharing(this.localScreenSharingStream);
-                this.setState({ localScreenSharingMode: 'StartWithDummy'});
+                    // schedule the first one.
+                    this.dummyStreamTimeout = setTimeout(createShapes, 0);
+                    const dummyStream = canvas.captureStream(FPS);
+                    this.localScreenSharingStream = new LocalVideoStream(dummyStream);
+                    await this.call.startScreenSharing(this.localScreenSharingStream);
+                    this.setState({ localScreenSharingMode: 'StartWithDummy'});
+                }
             }
         } catch (e) {
             console.error(e);
@@ -900,14 +905,14 @@ export default class CallCard extends React.Component {
                 let messageBarText = "call in (audio only) details: \n";
                 try {
                     const audioConferencingfeature = this.call.feature(Features.TeamsMeetingAudioConferencing);
-                    const audioConferenceDetails = 
+                    const audioConferenceDetails =
                         await audioConferencingfeature.getTeamsMeetingAudioConferencingDetails();
                     console.log(`meetingAudioConferenceDetails: ${JSON.stringify(audioConferenceDetails)}`)
                     messageBarText += `Conference Id: ${audioConferenceDetails.phoneConferenceId}\n`;
-                    if (audioConferenceDetails.phoneNumbers[0].tollPhoneNumber) { 
+                    if (audioConferenceDetails.phoneNumbers[0].tollPhoneNumber) {
                         messageBarText += `Toll Number: ${audioConferenceDetails.phoneNumbers[0].tollPhoneNumber.phoneNumber}\n`;
                     }
-                    if (audioConferenceDetails.phoneNumbers[0].tollFreePhoneNumber) { 
+                    if (audioConferenceDetails.phoneNumbers[0].tollFreePhoneNumber) {
                         messageBarText += `Toll Free Number: ${audioConferenceDetails.phoneNumbers[0].tollFreePhoneNumber.phoneNumber}\n`;
                     }
                 } catch (error) {
@@ -1134,14 +1139,14 @@ export default class CallCard extends React.Component {
                             variant="secondary"
                             onClick={() => this.handleRawScreenSharingOnOff()}>
                             {
-                                (
+                                this.state.canShareScreen && (
                                     !this.state.screenSharingOn ||
                                     (this.state.screenSharingOn && this.state.localScreenSharingMode !== 'StartWithDummy')
                                 ) &&
                                 <Icon iconName="Tablet" />
                             }
                             {
-                                this.state.screenSharingOn && this.state.localScreenSharingMode === 'StartWithDummy' &&
+                                (!this.state.canShareScreen) || (this.state.screenSharingOn && this.state.localScreenSharingMode === 'StartWithDummy') &&
                                 <Icon iconName="CircleStop" />
                             }
                         </span>
