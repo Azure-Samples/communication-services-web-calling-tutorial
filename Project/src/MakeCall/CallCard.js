@@ -44,7 +44,8 @@ export default class CallCard extends React.Component {
             this.meetingReaction = this.call.feature(Features.Reaction);
         }
         if (Features.PPTLive) {
-            this.pptLive = this.call.feature(Features.PPTLive);
+            this.pptLiveFeature = this.call.feature(Features.PPTLive);
+            this.pptLiveHtml = React.createRef();
         }
         this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
@@ -91,7 +92,7 @@ export default class CallCard extends React.Component {
             showDataChannel: false,
             showAddParticipantPanel: false,
             reactionRows:[],
-            pptLiveActive: false,
+            pptLiveActive: false
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
@@ -416,7 +417,7 @@ export default class CallCard extends React.Component {
             this.capabilitiesFeature.on('capabilitiesChanged', this.capabilitiesChangedHandler);
             this.dominantSpeakersFeature.on('dominantSeapkersChanged', this.dominantSpeakersChanged);
             this.meetingReaction?.on('reaction', this.reactionChangeHandler);
-            this.pptLive?.on('isActiveChanged', this.pptLiveChangedHandler);
+            this.pptLiveFeature?.on('isActiveChanged', this.pptLiveChangedHandler);
         }
     }
 
@@ -516,8 +517,11 @@ export default class CallCard extends React.Component {
 
     pptLiveChangedHandler = () => {
         this.setState({
-            pptLiveActive: this.pptLive && this.pptLive.isActive
+            pptLiveActive: this.pptLiveFeature && this.pptLiveFeature.isActive
         }) 
+        if(this.pptLiveHtml && this.state.pptLiveActive) {
+            this.pptLiveHtml.current.appendChild(this.pptLiveFeature.target);
+        }
     }
 
     capabilitiesChangedHandler = (capabilitiesChangeInfo) => {
@@ -995,13 +999,6 @@ export default class CallCard extends React.Component {
                         </MessageBar>
                     }
                 </div>
-                { this.state.pptLiveActive &&
-                    <div className="pptlive">
-                        {
-                            this.pptLive.target
-                        }
-                    </div>   
-                }
                 <div className="ms-Grid-row">
                     <div className="ms-Grid-col ms-lg6">
                         <div>
@@ -1359,6 +1356,9 @@ export default class CallCard extends React.Component {
                         </Panel>
                     </div>
                 </div>
+                { this.state.pptLiveActive &&
+                    <div className= "pptLive" ref={this.pptLiveHtml} />
+                }
                 {
                     this.state.videoOn && this.state.canOnVideo &&
                     <div className="mt-5">
