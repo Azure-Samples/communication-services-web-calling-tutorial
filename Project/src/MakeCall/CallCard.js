@@ -521,6 +521,8 @@ export default class CallCard extends React.Component {
         }) 
         if(this.pptLiveHtml && this.state.pptLiveActive) {
             this.pptLiveHtml.current.appendChild(this.pptLiveFeature.target);
+        } else if (this.state.pptLiveActive) {
+            this.pptLiveHtml.current.removeChild(this.pptLiveHtml.current.lastElementChild);
         }
     }
 
