@@ -44,6 +44,10 @@ export default class CallCard extends React.Component {
         if (Features.Reaction) {
             this.meetingReaction = this.call.feature(Features.Reaction);
         }
+        if (Features.PPTLive) {
+            this.pptLiveFeature = this.call.feature(Features.PPTLive);
+            this.pptLiveHtml = React.createRef();
+        }
         this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
         this.state = {
@@ -88,7 +92,8 @@ export default class CallCard extends React.Component {
             dominantSpeakers:[],
             showDataChannel: false,
             showAddParticipantPanel: false,
-            reactionRows:[]
+            reactionRows:[],
+            pptLiveActive: false
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
@@ -115,6 +120,9 @@ export default class CallCard extends React.Component {
         this.call.feature(Features.RaiseHand).off('loweredHandEvent', this.raiseHandChangedHandler);
         if (Features.Reaction) {
             this.call.feature(Features.Reaction).off('reaction', this.reactionChangeHandler);
+        }
+        if (Features.PPTLive) {
+            this.call.feature(Features.PPTLive).off('isActiveChanged', this.pptLiveChangedHandler);
         }
         this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged);
     }
@@ -410,6 +418,7 @@ export default class CallCard extends React.Component {
             this.capabilitiesFeature.on('capabilitiesChanged', this.capabilitiesChangedHandler);
             this.dominantSpeakersFeature.on('dominantSeapkersChanged', this.dominantSpeakersChanged);
             this.meetingReaction?.on('reaction', this.reactionChangeHandler);
+            this.pptLiveFeature?.on('isActiveChanged', this.pptLiveChangedHandler);
         }
     }
 
@@ -505,6 +514,17 @@ export default class CallCard extends React.Component {
         console.log(`reaction received - ${event.reactionMessage.name}`);
 
         this.setState({reactionRows: [...this.state.reactionRows, newEvent].slice(-100)});
+    }
+
+    pptLiveChangedHandler = () => {
+        this.setState({
+            pptLiveActive: this.pptLiveFeature && this.pptLiveFeature.isActive
+        }) 
+        if(this.pptLiveHtml && this.state.pptLiveActive) {
+            this.pptLiveHtml.current.appendChild(this.pptLiveFeature.target);
+        } else if (this.state.pptLiveActive) {
+            this.pptLiveHtml.current.removeChild(this.pptLiveHtml.current.lastElementChild);
+        }
     }
 
     capabilitiesChangedHandler = (capabilitiesChangeInfo) => {
@@ -1343,6 +1363,9 @@ export default class CallCard extends React.Component {
                         </Panel>
                     </div>
                 </div>
+                { this.state.pptLiveActive &&
+                    <div className= "pptLive" ref={this.pptLiveHtml} />
+                }
                 {
                     this.state.videoOn && this.state.canOnVideo &&
                     <div className="mt-5">
