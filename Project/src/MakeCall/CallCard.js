@@ -57,11 +57,11 @@ export default class CallCard extends React.Component {
             remoteParticipants: [],
             allRemoteParticipantStreams: [],
             remoteScreenShareStream: undefined,
-            canOnVideo: this.capabilities.turnVideoOn.isPresent,
-            canUnMuteMic: this.capabilities.unmuteMic.isPresent,
-            canShareScreen: this.capabilities.shareScreen.isPresent,
-            canRaiseHands: this.capabilities.raiseHand.isPresent,
-            canSpotlight: this.capabilities.spotlightParticipant.isPresent,
+            canOnVideo: this.capabilities.turnVideoOn.isPresent || this.capabilities.turnVideoOn.reason === 'FeatureNotSupported',
+            canUnMuteMic: this.capabilities.unmuteMic.isPresent || this.capabilities.unmuteMic.reason === 'FeatureNotSupported',
+            canShareScreen: this.capabilities.shareScreen.isPresent || this.capabilities.shareScreen.reason === 'FeatureNotSupported',
+            canRaiseHands: this.capabilities.raiseHand.isPresent || this.capabilities.raiseHand.reason === 'FeatureNotSupported',
+            canSpotlight: this.capabilities.spotlightParticipant.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
@@ -582,18 +582,14 @@ export default class CallCard extends React.Component {
                     this.setState({ videoOn: true })
                 }
                 await this.watchForCallFinishConnecting();
-                if (this.state.videoOn) {
-                    if (this.state.canOnVideo) {
-                        await this.call.startVideo(this.localVideoStream);
-                    }
+                if (this.state.videoOn && this.state.canOnVideo) {
+                    await this.call.startVideo(this.localVideoStream);
                 } else {
                     await this.call.stopVideo(this.localVideoStream);
                 }
             } else {
-                if (!this.state.videoOn) {
-                    if (this.state.canOnVideo) {
-                        await this.call.startVideo(this.localVideoStream);
-                    }
+                if (!this.state.videoOn && this.state.canOnVideo) {
+                    await this.call.startVideo(this.localVideoStream);
                 } else {
                     await this.call.stopVideo(this.localVideoStream);
                 }
@@ -759,14 +755,12 @@ export default class CallCard extends React.Component {
             if (this.call.isScreenSharingOn) {
                 await this.call.stopScreenSharing();
                 this.setState({ localScreenSharingMode: undefined });
-            } else {
-                if (this.state.canShareScreen) {
-                    await this.call.startScreenSharing();
-                    this.localScreenSharingStream = this.call.localVideoStreams.find(ss => {
-                        return ss.mediaStreamType === 'ScreenSharing'
-                    });
-                    this.setState({ localScreenSharingMode: 'StartWithNormal'});
-                }
+            } else if (this.state.canShareScreen) {
+                await this.call.startScreenSharing();
+                this.localScreenSharingStream = this.call.localVideoStreams.find(ss => {
+                    return ss.mediaStreamType === 'ScreenSharing'
+                });
+                this.setState({ localScreenSharingMode: 'StartWithNormal'});
             }
         } catch (e) {
             console.error(e);
