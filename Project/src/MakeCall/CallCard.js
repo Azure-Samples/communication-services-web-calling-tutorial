@@ -519,11 +519,13 @@ export default class CallCard extends React.Component {
         this.setState({
             pptLiveActive: this.pptLiveFeature && this.pptLiveFeature.isActive
         }) 
-        if(this.pptLiveHtml && this.state.pptLiveActive) {
-            this.pptLiveHtml.current.appendChild(this.pptLiveFeature.target);
-        } else if (this.state.pptLiveActive) {
-            this.pptLiveHtml.current.removeChild(this.pptLiveHtml.current.lastElementChild);
-        }
+        if(this.pptLiveHtml) {
+            if (this.state.pptLiveActive) {
+                this.pptLiveHtml.current.appendChild(this.pptLiveFeature.target);
+            } else {
+                this.pptLiveHtml.current.removeChild(this.pptLiveHtml.current.lastElementChild);
+            }
+        } 
     }
 
     capabilitiesChangedHandler = (capabilitiesChangeInfo) => {
