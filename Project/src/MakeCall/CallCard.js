@@ -528,7 +528,6 @@ export default class CallCard extends React.Component {
                 } catch {
                     console.log("Cannot stop screen sharing");
                 }
-                
             } else {
                 this.pptLiveHtml.current.removeChild(this.pptLiveHtml.current.lastElementChild);
             }
