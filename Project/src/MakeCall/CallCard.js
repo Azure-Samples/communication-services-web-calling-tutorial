@@ -516,13 +516,18 @@ export default class CallCard extends React.Component {
         this.setState({reactionRows: [...this.state.reactionRows, newEvent].slice(-100)});
     }
 
-    pptLiveChangedHandler = () => {
+    pptLiveChangedHandler = async ()  => {
         this.setState({
             pptLiveActive: this.pptLiveFeature && this.pptLiveFeature.isActive
         }) 
         if(this.pptLiveHtml) {
             if (this.state.pptLiveActive) {
                 this.pptLiveHtml.current.appendChild(this.pptLiveFeature.target);
+                try {
+                    await this.handleScreenSharingOnOff()
+                } catch {
+                    console.log("Cannot stop screen sharing");
+                }
             } else {
                 this.pptLiveHtml.current.removeChild(this.pptLiveHtml.current.lastElementChild);
             }
@@ -757,7 +762,7 @@ export default class CallCard extends React.Component {
             if (this.call.isScreenSharingOn) {
                 await this.call.stopScreenSharing();
                 this.setState({ localScreenSharingMode: undefined });
-            } else if (this.state.canShareScreen) {
+            } else if (this.state.canShareScreen && !this.state.pptLiveActive) {
                 await this.call.startScreenSharing();
                 this.localScreenSharingStream = this.call.localVideoStreams.find(ss => {
                     return ss.mediaStreamType === 'ScreenSharing'
