@@ -9,7 +9,7 @@ import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
 import { Icon } from '@fluentui/react/lib/Icon';
 import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
-import { LocalVideoStream, Features, LocalAudioStream, VideoStreamRenderer } from '@azure/communication-calling';
+import { LocalVideoStream, Features, LocalAudioStream, VideoStreamRenderer, CallKind } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
@@ -20,12 +20,14 @@ import DataChannelCard from './DataChannelCard';
 import CallCaption from "./CallCaption";
 import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 import MediaConstraint from './MediaConstraint';
+import { CallJoinType } from "./MakeCall";
 
 export default class CallCard extends React.Component {
     constructor(props) {
         super(props);
         this.callFinishConnectingResolve = undefined;
         this.call = props.call;
+        this.callJoinType = props.callJoinType;
         this.localVideoStream = this.call.localVideoStreams.find(lvs => {
             return lvs.mediaStreamType === 'Video' || lvs.mediaStreamType === 'RawMedia'
         });
@@ -62,6 +64,7 @@ export default class CallCard extends React.Component {
             canShareScreen: this.capabilities.shareScreen.isPresent || this.capabilities.shareScreen.reason === 'FeatureNotSupported',
             canRaiseHands: this.capabilities.raiseHand.isPresent || this.capabilities.raiseHand.reason === 'FeatureNotSupported',
             canSpotlight: this.capabilities.spotlightParticipant.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
+            canReact: this.capabilities.reaction.isPresent,
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
@@ -549,6 +552,10 @@ export default class CallCard extends React.Component {
                 (value.isPresent) ? this.setState({ canRaiseHands: true }) : this.setState({ canRaiseHands: false });
                 continue;
             }
+            if(key === 'reaction' && value.reason != 'FeatureNotSupported') {
+                (value.isPresent) ? this.setState({ canReact: true }) : this.setState({ canReact: false });
+                continue;
+            }
         }
     }
 
@@ -643,6 +650,13 @@ export default class CallCard extends React.Component {
     }
 
     async handleClickEmoji(index) {
+        
+        if(this.callJoinType === CallJoinType.TeamsCall && !this.state.canReact) {
+            // 1:1 direct call with teams user is not supported.
+            console.error('Reaction capability is not allowed for this call type');
+            return ;
+        }
+
         var reaction;
         switch(index) {
             case 0:
