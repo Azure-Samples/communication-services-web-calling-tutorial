@@ -108,11 +108,21 @@ export default class RemoteParticipantCard extends React.Component {
     }
 
     async admitParticipant() {
-        await this.call.lobby.admit(this.identifier);
+        console.log('admit');
+        try {
+            await this.call.lobby.admit(this.identifier);
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     async rejectParticipant() {
-        await this.call.lobby.reject(this.identifier);
+        console.log('reject');
+        try {
+            await this.call.lobby.reject(this.identifier);
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     render() {
