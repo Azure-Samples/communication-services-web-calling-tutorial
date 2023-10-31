@@ -20,14 +20,12 @@ import DataChannelCard from './DataChannelCard';
 import CallCaption from "./CallCaption";
 import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 import MediaConstraint from './MediaConstraint';
-import { CallJoinType } from "./MakeCall";
 
 export default class CallCard extends React.Component {
     constructor(props) {
         super(props);
         this.callFinishConnectingResolve = undefined;
         this.call = props.call;
-        this.callJoinType = props.callJoinType;
         this.localVideoStream = this.call.localVideoStreams.find(lvs => {
             return lvs.mediaStreamType === 'Video' || lvs.mediaStreamType === 'RawMedia'
         });
@@ -64,7 +62,7 @@ export default class CallCard extends React.Component {
             canShareScreen: this.capabilities.shareScreen.isPresent || this.capabilities.shareScreen.reason === 'FeatureNotSupported',
             canRaiseHands: this.capabilities.raiseHand.isPresent || this.capabilities.raiseHand.reason === 'FeatureNotSupported',
             canSpotlight: this.capabilities.spotlightParticipant.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
-            canReact: this.capabilities.reaction.isPresent,
+            canReact: this.capabilities.reaction.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
@@ -579,7 +577,6 @@ export default class CallCard extends React.Component {
                 this.localVideoStream = new LocalVideoStream(cameraDeviceInfo);
             }
 
-
             if (this.call.state === 'None' ||
                 this.call.state === 'Connecting' ||
                 this.call.state === 'Incoming') {
@@ -651,9 +648,11 @@ export default class CallCard extends React.Component {
 
     async handleClickEmoji(index) {
         
-        if(this.callJoinType === CallJoinType.TeamsCall && !this.state.canReact) {
+        if(!this.state.canReact) {
             // 1:1 direct call with teams user is not supported.
-            console.error('Reaction capability is not allowed for this call type');
+            messageBarText = 'Reaction capability is not allowed for this call type';
+            console.error(messageBarText);
+            this.setState({ callMessage: messageBarText })
             return ;
         }
 
@@ -683,7 +682,10 @@ export default class CallCard extends React.Component {
         try {
             this.meetingReaction?.sendReaction(reactionMessage);
         } catch (error) {
+            // Surface the error 
             console.error(error);
+            messageBarText = JSON.stringify(error);
+            this.setState({ callMessage: messageBarText })
         }
     }
 

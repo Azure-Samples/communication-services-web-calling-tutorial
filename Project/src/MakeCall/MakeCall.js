@@ -63,8 +63,7 @@ export default class MakeCall extends React.Component {
             },
             preCallDiagnosticsResults: {},
             isTeamsUser: false,
-            identityMri: undefined,
-            callJoinType: null
+            identityMri: undefined
         };
 
         setInterval(() => {
@@ -165,13 +164,6 @@ export default class MakeCall extends React.Component {
                     if (this.state.call) {
                         incomingCall.reject();
                         return;
-                    }
-
-                    if(incomingCall.kind === IncomingCallKind.IncomingCall) {
-                        this.setState({callJoinType: CallJoinType.AcsCall});
-                    }
-                    if(incomingCall.kind === IncomingCallKind.TeamsIncomingCall) {
-                        this.setState({callJoinType: CallJoinType.TeamsCall});
                     }
 
                     this.setState({ incomingCall: incomingCall });
@@ -299,7 +291,6 @@ export default class MakeCall extends React.Component {
         try {
             const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
             this.callAgent.join({ groupId: this.destinationGroup.value }, callOptions);
-            this.setState({callJoinType: CallJoinType.AcsCall});
         } catch (e) {
             console.error('Failed to join a call', e);
             this.setState({ callError: 'Failed to join a call: ' + e });
@@ -310,7 +301,6 @@ export default class MakeCall extends React.Component {
         try {
             const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
             this.callAgent.join({ roomId: this.roomsId.value }, callOptions);
-            this.setState({callJoinType: CallJoinType.RoomsCall});
         } catch (e) {
             console.error('Failed to join a call', e);
             this.setState({ callError: 'Failed to join a call: ' + e });
@@ -322,13 +312,11 @@ export default class MakeCall extends React.Component {
             const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
             if (this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({ meetingLink: this.meetingLink.value }, callOptions);
-                this.setState({callJoinType: CallJoinType.TeamsCall});
             } else if (this.meetingId.value  || this.passcode.value && !this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({ 
                     meetingId: this.meetingId.value,
                     passcode: this.passcode.value 
                 }, callOptions);
-                this.setState({callJoinType: CallJoinType.TeamsCall});
             } else if (!this.meetingLink.value && this.messageId.value && this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({
                     messageId: this.messageId.value,
@@ -336,7 +324,6 @@ export default class MakeCall extends React.Component {
                     tenantId: this.tenantId.value,
                     organizerId: this.organizerId.value
                 }, callOptions);
-                this.setState({callJoinType: CallJoinType.TeamsCall});
             } else {
                 throw new Error('Please enter Teams meeting link or Teams meeting coordinate');
             }
@@ -1052,10 +1039,9 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                             </div>
                         }
                         {
-                            this.state.call && this.state.callJoinType && !this.state.callSurvey && !this.state.isPreCallDiagnosticsCallInProgress &&
+                            this.state.call && !this.state.callSurvey && !this.state.isPreCallDiagnosticsCallInProgress &&
                             <CallCard
                                 call={this.state.call}
-                                callJoinType={this.state.callJoinType}
                                 deviceManager={this.deviceManager}
                                 selectedCameraDeviceId={this.state.selectedCameraDeviceId}
                                 cameraDeviceOptions={this.state.cameraDeviceOptions}
@@ -1349,9 +1335,3 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
         );
     }
 }
-
-export const CallJoinType = Object.freeze({
-    TeamsCall: 'TeamsCall',
-    AcsCall: 'AcsCall',
-    RoomsCall: 'RoomsCall'
-});
