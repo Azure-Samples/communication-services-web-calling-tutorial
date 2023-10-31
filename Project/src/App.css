@@ -405,6 +405,13 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
   grid-column: span 3;
 }
 
+.pptLive {
+  display: block;
+  padding: 2vh 2vw;  
+  width: 100%;  
+  height: 50vh; 
+}
+
 .video-title {
   position: absolute;
   bottom: 8%;

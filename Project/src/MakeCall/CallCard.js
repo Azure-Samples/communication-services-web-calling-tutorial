@@ -45,7 +45,11 @@ export default class CallCard extends React.Component {
         if (Features.Reaction) {
             this.meetingReaction = this.call.feature(Features.Reaction);
         }
-                this.isTeamsUser = props.isTeamsUser;
+        if (Features.PPTLive) {
+            this.pptLiveFeature = this.call.feature(Features.PPTLive);
+            this.pptLiveHtml = React.createRef();
+        }
+        this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
         this.state = {
             ovc: 4,
@@ -54,11 +58,11 @@ export default class CallCard extends React.Component {
             remoteParticipants: [],
             allRemoteParticipantStreams: [],
             remoteScreenShareStream: undefined,
-            canOnVideo: this.capabilities.turnVideoOn.isPresent,
-            canUnMuteMic: this.capabilities.unmuteMic.isPresent,
-            canShareScreen: this.capabilities.shareScreen.isPresent,
-            canRaiseHands: this.capabilities.raiseHand.isPresent,
-            canSpotlight: this.capabilities.spotlightParticipant.isPresent,
+            canOnVideo: this.capabilities.turnVideoOn.isPresent || this.capabilities.turnVideoOn.reason === 'FeatureNotSupported',
+            canUnMuteMic: this.capabilities.unmuteMic.isPresent || this.capabilities.unmuteMic.reason === 'FeatureNotSupported',
+            canShareScreen: this.capabilities.shareScreen.isPresent || this.capabilities.shareScreen.reason === 'FeatureNotSupported',
+            canRaiseHands: this.capabilities.raiseHand.isPresent || this.capabilities.raiseHand.reason === 'FeatureNotSupported',
+            canSpotlight: this.capabilities.spotlightParticipant.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
@@ -89,7 +93,8 @@ export default class CallCard extends React.Component {
             dominantSpeakers:[],
             showDataChannel: false,
             showAddParticipantPanel: false,
-            reactionRows:[]
+            reactionRows:[],
+            pptLiveActive: false
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
@@ -116,6 +121,9 @@ export default class CallCard extends React.Component {
         this.call.feature(Features.RaiseHand).off('loweredHandEvent', this.raiseHandChangedHandler);
         if (Features.Reaction) {
             this.call.feature(Features.Reaction).off('reaction', this.reactionChangeHandler);
+        }
+        if (Features.PPTLive) {
+            this.call.feature(Features.PPTLive).off('isActiveChanged', this.pptLiveChangedHandler);
         }
         this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged);
             }
@@ -411,7 +419,8 @@ export default class CallCard extends React.Component {
             this.capabilitiesFeature.on('capabilitiesChanged', this.capabilitiesChangedHandler);
             this.dominantSpeakersFeature.on('dominantSeapkersChanged', this.dominantSpeakersChanged);
             this.meetingReaction?.on('reaction', this.reactionChangeHandler);
-                    }
+            this.pptLiveFeature?.on('isActiveChanged', this.pptLiveChangedHandler);
+        }
     }
 
     updateListOfParticipantsToRender(reason) {
@@ -508,6 +517,24 @@ export default class CallCard extends React.Component {
         this.setState({reactionRows: [...this.state.reactionRows, newEvent].slice(-100)});
     }
 
+    pptLiveChangedHandler = async ()  => {
+        this.setState({
+            pptLiveActive: this.pptLiveFeature && this.pptLiveFeature.isActive
+        }) 
+        if(this.pptLiveHtml) {
+            if (this.state.pptLiveActive) {
+                this.pptLiveHtml.current.appendChild(this.pptLiveFeature.target);
+                try {
+                    await this.handleScreenSharingOnOff()
+                } catch {
+                    console.log("Cannot stop screen sharing");
+                }
+            } else {
+                this.pptLiveHtml.current.removeChild(this.pptLiveHtml.current.lastElementChild);
+            }
+        } 
+    }
+
     capabilitiesChangedHandler = (capabilitiesChangeInfo) => {
         for (const [key, value] of Object.entries(capabilitiesChangeInfo.newValue)) {
             if(key === 'turnVideoOn' && value.reason != 'FeatureNotSupported') {
@@ -563,18 +590,14 @@ export default class CallCard extends React.Component {
                     this.setState({ videoOn: true })
                 }
                 await this.watchForCallFinishConnecting();
-                if (this.state.videoOn) {
-                    if (this.state.canOnVideo) {
-                        await this.call.startVideo(this.localVideoStream);
-                    }
+                if (this.state.videoOn && this.state.canOnVideo) {
+                    await this.call.startVideo(this.localVideoStream);
                 } else {
                     await this.call.stopVideo(this.localVideoStream);
                 }
             } else {
-                if (!this.state.videoOn) {
-                    if (this.state.canOnVideo) {
-                        await this.call.startVideo(this.localVideoStream);
-                    }
+                if (!this.state.videoOn && this.state.canOnVideo) {
+                    await this.call.startVideo(this.localVideoStream);
                 } else {
                     await this.call.stopVideo(this.localVideoStream);
                 }
@@ -740,14 +763,12 @@ export default class CallCard extends React.Component {
             if (this.call.isScreenSharingOn) {
                 await this.call.stopScreenSharing();
                 this.setState({ localScreenSharingMode: undefined });
-            } else {
-                if (this.state.canShareScreen) {
-                    await this.call.startScreenSharing();
-                    this.localScreenSharingStream = this.call.localVideoStreams.find(ss => {
-                        return ss.mediaStreamType === 'ScreenSharing'
-                    });
-                    this.setState({ localScreenSharingMode: 'StartWithNormal'});
-                }
+            } else if (this.state.canShareScreen && !this.state.pptLiveActive) {
+                await this.call.startScreenSharing();
+                this.localScreenSharingStream = this.call.localVideoStreams.find(ss => {
+                    return ss.mediaStreamType === 'ScreenSharing'
+                });
+                this.setState({ localScreenSharingMode: 'StartWithNormal'});
             }
         } catch (e) {
             console.error(e);
@@ -1344,6 +1365,9 @@ export default class CallCard extends React.Component {
                         </Panel>
                     </div>
                 </div>
+                { this.state.pptLiveActive &&
+                    <div className= "pptLive" ref={this.pptLiveHtml} />
+                }
                 {
                     this.state.videoOn && this.state.canOnVideo &&
                     <div className="mt-5">
