@@ -18,6 +18,7 @@ import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
 import DataChannelCard from './DataChannelCard';
 import CallCaption from "./CallCaption";
+import Lobby from "./Lobby";
 import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 import MediaConstraint from './MediaConstraint';
 
@@ -44,7 +45,7 @@ export default class CallCard extends React.Component {
         if (Features.Reaction) {
             this.meetingReaction = this.call.feature(Features.Reaction);
         }
-        this.isTeamsUser = props.isTeamsUser;
+                this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
         this.state = {
             ovc: 4,
@@ -117,7 +118,7 @@ export default class CallCard extends React.Component {
             this.call.feature(Features.Reaction).off('reaction', this.reactionChangeHandler);
         }
         this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged);
-    }
+            }
 
     componentDidMount() {
         if (this.call) {
@@ -410,7 +411,7 @@ export default class CallCard extends React.Component {
             this.capabilitiesFeature.on('capabilitiesChanged', this.capabilitiesChangedHandler);
             this.dominantSpeakersFeature.on('dominantSeapkersChanged', this.dominantSpeakersChanged);
             this.meetingReaction?.on('reaction', this.reactionChangeHandler);
-        }
+                    }
     }
 
     updateListOfParticipantsToRender(reason) {
@@ -1515,6 +1516,15 @@ export default class CallCard extends React.Component {
                                </tbody>
                             </table>
                         </div>
+                    </div>
+                }
+                {
+                    this.state.callState === 'Connected' &&
+                    <div className="mt-5">
+                        <div className="ms-Grid-row">
+                            <h3>Meeting Lobby</h3>
+                        </div>
+                        <Lobby call={this.call}/>
                     </div>
                 }
                 {
