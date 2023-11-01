@@ -73,10 +73,18 @@ export default class CallSurvey extends React.Component {
 
     submitRating() {
         const rating = {};
-        rating.overallRating = { score: this.state.overallRating, issues: [this.state.overallIssue] };
-        if (this.state.audioRating !== 0) rating.audioRating = { score: this.state.audioRating, issues: [this.state.audioIssue] };
-        if (this.state.videoRating !== 0) rating.videoRating = { score: this.state.videoRating, issues: [this.state.videoIssue] };
-        if (this.state.screenShareRating !== 0) rating.screenshareRating = { score: this.state.screenShareRating, issues: [this.state.screenShareIssue] };
+        rating.overallRating = { score: this.state.overallRating };
+        if (this.state.overallIssue) rating.overallRating.issues = [this.state.overallIssue];
+
+        if (this.state.audioRating !== 0) rating.audioRating = { score: this.state.audioRating };
+        if (this.state.audioIssue) rating.audioRating.issues = [this.state.audioIssue];
+
+        if (this.state.videoRating !== 0) rating.videoRating = { score: this.state.videoRating };
+        if (this.state.videoIssue) rating.videoRating.issues = [this.state.videoIssue];
+
+        if (this.state.screenShareRating !== 0) rating.screenshareRating = { score: this.state.screenShareRating };
+        if (this.state.screenShareIssue) rating.screenshareRating.issues = [this.state.screenShareIssue];
+        
         this.call.feature(Features.CallSurvey).submitSurvey(rating).then((res) => {
             if (this.appInsights && this.state.improvementSuggestion !== '') {
                 this.appInsights.trackEvent({
