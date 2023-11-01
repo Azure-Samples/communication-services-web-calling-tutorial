@@ -1,5 +1,5 @@
 import React from "react";
-import { CallClient, LocalVideoStream, Features, CallAgentKind, VideoStreamRenderer, IncomingCallKind } from '@azure/communication-calling';
+import { CallClient, LocalVideoStream, Features, CallAgentKind, VideoStreamRenderer } from '@azure/communication-calling';
 import { AzureCommunicationTokenCredential, createIdentifierFromRawId} from '@azure/communication-common';
 import {
     PrimaryButton,
