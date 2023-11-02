@@ -1,7 +1,5 @@
 import React from "react";
-import { MessageBar, MessageBarType, DefaultButton } from 'office-ui-fabric-react'
-import { Toggle } from '@fluentui/react/lib/Toggle';
-import { TooltipHost } from '@fluentui/react/lib/Tooltip';
+import { MessageBar, MessageBarType } from 'office-ui-fabric-react'
 import { FunctionalStreamRenderer as StreamRenderer } from "./FunctionalStreamRenderer";
 import AddParticipantPopover from "./AddParticipantPopover";
 import RemoteParticipantCard from "./RemoteParticipantCard";
@@ -9,7 +7,7 @@ import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
 import { Icon } from '@fluentui/react/lib/Icon';
 import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
-import { LocalVideoStream, Features, LocalAudioStream, VideoStreamRenderer } from '@azure/communication-calling';
+import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
@@ -62,6 +60,7 @@ export default class CallCard extends React.Component {
             canShareScreen: this.capabilities.shareScreen.isPresent || this.capabilities.shareScreen.reason === 'FeatureNotSupported',
             canRaiseHands: this.capabilities.raiseHand.isPresent || this.capabilities.raiseHand.reason === 'FeatureNotSupported',
             canSpotlight: this.capabilities.spotlightParticipant.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
+            canReact: this.capabilities.reaction.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
@@ -556,6 +555,10 @@ export default class CallCard extends React.Component {
                 (value.isPresent) ? this.setState({ canRaiseHands: true }) : this.setState({ canRaiseHands: false });
                 continue;
             }
+            if(key === 'reaction' && value.reason != 'FeatureNotSupported') {
+                (value.isPresent) ? this.setState({ canReact: true }) : this.setState({ canReact: false });
+                continue;
+            }
         }
     }
 
@@ -578,7 +581,6 @@ export default class CallCard extends React.Component {
                 });
                 this.localVideoStream = new LocalVideoStream(cameraDeviceInfo);
             }
-
 
             if (this.call.state === 'None' ||
                 this.call.state === 'Connecting' ||
@@ -650,6 +652,19 @@ export default class CallCard extends React.Component {
     }
 
     async handleClickEmoji(index) {
+        
+        if(!this.state.canReact) {
+            // 1:1 direct call with teams user is not supported.
+            const messageBarText = 'Reaction capability is not allowed for this call type';
+            console.error(messageBarText);
+            this.setState(prevState => ({
+                ...prevState,
+                callMessage: `${prevState.callMessage ? prevState.callMessage + `\n` : ``}
+                                ${messageBarText}. \n`
+            }));
+            return ;
+        }
+
         var reaction;
         switch(index) {
             case 0:
@@ -676,7 +691,14 @@ export default class CallCard extends React.Component {
         try {
             this.meetingReaction?.sendReaction(reactionMessage);
         } catch (error) {
+            // Surface the error 
             console.error(error);
+            const messageBarText = JSON.stringify(error);
+            this.setState(prevState => ({
+                ...prevState,
+                callMessage: `${prevState.callMessage ? prevState.callMessage + `\n` : ``}
+                                ${messageBarText}. \n`
+            }));
         }
     }
 
