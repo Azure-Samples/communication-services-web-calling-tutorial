@@ -312,7 +312,6 @@ export default class MakeCall extends React.Component {
             const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
             if (this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({ meetingLink: this.meetingLink.value }, callOptions);
-
             } else if (this.meetingId.value  || this.passcode.value && !this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({ 
                     meetingId: this.meetingId.value,
