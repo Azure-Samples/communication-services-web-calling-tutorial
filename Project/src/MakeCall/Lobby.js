@@ -20,10 +20,14 @@ const Lobby = ({ call }) => {
         console.log(`lobbyParticipantsUpdated, added=${event.added}, removed=${event.removed}`);
         setLobbyParticipantsCount(lobby.participants.length);
         if(event.added.length > 0) {
-            console.log(`lobbyParticipantAdded, added lobby participants:${event.added}`);
+            event.added.forEach(participant => {
+                console.log('lobbyParticipantAdded', participant);
+            });
         }
         if(event.removed.length > 0) {
-            console.log(`participantRemoved, removed lobby participants:${event.removed}`);
+            event.removed.forEach(participant => {
+                console.log('lobbyParticipantRemoved', participant);
+            });
         }
     };
 
