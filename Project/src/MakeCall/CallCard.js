@@ -1568,21 +1568,15 @@ export default class CallCard extends React.Component {
                     this.state.callState === 'Connected' &&
                     <div className="mt-5">
                         <div className="ms-Grid-row">
-                            <h3>Meeting Lobby</h3>
-                        </div>
-                        <Lobby call={this.call}/>
-                    </div>
-                }
-                {
-                    this.state.callState === 'Connected' &&
-                    <div className="mt-5">
-                        <div className="ms-Grid-row">
                             <h3>Participants</h3>
                         </div>
                         <div>
                             {   this.state.showAddParticipantPanel &&
                                 <AddParticipantPopover call={this.call} />
                             }
+                        </div>
+                        <div>
+                            <Lobby call={this.call}/>
                         </div>
                         {
                             this.state.dominantSpeakerMode &&
