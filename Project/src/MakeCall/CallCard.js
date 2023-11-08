@@ -16,6 +16,7 @@ import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
 import DataChannelCard from './DataChannelCard';
 import CallCaption from "./CallCaption";
+import Lobby from "./Lobby";
 import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 import MediaConstraint from './MediaConstraint';
 
@@ -124,7 +125,7 @@ export default class CallCard extends React.Component {
             this.call.feature(Features.PPTLive).off('isActiveChanged', this.pptLiveChangedHandler);
         }
         this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged);
-    }
+            }
 
     componentDidMount() {
         if (this.call) {
@@ -1573,6 +1574,9 @@ export default class CallCard extends React.Component {
                             {   this.state.showAddParticipantPanel &&
                                 <AddParticipantPopover call={this.call} />
                             }
+                        </div>
+                        <div>
+                            <Lobby call={this.call}/>
                         </div>
                         {
                             this.state.dominantSpeakerMode &&
