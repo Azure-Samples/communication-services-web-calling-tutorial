@@ -516,22 +516,31 @@ export default class CallCard extends React.Component {
         this.setState({reactionRows: [...this.state.reactionRows, newEvent].slice(-100)});
     }
 
-    pptLiveChangedHandler = async ()  => {
-        this.setState({
-            pptLiveActive: this.pptLiveFeature && this.pptLiveFeature.isActive
-        }) 
-        if(this.pptLiveHtml) {
-            if (this.state.pptLiveActive) {
+    pptLiveChangedHandler = async () => {
+        const pptLiveActive = this.pptLiveFeature && this.pptLiveFeature.isActive;
+        this.setState({ pptLiveActive });
+    
+        if (this.pptLiveHtml) {
+            if (pptLiveActive) {
                 this.pptLiveHtml.current.appendChild(this.pptLiveFeature.target);
-                try {
-                    await this.handleScreenSharingOnOff()
-                } catch {
-                    console.log("Cannot stop screen sharing");
+                if (this.call.isScreenSharingOn) {
+                    try {
+                        await this.handleScreenSharingOnOff();
+                    } catch {
+                        console.log("Cannot stop screen sharing");
+                    }
                 }
             } else {
                 this.pptLiveHtml.current.removeChild(this.pptLiveHtml.current.lastElementChild);
+                if (!this.call.isScreenSharingOn && this.state.canShareScreen) {
+                    try {
+                        await this.handleScreenSharingOnOff();
+                    } catch {
+                        console.log("Cannot start screen sharing");
+                    }
+                }
             }
-        } 
+        }
     }
 
     capabilitiesChangedHandler = (capabilitiesChangeInfo) => {
@@ -785,18 +794,20 @@ export default class CallCard extends React.Component {
             if (this.call.isScreenSharingOn) {
                 await this.call.stopScreenSharing();
                 this.setState({ localScreenSharingMode: undefined });
-            } else if (this.state.canShareScreen && !this.state.pptLiveActive) {
-                await this.call.startScreenSharing();
-                this.localScreenSharingStream = this.call.localVideoStreams.find(ss => {
-                    return ss.mediaStreamType === 'ScreenSharing'
-                });
-                this.setState({ localScreenSharingMode: 'StartWithNormal'});
+            } else if (this.state.canShareScreen) {
+                await this.startScreenSharing();
             }
         } catch (e) {
             console.error(e);
         }
     }
 
+    async startScreenSharing() {
+        await this.call.startScreenSharing();
+        this.localScreenSharingStream = this.call.localVideoStreams.find(ss => ss.mediaStreamType === 'ScreenSharing');
+        this.setState({ localScreenSharingMode: 'StartWithNormal', pptLiveActive: false });
+    }
+    
     async handleRawScreenSharingOnOff() {
         try {
             if (this.call.isScreenSharingOn) {
