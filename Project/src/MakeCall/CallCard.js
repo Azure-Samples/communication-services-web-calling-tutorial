@@ -667,11 +667,7 @@ export default class CallCard extends React.Component {
             // 1:1 direct call with teams user is not supported.
             const messageBarText = 'Reaction capability is not allowed for this call type';
             console.error(messageBarText);
-            this.setState(prevState => ({
-                ...prevState,
-                callMessage: `${prevState.callMessage ? prevState.callMessage + `\n` : ``}
-                                ${messageBarText}. \n`
-            }));
+            this.setState({ callMessage: messageBarText })
             return ;
         }
 
@@ -704,11 +700,7 @@ export default class CallCard extends React.Component {
             // Surface the error 
             console.error(error);
             const messageBarText = JSON.stringify(error);
-            this.setState(prevState => ({
-                ...prevState,
-                callMessage: `${prevState.callMessage ? prevState.callMessage + `\n` : ``}
-                                ${messageBarText}. \n`
-            }));
+            this.setState({ callMessage: messageBarText })
         }
     }
 
