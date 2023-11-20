@@ -13,14 +13,21 @@ export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    getCommunicationUserToken: async (communicationUserId) => {
+    getCommunicationUserToken: async (communicationUserId, isJoinOnlyToken) => {
+        let data = {};
+        if (communicationUserId) {
+            data.communicationUserId = communicationUserId;
+        }
+        if (isJoinOnlyToken) {
+            data.isJoinOnlyToken = isJoinOnlyToken;
+        }
         let response = await axios({
             url: 'getCommunicationUserToken',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            data: communicationUserId ? JSON.stringify({communicationUserId}) : undefined
+            data: JSON.stringify(data)
         })
         if (response.status === 200) {
             return response.data;
