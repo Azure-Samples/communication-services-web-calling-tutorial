@@ -15,7 +15,6 @@ const CallCaption = ({ call }) => {
 
     const [captionHistory, setCaptionHistory] = useState([]);
     const [communicationAI, setCommunicationAI] = useState(false);
-
     const [isAgentSpeaking, setIsAgentSpeaking] = useState(false);
     const [isUserSpeaking, setIsUserSpeaking] = useState(false);
 
@@ -26,10 +25,10 @@ const CallCaption = ({ call }) => {
             window.captionHistory = [];
             startCaptions(captions);
         }
-        catch(e) {
+        catch (e) {
             console.log("Captions not configured for this release version")
         }
-        
+
         return () => {
             // cleanup
             captions.off('CaptionsActiveChanged', captionsActiveHandler);
@@ -77,7 +76,7 @@ const CallCaption = ({ call }) => {
             mri = captionData.speaker.identifier.phoneNumber;
         }
 
-        if (mri.trim() == localMri &&  !isAgentSpeaking) {
+        if (mri.trim() == localMri && !isAgentSpeaking) {
             setIsAgentSpeaking(true)
         } else {
             setIsUserSpeaking(true)
@@ -115,70 +114,70 @@ const CallCaption = ({ call }) => {
         const spokenLanguages = captions.supportedSpokenLanguages;
         const language = spokenLanguages.find(language => { return language === item.key });
         await captions.setSpokenLanguage(language);
-        setCurrentSpokenLanguage(language); 
+        setCurrentSpokenLanguage(language);
     };
 
-    const SpokenLanguageDropdown = () => { 
-        const keyedSupportedSpokenLanguages = captions.supportedSpokenLanguages.map(language => ({key: language, text: language}));
+    const SpokenLanguageDropdown = () => {
+        const keyedSupportedSpokenLanguages = captions.supportedSpokenLanguages.map(language => ({ key: language, text: language }));
         return <Dropdown
-                selectedKey={currentSpokenLanguage}
-                onChange={spokenLanguageSelectionChanged}
-                label={'Spoken Language'}
-                options={keyedSupportedSpokenLanguages}
-                styles={{ label: {color: '#edebe9'}, dropdown: { width: 100 } }}
-            />
+            selectedKey={currentSpokenLanguage}
+            onChange={spokenLanguageSelectionChanged}
+            label={'Spoken Language'}
+            options={keyedSupportedSpokenLanguages}
+            styles={{ label: { color: '#edebe9' }, dropdown: { width: 100 } }}
+        />
     }
 
     const captionLanguageSelectionChanged = async (event, item) => {
         const captionLanguages = captions.supportedCaptionLanguages;
         const language = captionLanguages.find(language => { return language === item.key });
         await captions.setCaptionLanguage(language);
-        setCurrentCaptionLanguage(language); 
+        setCurrentCaptionLanguage(language);
     };
 
     const CaptionLanguageDropdown = () => {
-        const keyedSupportedCaptionLanguages = captions.supportedCaptionLanguages.map(language => ({key: language, text: language}));
+        const keyedSupportedCaptionLanguages = captions.supportedCaptionLanguages.map(language => ({ key: language, text: language }));
         return <Dropdown
-                selectedKey={currentCaptionLanguage}
-                onChange={captionLanguageSelectionChanged}
-                label={'Caption Language'}
-                options={keyedSupportedCaptionLanguages}
-                styles={{ label: {color: '#edebe9'}, dropdown: { width: 100, overflow: 'scroll' } }}
-            />
+            selectedKey={currentCaptionLanguage}
+            onChange={captionLanguageSelectionChanged}
+            label={'Caption Language'}
+            options={keyedSupportedCaptionLanguages}
+            styles={{ label: { color: '#edebe9' }, dropdown: { width: 100, overflow: 'scroll' } }}
+        />
     }
 
     return (
         <>
-            {captions && <SpokenLanguageDropdown/>}
-            {captions && captions.captionsType === 'TeamsCaptions' && <CaptionLanguageDropdown/>}
+            {captions && <SpokenLanguageDropdown />}
+            {captions && captions.captionsType === 'TeamsCaptions' && <CaptionLanguageDropdown />}
             <div className="scrollable-captions-container">
                 <div id="captionsArea" className="captions-area">
                 </div>
             </div>
             <div className="participants-panel mt-1 mb-3">
-                    <Toggle label={
-                            <div>
-                                Communication AI{' '}
-                                <TooltipHost content={`Turn on Communication AI`}>
-                                    <Icon iconName="Info" aria-label="Info tooltip" />
-                                </TooltipHost>
-                            </div>
-                        }
-                        styles={{
-                            text : { color: '#edebe9' },
-                            label: { color: '#edebe9' },
-                        }}
-                        inlineLabel
-                        onText="On"
-                        offText="Off"
-                        defaultChecked={communicationAI}
-                        onChange={() => { setCommunicationAI(oldValue => !oldValue)}}
-                    />
+                <Toggle label={
+                    <div>
+                        Communication AI{' '}
+                        <TooltipHost content={`Turn on Communication AI`}>
+                            <Icon iconName="Info" aria-label="Info tooltip" />
+                        </TooltipHost>
+                    </div>
+                }
+                    styles={{
+                        text: { color: '#edebe9' },
+                        label: { color: '#edebe9' },
+                    }}
+                    inlineLabel
+                    onText="On"
+                    offText="Off"
+                    defaultChecked={communicationAI}
+                    onChange={() => { setCommunicationAI(oldValue => !oldValue) }}
+                />
 
-                    {
-                        communicationAI &&
-                        <CommunicationAI call={call} isAgentSpeaking={isAgentSpeaking} isUserSpeaking={isUserSpeaking}/>
-                    }
+                {
+                    communicationAI &&
+                    <CommunicationAI call={call} isAgentSpeaking={isAgentSpeaking} isUserSpeaking={isUserSpeaking} />
+                }
             </div>
         </>
     );

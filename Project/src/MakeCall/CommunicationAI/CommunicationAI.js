@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Dropdown } from '@fluentui/react/lib/Dropdown';
-import { utils, acsOpenAiPromptsApi } from "../../Utils/Utils";
+import { utils, acsOpenAiPromptsApi } from "./Utils";
 import {AgentSupportForm} from "./AgentSupportForm"
 
 
@@ -180,7 +180,6 @@ const CommunicationAI = ({ call, isAgentSpeaking, isUserSpeaking }) => {
 
     const getSuggestionForXBoxSupportAgent = async () => {
         try {
-            // const currentCaptionsData = window.captionHistory.slice(captionsSupportAgentResponseIndex); 
             let response = await utils.sendCaptionsDataToAcsOpenAI(acsOpenAiPromptsApi.supportAgent, 
                     displayName, lastSupportAgentResponse, window.captionHistory, true)
             let content = response.suggested_reply;

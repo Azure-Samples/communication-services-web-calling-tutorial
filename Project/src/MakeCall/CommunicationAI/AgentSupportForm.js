@@ -5,7 +5,7 @@ import {
 } from 'office-ui-fabric-react'
 import { v4 as uuidv4 } from 'uuid';
 
-export const SupportForm = ({name, address, phoneNumber, dateOfPurchase, issue, productUnderWarranty}) => {
+export const AgentSupportForm = ({name, address, phoneNumber, dateOfPurchase, issue, productUnderWarranty}) => {
     const [userFullName, setUserFullName] = useState("");
     const [userAddress, setUserAddress] = useState("");
     const [userPhoneNumber, setUserPhoneNumber] = useState("");
