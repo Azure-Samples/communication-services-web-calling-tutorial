@@ -1,6 +1,6 @@
 import axios from 'axios';
 export const acsOpenAiPromptsApi = {
-    base: 'https://fhlopenaicalling.azurewebsites.net/api/',
+    base: '<Based_URL_AI_GatewayService>',
     summary: 'getSummary',
     feedback: 'getPersonalFeedback',
     sentiment: 'GetSentiments',
