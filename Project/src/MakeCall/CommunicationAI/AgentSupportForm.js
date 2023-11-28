@@ -25,10 +25,10 @@ export const AgentSupportForm = ({name, address, phoneNumber, dateOfPurchase, is
 
 
         if (userFullName && userAddress && userPhoneNumber && userDateOfPurchase && IssueDescription) {
-            console.log(`CHUK_TICKET === Updating Ticket number`);
+            console.log(`Updating Ticket number`);
             setIssueTicket(uuidv4())
         } else {
-            console.log(`CHUK_TICKET === NOT Updating Ticket number`);
+            console.log(`NOT Updating Ticket number`);
         }
     }, [name, address, phoneNumber, dateOfPurchase, issue, productUnderWarranty])
 
