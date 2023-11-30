@@ -1571,7 +1571,7 @@ export default class CallCard extends React.Component {
                     this.state.callState === 'Connected' &&
                     <div className="mt-5">
                         <div className="ms-Grid-row">
-                            <h3>Participants</h3>
+                            <h2>Participants</h2>
                         </div>
                         <div>
                             {   this.state.showAddParticipantPanel &&
@@ -1591,7 +1591,7 @@ export default class CallCard extends React.Component {
                             this.state.remoteParticipants.length === 0 &&
                             <p>No other participants currently in the call</p>
                         }
-                        <ul className="">
+                        <ul className="p-0 m-0">
                             {
                                 this.state.remoteParticipants.map(remoteParticipant =>
                                     <RemoteParticipantCard

@@ -41,20 +41,22 @@ const Lobby = ({ call }) => {
     }
 
     return (
-        <div className="ms-Grid-row">
-            <div className="ml-2 inline-block">
-                <p><strong>In-Lobby participants number: {lobbyParticipantsCount}</strong></p>
-            </div>      
-            <div className="ml-4 inline-block">
+        <div>
             {
                 (lobbyParticipantsCount > 0) &&
-                <PrimaryButton className="primary-button"
-                                iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                text="Admit All Participants"
-                                onClick={admitAllParticipants}>
-                </PrimaryButton>
+                <div className="ms-Grid-row">
+                    <div className="ml-2 inline-block">
+                        <div>In-Lobby participants number: {lobbyParticipantsCount}</div>
+                    </div>
+                    <div className="ml-4 inline-block">
+                        <PrimaryButton className="primary-button"
+                                        iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                        text="Admit All Participants"
+                                        onClick={admitAllParticipants}>
+                        </PrimaryButton>
+                    </div>
+                </div>
             }
-            </div>
         </div>
     );
 };
