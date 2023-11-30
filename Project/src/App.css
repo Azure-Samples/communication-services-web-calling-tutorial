@@ -216,16 +216,17 @@ ul {
 }
 
 .participant-item {
-  padding: 1em;
-  margin-bottom: 1em;
+  padding-top: 2em;
+  padding-bottom: 2em;
 }
 
 .participant-item:hover {
   background-color: #201f1e;
 }
 
-.ms-Persona-primaryText:hover {
+.ms-Persona-primaryText, .ms-Persona-primaryText:hover {
   color: #edebe9;
+  text-wrap: wrap;
 }
 
 .participant-remove,

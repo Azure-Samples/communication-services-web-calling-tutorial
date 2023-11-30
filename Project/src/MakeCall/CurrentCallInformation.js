@@ -28,12 +28,13 @@ const CurrentCallInformation = ({ sentResolution, call }) => {
 
     return (
         <div className="ms-Grid-col ms-lg6 text-right">
-            <p>Call Id: {call.id}</p>
+            <div>Call Id: {call.id}</div>
+            <div>Local Participant Id: {call.info.participantId}</div>
             {
-                sentResolution && <p>Sent Resolution: {sentResolution}</p>
+                sentResolution && <div>Sent Resolution: {sentResolution}</div>
             }
             {
-                ovcFeature && <p>Optimal Video Count: {optimalVideoCount}</p>
+                ovcFeature && <div>Optimal Video Count: {optimalVideoCount}</div>
             }           
         </div>
     );
