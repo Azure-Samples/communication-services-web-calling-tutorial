@@ -635,7 +635,9 @@ export default class CallCard extends React.Component {
             if (!this.call.isMuted) {
                 await this.call.mute();
             } else {
-                await this.call.unmute();
+                if (this.call.canUnMuteMic) {
+                    await this.call.unmute();
+                }
             }
             this.setState({ micMuted: this.call.isMuted });
         } catch (e) {
@@ -1084,8 +1086,8 @@ export default class CallCard extends React.Component {
                 </div>
                 <div className="ms-Grid-row">
                     <div className="text-center">
-                        <span className="in-call-button"
-                            title={`Turn your video ${this.state.videoOn ? 'off' : 'on'}`}
+                        <span className={`in-call-button ${!this.state.canOnVideo && 'disabled'}`}
+                            title={!this.state.canOnVideo ? `No permission to turn on video` : `Turn your video ${this.state.videoOn ? 'off' : 'on'}`}
                             variant="secondary"
                             onClick={() => this.handleVideoOnOff()}>
                             {
@@ -1097,9 +1099,10 @@ export default class CallCard extends React.Component {
                                 <Icon iconName="VideoOff" />
                             }
                         </span>
-                        <span className="in-call-button"
-                            title={`${this.state.micMuted ? 'Unmute' : 'Mute'} your microphone`}
+                        <span className={`in-call-button ${!this.state.canUnMuteMic && 'disabled'}`}
+                            title={!this.state.canUnMuteMic ? `No permission to unmute mic` : `${this.state.micMuted ? 'Unmute' : 'Mute'} your microphone`}
                             variant="secondary"
+                            disabled="true"
                             onClick={() => this.handleMicOnOff()}>
                             {
                                 this.state.canUnMuteMic && !this.state.micMuted &&
