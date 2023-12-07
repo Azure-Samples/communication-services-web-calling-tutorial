@@ -46,7 +46,7 @@ export default class Login extends React.Component {
                 turn: null
             },
             isTeamsUser: false,
-            
+            isJoinOnlyToken: false
         }
     }
 
@@ -129,14 +129,14 @@ export default class Login extends React.Component {
             this.setState({ isTeamsUser: false });
             this.setState({ showSpinner: true });
             if (!this.state.token && !this.state.communicationUserId) {
-                this.userDetailsResponse = await utils.getCommunicationUserToken();
+                this.userDetailsResponse = await utils.getCommunicationUserToken(undefined, this.state.isJoinOnlyToken);
             } else if (this.state.token && this.state.communicationUserId) {
                 this.userDetailsResponse = await utils.getOneSignalRegistrationTokenForCommunicationUserToken(
                     this.state.token, this.state.communicationUserId
                 );
             } else if (!this.state.token && this.state.communicationUserId) {
-                this.userDetailsResponse = await utils.getCommunicationUserToken(this.state.communicationUserId);
-            }else if (this.state.token && !this.state.communicationUserId) {
+                this.userDetailsResponse = await utils.getCommunicationUserToken(this.state.communicationUserId, this.state.isJoinOnlyToken);
+            } else if (this.state.token && !this.state.communicationUserId) {
                 throw new Error('You must specify the associated ACS identity for the provided ACS communication user token');
             }
             if (this.state.initializedOneSignal) {
@@ -710,6 +710,15 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                                 placeholder="8:acs:<ACS Resource ID>_<guid>"
                                                                 label="Optional - ACS Identity"
                                                                 onChange={(e) => { this.state.communicationUserId = e.target.value }}/>
+                                                    </div>
+                                                </div>
+                                                <div className="ms-Grid-row">
+                                                    <div className="ms-Grid-col">
+                                                    <Checkbox 
+                                                        className='mt-3'
+                                                        label='Join only token'
+                                                        checked={this.state.isJoinOnlyToken}
+                                                        onChange={(e, isChecked) => this.setState({isJoinOnlyToken: isChecked})} />    
                                                     </div>
                                                 </div>
                                                 <div className="ms-Grid-row">

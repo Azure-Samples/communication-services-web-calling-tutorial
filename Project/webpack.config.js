@@ -133,13 +133,14 @@ module.exports = {
             devServer.app.post('/getCommunicationUserToken', async (req, res) => {
                 try {
                     const communicationUserId = req.body.communicationUserId;
+                    const isJoinOnlyToken = req.body.isJoinOnlyToken === true;
                     let CommunicationUserIdentifier;
                     if (!communicationUserId) {
                         CommunicationUserIdentifier = await communicationIdentityClient.createUser();
                     } else {
                         CommunicationUserIdentifier = { communicationUserId: communicationUserId };
                     }
-                    const communicationUserToken = await communicationIdentityClient.getToken(CommunicationUserIdentifier, ["voip"]);
+                    const communicationUserToken = await communicationIdentityClient.getToken(CommunicationUserIdentifier, [isJoinOnlyToken ? "voip.join" : "voip"]);
                     let oneSignalRegistrationToken;
                     if (config.functionAppOneSignalTokenRegistrationUrl) {
                         oneSignalRegistrationToken = await registerCommunicationUserForOneSignal(communicationUserToken, CommunicationUserIdentifier);
