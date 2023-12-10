@@ -100,7 +100,7 @@ export default class RemoteParticipantCard extends React.Component {
     async handleRemoteRaiseHand() {
         try {
             if (this.state.isHandRaised) {
-                await this.raiseHandFeature.lowerHand([this.remoteParticipant.identifier]);
+                await this.raiseHandFeature.lowerHands([this.remoteParticipant.identifier]);
                 this.setState({isHandRaised: utils.isParticipantHandRaised(this.remoteParticipant.identifier, this.raiseHandFeature.getRaisedHands())})
             }
         } catch(error) {
