@@ -699,15 +699,14 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                                 onChange={(e) => { this.displayName = e.target.value }}/>
                                                         <TextField
                                                                 defaultValue={this.clientTag}
-                                                                label="Optinal - Usage tag for
-                                                                this session"
+                                                                label="Optinal - Usage tag for this session"
                                                                 onChange={(e) => { this.clientTag = e.target.value }}/>
                                                         <TextField
                                                             placeholder="JWT Token"
                                                             label="Optional - ACS token. If no token is entered, then a random one will be generated"
                                                             onChange={(e) => { this.state.token = e.target.value }}/>
                                                         <TextField
-                                                                placeholder="8:acs:<ACS Resource ID>_<guid>"
+                                                                placeholder="8:acs:<ACS Resource ID>_<GUID>"
                                                                 label="Optional - ACS Identity"
                                                                 onChange={(e) => { this.state.communicationUserId = e.target.value }}/>
                                                     </div>
