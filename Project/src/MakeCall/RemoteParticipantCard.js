@@ -130,7 +130,7 @@ export default class RemoteParticipantCard extends React.Component {
         return (
             <li className={this.state.isSpotlighted ? 'participant-item spotlightEnabled':'participant-item'} key={utils.getIdentifierText(this.remoteParticipant.identifier)}>
                 <div className="ms-Grid-row">
-                    <div className="ms-Grid-col ms-Grid-col ms-sm12 ms-md12 ms-lg12 ms-xl6 ms-xxl6 inline-flex">
+                    <div className="inline-flex align-items-center">
                         {
                             this.isCheckable &&
                             <div className="mr-3 inline-flex">
@@ -148,7 +148,7 @@ export default class RemoteParticipantCard extends React.Component {
                                 styles={{ primaryText: {color: '#edebe9'}, secondaryText: {color: '#edebe9'} }}/>
                         </div>
                     </div>
-                    <div className="ms-Grid-col ms-sm12 ms-md12 ms-lg12 ms-xl6 ms-xxl6 text-right">
+                    <div className="inline-flex align-items-center ml-5">
                         <div className="in-call-button inline-block"
                             title={`${this.state.isMuted ? 'Participant is muted': ``}`}
                             onClick={e => this.handleMuteParticipant(e, this.remoteParticipant)}>

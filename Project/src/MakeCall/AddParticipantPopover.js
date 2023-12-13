@@ -32,7 +32,7 @@ export default function AddParticipantPopover({call}) {
     return (
         <div className="ms-Grid">
             <div className="ms-Grid-row">
-                <div className="ms-Grid-col ms-lg12">
+                <div className="ms-Grid-col ms-sm12 ms-md12 ms-lg3 ms-xl3 ms-xxl3">
                     <div className="add-participant-panel">
                         <h3 className="add-participant-panel-header">Add a participant</h3>
                         <div className="add-participant-panel-header">
