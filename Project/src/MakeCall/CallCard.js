@@ -635,7 +635,7 @@ export default class CallCard extends React.Component {
             if (!this.call.isMuted) {
                 await this.call.mute();
             } else {
-                if (this.call.canUnMuteMic) {
+                if (this.state.canUnMuteMic) {
                     await this.call.unmute();
                 }
             }
@@ -1086,7 +1086,7 @@ export default class CallCard extends React.Component {
                 </div>
                 <div className="ms-Grid-row">
                     <div className="text-center">
-                        <span className={`in-call-button ${!this.state.canOnVideo && 'disabled'}`}
+                        <span className={`in-call-button ${!this.state.canOnVideo ? `disabled` : ``}`}
                             title={!this.state.canOnVideo ? `No permission to turn on video` : `Turn your video ${this.state.videoOn ? 'off' : 'on'}`}
                             variant="secondary"
                             onClick={() => this.handleVideoOnOff()}>
@@ -1099,7 +1099,7 @@ export default class CallCard extends React.Component {
                                 <Icon iconName="VideoOff" />
                             }
                         </span>
-                        <span className={`in-call-button ${!this.state.canUnMuteMic && 'disabled'}`}
+                        <span className={`in-call-button ${!this.state.canUnMuteMic ? `disabled` : ``}`}
                             title={!this.state.canUnMuteMic ? `No permission to unmute mic` : `${this.state.micMuted ? 'Unmute' : 'Mute'} your microphone`}
                             variant="secondary"
                             disabled="true"
