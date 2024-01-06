@@ -312,7 +312,6 @@ export default class MakeCall extends React.Component {
             const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
             if (this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({ meetingLink: this.meetingLink.value }, callOptions);
-
             } else if (this.meetingId.value  || this.passcode.value && !this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({ 
                     meetingId: this.meetingId.value,
@@ -871,15 +870,18 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                                 <TextField
                                                     className="mt-0"
                                                     disabled={this.state.call || !this.state.loggedIn}
-                                                    label={`Enter an Identity to make a call to. You can specify multiple Identities to call by using \",\" separated values."`}
+                                                    label={`Enter an Identity to make a call to. You can specify multiple Identities to call by using \",\" separated values.`}
+                                                    placeholder="8:acs:<ACA resource ID>_<GUID>"
                                                     componentRef={(val) => this.destinationUserIds = val} />
                                                 <TextField
                                                     disabled={this.state.call || !this.state.loggedIn}
                                                     label="Destination Phone Identity or Phone Identities"
+                                                    placeholder="4:+18881231234"
                                                     componentRef={(val) => this.destinationPhoneIds = val} />
                                                 <TextField
                                                     disabled={this.state.call || !this.state.loggedIn}
                                                     label="If calling a Phone Identity, your Alternate Caller Id must be specified."
+                                                    placeholder="4:+18881231234"
                                                     componentRef={(val) => this.alternateCallerId = val} />
                                             </div>
                                         </div>
@@ -908,7 +910,9 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                         </div>
                                         <div className="ms-Grid-row">
                                             <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
-                                                <div>Enter meeting link</div>
+                                                <div className={this.state.call || !this.state.loggedIn ? "call-input-panel-input-label-disabled" : ""}>
+                                                    Enter meeting link
+                                                </div>
                                                 <div className="ml-3">
                                                     <TextField
                                                         className="mb-3 mt-0"
@@ -916,7 +920,9 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                                         label="Meeting link"
                                                         componentRef={(val) => this.meetingLink = val} />
                                                 </div>
-                                                <div>Or enter meeting id (and) passcode</div>
+                                                <div className={this.state.call || !this.state.loggedIn ? "call-input-panel-input-label-disabled" : ""}>
+                                                    Or enter meeting id (and) passcode
+                                                </div>
                                                 <div className="ml-3">
                                                     <TextField
                                                         className="mb-3 mt-0"
@@ -929,7 +935,9 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                                         label="Meeting passcode (optional)"
                                                         componentRef={(val) => this.passcode = val} />
                                                 </div>
-                                                <div> Or enter meeting coordinates (Thread Id, Message Id, Organizer Id, and Tenant Id)</div>
+                                                <div className={this.state.call || !this.state.loggedIn ? "call-input-panel-input-label-disabled" : ""}>
+                                                    Or enter meeting coordinates (Thread Id, Message Id, Organizer Id, and Tenant Id)
+                                                </div>
                                                 <div className="ml-3">
                                                     <TextField
                                                         className="mt-0"
@@ -965,18 +973,17 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                             onClick={() => this.joinTeamsMeeting(true)}>
                                         </PrimaryButton>
                                     </div>
-                                    <div className="ms-Grid-col ms-sm12 ms-md12 ms-lg12 ms-xl1 ms-xxl1">
+                                    <div className="ms-Grid-col ms-sm12 ms-md12 ms-lg12 ms-xl0 ms-xxl1">
                                     </div>
                                     <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-md12 ms-lg12 ms-xl6 ms-xxl3">
                                         <div>
                                             <h2 className="mb-0">Join a group call</h2>
                                             <div className="ms-Grid-row">
-                                                <div className="ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                <div className="ms-Grid-col ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                     <TextField
                                                         className="mb-3 mt-0"
                                                         disabled={this.state.call || !this.state.loggedIn}
                                                         label="Group Id"
-                                                        placeholder="29228d3e-040e-4656-a70e-890ab4e173e5"
                                                         defaultValue="29228d3e-040e-4656-a70e-890ab4e173e5"
                                                         componentRef={(val) => this.destinationGroup = val} />
                                                 </div>
@@ -999,10 +1006,11 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                         <div className="mt-5">
                                             <h2 className="mb-0">Join a Rooms call</h2>
                                             <div className="ms-Grid-row">
-                                                <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl11 ms-xxl11">
+                                                <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                     <TextField className="mb-3 mt-0"
                                                         disabled={this.state.call || !this.state.loggedIn}
                                                         label="Rooms id"
+                                                        placeholder="<GUID>"
                                                         componentRef={(val) => this.roomsId = val} />
                                                 </div>
                                             </div>

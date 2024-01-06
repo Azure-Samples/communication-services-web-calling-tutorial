@@ -29,6 +29,7 @@ export default class RemoteParticipantCard extends React.Component {
             state: this.remoteParticipant.state,
             isMuted: this.remoteParticipant.isMuted,
             displayName: this.remoteParticipant.displayName?.trim(),
+            participantIds: this.remoteParticipant.endpointDetails.map((e) => { return e.participantId }),
             isHandRaised: utils.isParticipantHandRaised(this.remoteParticipant.identifier, this.raiseHandFeature.getRaisedHands()),
             isSpotlighted: utils.isParticipantHandRaised(this.remoteParticipant.identifier, this.spotlightFeature.getSpotlightedParticipants()),
         };
@@ -87,6 +88,11 @@ export default class RemoteParticipantCard extends React.Component {
         this.call.removeParticipant(identifier).catch((e) => console.error(e))
     }
 
+    handleMuteParticipant(e, remoteParticipant) {
+        e.preventDefault();
+        remoteParticipant.mute?.().catch((e) => console.error('Failed to mute specific participant.', e))
+    }
+
     handleCheckboxChange(e) {
         this.props.onSelectionChanged(this.remoteParticipant.identifier, e.target.checked);
     }
@@ -94,7 +100,7 @@ export default class RemoteParticipantCard extends React.Component {
     async handleRemoteRaiseHand() {
         try {
             if (this.state.isHandRaised) {
-                await this.raiseHandFeature.lowerHand([this.remoteParticipant.identifier]);
+                await this.raiseHandFeature.lowerHands([this.remoteParticipant.identifier]);
                 this.setState({isHandRaised: utils.isParticipantHandRaised(this.remoteParticipant.identifier, this.raiseHandFeature.getRaisedHands())})
             }
         } catch(error) {
@@ -103,75 +109,83 @@ export default class RemoteParticipantCard extends React.Component {
     }
 
     async admitParticipant() {
-        await this.call.lobby.admit(this.identifier);
+        console.log('admit');
+        try {
+            await this.call.lobby.admit(this.identifier);
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     async rejectParticipant() {
-        await this.call.lobby.reject(this.identifier);
+        console.log('reject');
+        try {
+            await this.call.lobby.reject(this.identifier);
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     render() {
         return (
             <li className={this.state.isSpotlighted ? 'participant-item spotlightEnabled':'participant-item'} key={utils.getIdentifierText(this.remoteParticipant.identifier)}>
                 <div className="ms-Grid-row">
-                    <div className="ms-Grid-col ms-lg10 ms-sm10">
-                        <Persona className={this.state.isSpeaking ? `speaking-border-for-initials` : ``}
-                            size={PersonaSize.size40}
-                            text={ this.state.displayName ? this.state.displayName : utils.getIdentifierText(this.remoteParticipant.identifier) }
-                            secondaryText={this.state.state}
-                            styles={{ primaryText: {color: '#edebe9'}, secondaryText: {color: '#edebe9'} }}/>
-                    </div>
-                    <div className="ms-Grid-col ms-lg2 ms-sm2">
-                        <ParticipantMenuOptions
-                            id={this.remoteParticipant.identifier}
-                            menuOptionsHandler={this.menuOptionsHandler}
-                            menuOptionsState={{isSpotlighted: this.state.isSpotlighted}} />
-                    </div>
-                    <div className="ms-Grid-col ms-lg1 ms-sm2">
-                    {
-                        this.isCheckable &&
-                        <input type="checkbox" onChange={e => this.handleCheckboxChange(e)} />
-                    }
-                    </div>
-                </div>
-                <div className="ms-Grid-row">
-                    <div className="ms-Grid-col ms-lg1 ms-sm2">
+                    <div className="inline-flex align-items-center">
                         {
-                            <span className="in-call-button"
-                                title={`${this.state.isMuted ?'Participant is muted': ``}`}
-                            >
-                                {<Icon 
-                                    iconName={this.state.isMuted ? "MicOff2" : "Microphone"}
-                                />}
-                            </span>
+                            this.isCheckable &&
+                            <div className="mr-3 inline-flex">
+                                <input type="checkbox" onChange={e => this.handleCheckboxChange(e)} />
+                            </div>
                         }
+                        <div className="inline-flex">
+                            <Persona className={this.state.isSpeaking ? `speaking-border-for-initials` : ``}
+                                size={PersonaSize.size40}
+                                text={ this.state.displayName ?
+                                    this.state.displayName :
+                                    this.state.participantIds.toString()
+                                }
+                                secondaryText={this.state.state}
+                                styles={{ primaryText: {color: '#edebe9'}, secondaryText: {color: '#edebe9'} }}/>
+                        </div>
                     </div>
-                    {
-                        !(isPhoneNumberIdentifier(this.remoteParticipant.identifier) || isUnknownIdentifier(this.remoteParticipant.identifier)) &&
-                        <div>
-                            <div className="ms-Grid-col ms-lg1 ms-sm2">
-                                <span className="in-call-button"
+                    <div className="inline-flex align-items-center ml-5">
+                        <div className="in-call-button inline-block"
+                            title={`${this.state.isMuted ? 'Participant is muted': ``}`}
+                            onClick={e => this.handleMuteParticipant(e, this.remoteParticipant)}>
+                                <Icon iconName={this.state.isMuted ? "MicOff2" : "Microphone"}/>
+                        </div>
+                        {
+                            !(isPhoneNumberIdentifier(this.remoteParticipant.identifier) || isUnknownIdentifier(this.remoteParticipant.identifier)) &&
+                                <div className="in-call-button inline-block"
                                     title={this.state.isHandRaised ? "Lower Participant Hand":``}
                                     variant="secondary"
                                     onClick={() => this.handleRemoteRaiseHand()}>
-                                    {
                                         <Icon iconName="HandsFree" className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
-                                    }
-                                </span>
-                            </div>
+                                </div>
+                        }
+                        <div className="inline-block">
+                            <ParticipantMenuOptions
+                                id={this.remoteParticipant.identifier}
+                                menuOptionsHandler={this.menuOptionsHandler}
+                                menuOptionsState={{isSpotlighted: this.state.isSpotlighted}} />
                         </div>
-                    }
+                        <div className="inline-block">
+                        {
+                            this.state.state === "InLobby" ?
+                                <div className="text-right lobby-action">
+                                    <a href="#" onClick={e => this.admitParticipant(e)} className="float-right ml-3"> Admit Participant</a>
+                                    <a href="#" onClick={e => this.rejectParticipant(e)} className="float-right ml-3"> Reject Participant</a>
+                                </div> :
+                                <div className="in-call-button inline-block"
+                                    title={`Remove participant`}
+                                    variant="secondary"
+                                    onClick={(e) => this.handleRemoveParticipant(e, this.remoteParticipant.identifier)}>
+                                    <Icon iconName="UserRemove" />
+                                </div>
+                        }
+                        </div>
+                    </div>
                 </div>
-                {
-                    this.state.state === "InLobby" ?
-                        <div className="text-right lobby-action">
-                            <a href="#" onClick={e => this.admitParticipant(e)} className="float-right ml-3"> Admit Participant</a>
-                            <a href="#" onClick={e => this.rejectParticipant(e)} className="float-right ml-3"> Reject Participant</a>
-                        </div> :
-                        <div className="text-right">
-                            <a href="#" onClick={e => this.handleRemoveParticipant(e, this.remoteParticipant.identifier)} className="participant-remove float-right ml-3">Remove participant</a>
-                        </div>
-                }
             </li>
         )
     }

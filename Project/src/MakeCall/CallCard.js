@@ -1,7 +1,5 @@
 import React from "react";
-import { MessageBar, MessageBarType, DefaultButton } from 'office-ui-fabric-react'
-import { Toggle } from '@fluentui/react/lib/Toggle';
-import { TooltipHost } from '@fluentui/react/lib/Tooltip';
+import { MessageBar, MessageBarType } from 'office-ui-fabric-react'
 import { FunctionalStreamRenderer as StreamRenderer } from "./FunctionalStreamRenderer";
 import AddParticipantPopover from "./AddParticipantPopover";
 import RemoteParticipantCard from "./RemoteParticipantCard";
@@ -9,7 +7,7 @@ import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
 import { Icon } from '@fluentui/react/lib/Icon';
 import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
-import { LocalVideoStream, Features, LocalAudioStream, VideoStreamRenderer } from '@azure/communication-calling';
+import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
@@ -18,6 +16,7 @@ import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
 import DataChannelCard from './DataChannelCard';
 import CallCaption from "./CallCaption";
+import Lobby from "./Lobby";
 import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 import MediaConstraint from './MediaConstraint';
 
@@ -39,8 +38,15 @@ export default class CallCard extends React.Component {
         this.spotlightFeature = this.call.feature(Features.Spotlight);
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.capabilitiesFeature = this.call.feature(Features.Capabilities);
+        this.capabilities = this.capabilitiesFeature.capabilities;
         this.dominantSpeakersFeature = this.call.feature(Features.DominantSpeakers);
-        this.identifier = props.identityMri;
+        if (Features.Reaction) {
+            this.meetingReaction = this.call.feature(Features.Reaction);
+        }
+        if (Features.PPTLive) {
+            this.pptLiveFeature = this.call.feature(Features.PPTLive);
+            this.pptLiveHtml = React.createRef();
+        }
         this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
         this.state = {
@@ -50,11 +56,12 @@ export default class CallCard extends React.Component {
             remoteParticipants: [],
             allRemoteParticipantStreams: [],
             remoteScreenShareStream: undefined,
-            canOnVideo: true,
-            canUnMuteMic: true,
-            canShareScreen: true,
-            canRaiseHands: true,
-            canSpotlight: true,
+            canOnVideo: this.capabilities.turnVideoOn.isPresent || this.capabilities.turnVideoOn.reason === 'FeatureNotSupported',
+            canUnMuteMic: this.capabilities.unmuteMic.isPresent || this.capabilities.unmuteMic.reason === 'FeatureNotSupported',
+            canShareScreen: this.capabilities.shareScreen.isPresent || this.capabilities.shareScreen.reason === 'FeatureNotSupported',
+            canRaiseHands: this.capabilities.raiseHand.isPresent || this.capabilities.raiseHand.reason === 'FeatureNotSupported',
+            canSpotlight: this.capabilities.spotlightParticipant.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
+            canReact: this.capabilities.reaction.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
@@ -84,7 +91,9 @@ export default class CallCard extends React.Component {
             dominantSpeakersListActive: false,
             dominantSpeakers:[],
             showDataChannel: false,
-            showAddParticipantPanel: false
+            showAddParticipantPanel: false,
+            reactionRows:[],
+            pptLiveActive: false
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
@@ -109,8 +118,14 @@ export default class CallCard extends React.Component {
         this.call.feature(Features.Spotlight).off('spotlightChanged', this.spotlightStateChangedHandler);
         this.call.feature(Features.RaiseHand).off('raisedHandEvent', this.raiseHandChangedHandler);
         this.call.feature(Features.RaiseHand).off('loweredHandEvent', this.raiseHandChangedHandler);
+        if (Features.Reaction) {
+            this.call.feature(Features.Reaction).off('reaction', this.reactionChangeHandler);
+        }
+        if (Features.PPTLive) {
+            this.call.feature(Features.PPTLive).off('isActiveChanged', this.pptLiveChangedHandler);
+        }
         this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged);
-    }
+            }
 
     componentDidMount() {
         if (this.call) {
@@ -402,6 +417,8 @@ export default class CallCard extends React.Component {
             this.raiseHandFeature.on("raisedHandEvent", this.raiseHandChangedHandler);
             this.capabilitiesFeature.on('capabilitiesChanged', this.capabilitiesChangedHandler);
             this.dominantSpeakersFeature.on('dominantSeapkersChanged', this.dominantSpeakersChanged);
+            this.meetingReaction?.on('reaction', this.reactionChangeHandler);
+            this.pptLiveFeature?.on('isActiveChanged', this.pptLiveChangedHandler);
         }
     }
 
@@ -467,6 +484,65 @@ export default class CallCard extends React.Component {
         this.setState({isHandRaised: utils.isParticipantHandRaised(this.identifier, this.raiseHandFeature.getRaisedHands())})
     }
 
+    reactionChangeHandler = (event) => {
+        let displayName = 'Local Participant';
+        let id = event.identifier;
+
+        const idArray = id.split(':');
+        id = idArray[idArray.length - 1];
+
+        this.state.remoteParticipants.forEach(participant => {
+            let pid = utils.getIdentifierText(participant.identifier);
+
+            const pidArray = pid.split(':');
+            pid = pidArray[pidArray.length - 1];
+            console.log('Participant displayName - ' + participant.displayName?.trim());
+            if(pid === id) {
+                displayName = participant.displayName?.trim();
+            }
+        });
+
+        if(displayName.length == 0) {
+            displayName = 'Undefined';
+        }
+
+        const newEvent = {
+            participantIdentifier: displayName,
+            reaction: event.reactionMessage.reactionType,
+            receiveTimestamp: new Date().toLocaleString(),
+        }
+        console.log(`reaction received - ${event.reactionMessage.name}`);
+
+        this.setState({reactionRows: [...this.state.reactionRows, newEvent].slice(-100)});
+    }
+
+    pptLiveChangedHandler = async () => {
+        const pptLiveActive = this.pptLiveFeature && this.pptLiveFeature.isActive;
+        this.setState({ pptLiveActive });
+    
+        if (this.pptLiveHtml) {
+            if (pptLiveActive) {
+                this.pptLiveHtml.current.appendChild(this.pptLiveFeature.target);
+                if (this.call.isScreenSharingOn) {
+                    try {
+                        await this.handleScreenSharingOnOff();
+                    } catch {
+                        console.log("Cannot stop screen sharing");
+                    }
+                }
+            } else {
+                this.pptLiveHtml.current.removeChild(this.pptLiveHtml.current.lastElementChild);
+                if (!this.call.isScreenSharingOn && this.state.canShareScreen) {
+                    try {
+                        await this.handleScreenSharingOnOff();
+                    } catch {
+                        console.log("Cannot start screen sharing");
+                    }
+                }
+            }
+        }
+    }
+
     capabilitiesChangedHandler = (capabilitiesChangeInfo) => {
         for (const [key, value] of Object.entries(capabilitiesChangeInfo.newValue)) {
             if(key === 'turnVideoOn' && value.reason != 'FeatureNotSupported') {
@@ -487,6 +563,10 @@ export default class CallCard extends React.Component {
             }
             if(key === 'raiseHand' && value.reason != 'FeatureNotSupported') {
                 (value.isPresent) ? this.setState({ canRaiseHands: true }) : this.setState({ canRaiseHands: false });
+                continue;
+            }
+            if(key === 'reaction' && value.reason != 'FeatureNotSupported') {
+                (value.isPresent) ? this.setState({ canReact: true }) : this.setState({ canReact: false });
                 continue;
             }
         }
@@ -512,7 +592,6 @@ export default class CallCard extends React.Component {
                 this.localVideoStream = new LocalVideoStream(cameraDeviceInfo);
             }
 
-
             if (this.call.state === 'None' ||
                 this.call.state === 'Connecting' ||
                 this.call.state === 'Incoming') {
@@ -522,13 +601,13 @@ export default class CallCard extends React.Component {
                     this.setState({ videoOn: true })
                 }
                 await this.watchForCallFinishConnecting();
-                if (this.state.videoOn) {
+                if (this.state.videoOn && this.state.canOnVideo) {
                     await this.call.startVideo(this.localVideoStream);
                 } else {
                     await this.call.stopVideo(this.localVideoStream);
                 }
             } else {
-                if (!this.state.videoOn) {
+                if (!this.state.videoOn && this.state.canOnVideo) {
                     await this.call.startVideo(this.localVideoStream);
                 } else {
                     await this.call.stopVideo(this.localVideoStream);
@@ -564,6 +643,14 @@ export default class CallCard extends React.Component {
         }
     }
 
+    async handleMuteAllRemoteParticipants() {
+        try {
+            await this.call.muteAllRemoteParticipants?.();
+        } catch (e) {
+            console.error('Failed to mute all other participants.', e);
+        }
+    }
+
     async handleRaiseHand() {
         try {
             this.state.isHandRaised ?
@@ -574,6 +661,48 @@ export default class CallCard extends React.Component {
         }
     }
 
+    async handleClickEmoji(index) {
+        
+        if(!this.state.canReact) {
+            // 1:1 direct call with teams user is not supported.
+            const messageBarText = 'Reaction capability is not allowed for this call type';
+            console.error(messageBarText);
+            this.setState({ callMessage: messageBarText })
+            return ;
+        }
+
+        var reaction;
+        switch(index) {
+            case 0:
+                reaction = 'like';
+                break;
+            case 1:
+                reaction = 'heart';
+                break;
+            case 2:
+                reaction = 'laugh';
+                break;
+            case 3:
+                reaction = 'applause';
+                break;
+            case 4:
+                reaction = 'surprised';
+                break;
+            default:
+        }
+
+        const reactionMessage = {
+            reactionType: reaction
+        };
+        try {
+            this.meetingReaction?.sendReaction(reactionMessage);
+        } catch (error) {
+            // Surface the error 
+            console.error(error);
+            const messageBarText = JSON.stringify(error);
+            this.setState({ callMessage: messageBarText })
+        }
+    }
 
     async handleIncomingAudioOnOff() {
         try {
@@ -657,18 +786,20 @@ export default class CallCard extends React.Component {
             if (this.call.isScreenSharingOn) {
                 await this.call.stopScreenSharing();
                 this.setState({ localScreenSharingMode: undefined });
-            } else {
-                await this.call.startScreenSharing();
-                this.localScreenSharingStream = this.call.localVideoStreams.find(ss => {
-                    return ss.mediaStreamType === 'ScreenSharing'
-                });
-                this.setState({ localScreenSharingMode: 'StartWithNormal'});
+            } else if (this.state.canShareScreen) {
+                await this.startScreenSharing();
             }
         } catch (e) {
             console.error(e);
         }
     }
 
+    async startScreenSharing() {
+        await this.call.startScreenSharing();
+        this.localScreenSharingStream = this.call.localVideoStreams.find(ss => ss.mediaStreamType === 'ScreenSharing');
+        this.setState({ localScreenSharingMode: 'StartWithNormal', pptLiveActive: false });
+    }
+    
     async handleRawScreenSharingOnOff() {
         try {
             if (this.call.isScreenSharingOn) {
@@ -677,40 +808,42 @@ export default class CallCard extends React.Component {
                 this.dummyStreamTimeout = undefined;
                 this.setState({ localScreenSharingMode: undefined });
             } else {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d', {willReadFrequently: true});
-                canvas.width = 1280;
-                canvas.height = 720;
-                ctx.fillStyle = 'blue';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                if (this.state.canShareScreen) {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d', {willReadFrequently: true});
+                    canvas.width = 1280;
+                    canvas.height = 720;
+                    ctx.fillStyle = 'blue';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                const colors = ['red', 'yellow', 'green'];
-                const FPS = 30;
-                const createShapes = function () {
-                    try {
-                        let begin = Date.now();
-                        // start processing.
-                        if (ctx) {
-                            ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
-                            const x = Math.floor(Math.random() * canvas.width);
-                            const y = Math.floor(Math.random() * canvas.height);
-                            const size = 100;
-                            ctx.fillRect(x, y, size, size);
+                    const colors = ['red', 'yellow', 'green'];
+                    const FPS = 30;
+                    const createShapes = function () {
+                        try {
+                            let begin = Date.now();
+                            // start processing.
+                            if (ctx) {
+                                ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                                const x = Math.floor(Math.random() * canvas.width);
+                                const y = Math.floor(Math.random() * canvas.height);
+                                const size = 100;
+                                ctx.fillRect(x, y, size, size);
+                            }
+                            // schedule the next one.
+                            let delay = Math.abs(1000/FPS - (Date.now() - begin));
+                            this.dummyStreamTimeout = setTimeout(createShapes, delay);
+                        } catch (err) {
+                            console.error(err);
                         }
-                        // schedule the next one.
-                        let delay = Math.abs(1000/FPS - (Date.now() - begin));
-                        this.dummyStreamTimeout = setTimeout(createShapes, delay);
-                    } catch (err) {
-                        console.error(err);
-                    }
-                }.bind(this);
+                    }.bind(this);
 
-                // schedule the first one.
-                this.dummyStreamTimeout = setTimeout(createShapes, 0);
-                const dummyStream = canvas.captureStream(FPS);
-                this.localScreenSharingStream = new LocalVideoStream(dummyStream);
-                await this.call.startScreenSharing(this.localScreenSharingStream);
-                this.setState({ localScreenSharingMode: 'StartWithDummy'});
+                    // schedule the first one.
+                    this.dummyStreamTimeout = setTimeout(createShapes, 0);
+                    const dummyStream = canvas.captureStream(FPS);
+                    this.localScreenSharingStream = new LocalVideoStream(dummyStream);
+                    await this.call.startScreenSharing(this.localScreenSharingStream);
+                    this.setState({ localScreenSharingMode: 'StartWithDummy'});
+                }
             }
         } catch (e) {
             console.error(e);
@@ -815,6 +948,26 @@ export default class CallCard extends React.Component {
                     console.error(error)
                 }
             },
+            meetingAudioConferenceDetails:  async() => {
+                let messageBarText = "call in (audio only) details: \n";
+                try {
+                    const audioConferencingfeature = this.call.feature(Features.TeamsMeetingAudioConferencing);
+                    const audioConferenceDetails =
+                        await audioConferencingfeature.getTeamsMeetingAudioConferencingDetails();
+                    console.log(`meetingAudioConferenceDetails: ${JSON.stringify(audioConferenceDetails)}`)
+                    messageBarText += `Conference Id: ${audioConferenceDetails.phoneConferenceId}\n`;
+                    if (audioConferenceDetails.phoneNumbers[0].tollPhoneNumber) {
+                        messageBarText += `Toll Number: ${audioConferenceDetails.phoneNumbers[0].tollPhoneNumber.phoneNumber}\n`;
+                    }
+                    if (audioConferenceDetails.phoneNumbers[0].tollFreePhoneNumber) {
+                        messageBarText += `Toll Free Number: ${audioConferenceDetails.phoneNumbers[0].tollFreePhoneNumber.phoneNumber}\n`;
+                    }
+                } catch (error) {
+                    messageBarText += JSON.stringify(error);
+                }
+                console.log(`meetingAudioConferenceDetails MessageBarText = ${messageBarText}`)
+                this.setState({ callMessage: messageBarText })
+            },
         }
     }
 
@@ -833,6 +986,12 @@ export default class CallCard extends React.Component {
                 text: 'Lower All Hands',
                 onClick: (e) => menuCallBacks.lowerAllHands(e)
             },
+            {
+                key: 'Teams Meeting Audio Dial-In Info',
+                iconProps: { iconName: 'HandsFree'},
+                text: 'Teams Meeting Audio Dial-In Info',
+                onClick: (e) => menuCallBacks.meetingAudioConferenceDetails(e)
+            }
         ]
         return menuItems.filter(item => item != 0)
     }
@@ -858,6 +1017,8 @@ export default class CallCard extends React.Component {
     }
 
     render() {
+        const emojis = ['👍', '❤️', '😂', '👏', '😲'];
+
         return (
             <div className="ms-Grid mt-2">
                 <div className="ms-Grid-row">
@@ -874,13 +1035,13 @@ export default class CallCard extends React.Component {
                 </div>
                 <div className="ms-Grid-row">
                     <div className="ms-Grid-col ms-lg6">
-                        {
-                            this.state.callState !== 'Connected' &&
-                            <div>
+                        <div>
+                            {
+                                this.state.callState !== 'Connected' &&
                                 <div className="inline-block ringing-loader mr-2"></div>
-                                <h2 className="inline-block">{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
-                            </div>
-                        }
+                            }
+                            <h2 className="inline-block">{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
+                        </div>
                     </div>
                     {
                         this.call &&
@@ -1015,18 +1176,24 @@ export default class CallCard extends React.Component {
                             }
                         </span>
                         <span className="in-call-button"
+                            title={`Mute all other participants`}
+                            variant="secondary"
+                            onClick={() => this.handleMuteAllRemoteParticipants()}>
+                            <Icon iconName="VolumeDisabled" />
+                        </span>
+                        <span className="in-call-button"
                             title={`${this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'RawMedia' ? 'Stop' : 'Start'} screen sharing a dummy stream`}
                             variant="secondary"
                             onClick={() => this.handleRawScreenSharingOnOff()}>
                             {
-                                (
+                                this.state.canShareScreen && (
                                     !this.state.screenSharingOn ||
                                     (this.state.screenSharingOn && this.state.localScreenSharingMode !== 'StartWithDummy')
                                 ) &&
                                 <Icon iconName="Tablet" />
                             }
                             {
-                                this.state.screenSharingOn && this.state.localScreenSharingMode === 'StartWithDummy' &&
+                                (!this.state.canShareScreen) || (this.state.screenSharingOn && this.state.localScreenSharingMode === 'StartWithDummy') &&
                                 <Icon iconName="CircleStop" />
                             }
                         </span>
@@ -1113,11 +1280,46 @@ export default class CallCard extends React.Component {
                                 <Icon iconName="ReminderPerson" />
                             }
                         </span>
-                        <span className="in-call-button "
+                        <span className="in-call-button"
                             title={`${this.state.isHandRaised  ? 'LowerHand' : 'RaiseHand'}`}
                             variant="secondary"
                             onClick={() => this.handleRaiseHand()}>
                             <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
+                        </span>
+                        <span className="in-call-button"
+                            title='Like Reaction'
+                            variant="secondary"
+                            onClick={() => this.handleClickEmoji(0)}
+                            style={{ cursor: 'pointer' }}>
+                                {emojis[0]}
+                        </span>
+                        <span className="in-call-button"
+                            title='Heart Reaction'
+                            variant="secondary"
+                            onClick={() => this.handleClickEmoji(1)}
+                            style={{ cursor: 'pointer' }}>
+                                {emojis[1]}
+                        </span>
+                        <span className="in-call-button"
+                            title='Laugh Reaction'
+                            variant="secondary"
+                            onClick={() => this.handleClickEmoji(2)}
+                            style={{ cursor: 'pointer' }}>
+                                {emojis[2]}
+                        </span>
+                        <span className="in-call-button"
+                            title='Applause Reaction'
+                            variant="secondary"
+                            onClick={() => this.handleClickEmoji(3)}
+                            style={{ cursor: 'pointer' }}>
+                                {emojis[3]}
+                        </span>
+                        <span className="in-call-button"
+                            title='Surprised Reaction'
+                            variant="secondary"
+                            onClick={() => this.handleClickEmoji(4)}
+                            style={{ cursor: 'pointer' }}>
+                                {emojis[4]}
                         </span>
                         <ParticipantMenuOptions
                             id={this.identifier}
@@ -1188,6 +1390,9 @@ export default class CallCard extends React.Component {
                         </Panel>
                     </div>
                 </div>
+                { this.state.pptLiveActive &&
+                    <div className= "pptLive" ref={this.pptLiveHtml} />
+                }
                 {
                     this.state.videoOn && this.state.canOnVideo &&
                     <div className="mt-5">
@@ -1197,6 +1402,7 @@ export default class CallCard extends React.Component {
                         <div className="ms-Grid-row">
                             <div className="ms-Grid-col ms-sm12 ms-md4 ms-lg4">
                                 <LocalVideoPreviewCard
+                                    identifier={this.identifier}
                                     stream={this.localVideoStream}/>
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md2 md-lg2'>
@@ -1224,7 +1430,7 @@ export default class CallCard extends React.Component {
                                             disabled={false}/>
                                     </div>
                                 }
-                                
+
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md5 md-lg6'>
                                 <VideoEffectsContainer call={this.call} />
@@ -1242,6 +1448,7 @@ export default class CallCard extends React.Component {
                             {
                                 <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
                                     <LocalVideoPreviewCard
+                                        identifier={this.identifier}
                                         stream={this.localScreenSharingStream}/>
                                 </div>
                             }
@@ -1334,12 +1541,45 @@ export default class CallCard extends React.Component {
                     this.state.callState === 'Connected' &&
                     <div className="mt-5">
                         <div className="ms-Grid-row">
-                            <h3>Participants</h3>
+                            <h3>Meeting Reactions</h3>
+                        </div>
+                        <div className="ms-Grid-row>">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Identifier</th>
+                                        <th>Reaction</th>
+                                        <th>Receive TimeStamp</th>
+                                    </tr>
+                                </thead>
+                               <tbody>
+                                   {
+                                       this.state.reactionRows.map((row, index) => (
+                                           <tr key={index}>
+                                               <td>{row.participantIdentifier}</td>
+                                               <td>{row.reaction}</td>
+                                               <td>{row.receiveTimestamp}</td>
+                                           </tr>
+                                       ))
+                                   }
+                               </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+                {
+                    this.state.callState === 'Connected' &&
+                    <div className="mt-5">
+                        <div className="ms-Grid-row">
+                            <h2>Participants</h2>
                         </div>
                         <div>
                             {   this.state.showAddParticipantPanel &&
                                 <AddParticipantPopover call={this.call} />
                             }
+                        </div>
+                        <div>
+                            <Lobby call={this.call}/>
                         </div>
                         {
                             this.state.dominantSpeakerMode &&
@@ -1351,7 +1591,7 @@ export default class CallCard extends React.Component {
                             this.state.remoteParticipants.length === 0 &&
                             <p>No other participants currently in the call</p>
                         }
-                        <ul className="">
+                        <ul className="p-0 m-0">
                             {
                                 this.state.remoteParticipants.map(remoteParticipant =>
                                     <RemoteParticipantCard

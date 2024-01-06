@@ -18,15 +18,15 @@ function App() {
       <ToastContainer />
       <div className="header ms-Grid">
         <div className="ms-Grid-row">
-          <div className="ms-Grid-col ms-lg6 inline-flex align-items-center">
+          <div className="ms-Grid-col ms-sm12 ms-md12 ms-lg6 ms-xl6 ms-xxl6 inline-flex align-items-center">
             <div className="inline-block">
                 <img onClick={() => {setUsers([...users, <MakeCall/>]) }} className="nav-bar-icon" src="./assets/images/acsIcon.png"></img>
             </div>
             <h2 className="inline-block">
-              Azure Communication Services - Calling SDK for Javascript - { VWebSdkVersion() }
+                Azure Communication Services - Calling SDK for Javascript - { VWebSdkVersion() }
             </h2>
           </div>
-          <div className="ms-Grid-col ms-lg6">
+          <div className="ms-Grid-col ms-sm12 ms-md12 ms-lg6 ms-xl6 ms-xxl6">
             <div className="sdk-docs-header">
               <a className="sdk-docs-link" target="_blank" href="https://learn.microsoft.com/en-gb/azure/communication-services/how-tos/calling-sdk/manage-calls?pivots=platform-web">Documentation</a>
             </div>

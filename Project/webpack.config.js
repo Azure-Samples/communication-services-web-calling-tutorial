@@ -119,22 +119,28 @@ module.exports = {
     devServer: {
         open: true,
         port: PORT,
-        contentBase:'./public',
+        static:'./public',
         allowedHosts:[
             '.azurewebsites.net'
         ],
-        before: function(app) {
-            app.use(bodyParser.json());
-            app.post('/getCommunicationUserToken', async (req, res) => {
+        webSocketServer: false,
+        setupMiddlewares: (middlewares, devServer) => {
+            if (!devServer) {
+                throw new Error('webpack-dev-server is not defined');
+            }
+
+            devServer.app.use(bodyParser.json());
+            devServer.app.post('/getCommunicationUserToken', async (req, res) => {
                 try {
                     const communicationUserId = req.body.communicationUserId;
+                    const isJoinOnlyToken = req.body.isJoinOnlyToken === true;
                     let CommunicationUserIdentifier;
                     if (!communicationUserId) {
                         CommunicationUserIdentifier = await communicationIdentityClient.createUser();
                     } else {
                         CommunicationUserIdentifier = { communicationUserId: communicationUserId };
                     }
-                    const communicationUserToken = await communicationIdentityClient.getToken(CommunicationUserIdentifier, ["voip"]);
+                    const communicationUserToken = await communicationIdentityClient.getToken(CommunicationUserIdentifier, [isJoinOnlyToken ? "voip.join" : "voip"]);
                     let oneSignalRegistrationToken;
                     if (config.functionAppOneSignalTokenRegistrationUrl) {
                         oneSignalRegistrationToken = await registerCommunicationUserForOneSignal(communicationUserToken, CommunicationUserIdentifier);
@@ -146,7 +152,7 @@ module.exports = {
                     res.sendStatus(500);
                 }
             });
-            app.post('/getCommunicationUserTokenForOneSignalRegistrationToken', async (req, res) => {
+            devServer.app.post('/getCommunicationUserTokenForOneSignalRegistrationToken', async (req, res) => {
                 try {
                     const oneSignalRegistrationToken = req.body.oneSignalRegistrationToken;
                     const { communicationUserToken, communicationUserIdentifier } = oneSignalRegistrationTokenToAcsUserAccesTokenMap.get(oneSignalRegistrationToken);
@@ -157,7 +163,7 @@ module.exports = {
                     res.sendStatus(500);
                 }
             });
-            app.post('/getOneSignalRegistrationTokenForCommunicationUserToken', async (req, res) => {
+            devServer.app.post('/getOneSignalRegistrationTokenForCommunicationUserToken', async (req, res) => {
                 try {
                     const communicationUserToken = {token: req.body.token };
                     const communicationUserIdentifier = { communicationUserId: req.body.communicationUserId };
@@ -191,7 +197,7 @@ module.exports = {
                     res.sendStatus(500);
                 }
             });
-            app.get('/customRelayConfig', async (req, res) => {
+            devServer.app.get('/customRelayConfig', async (req, res) => {
                 console.log('Requesting custom TURN server configuration');
                 try {
                     const relayClient = new CommunicationRelayClient(config.connectionString);
@@ -208,7 +214,7 @@ module.exports = {
                     res.sendStatus(500);
                 }
             });
-            app.post('/teamsPopupLogin', async (req, res) => {
+            devServer.app.post('/teamsPopupLogin', async (req, res) => {
                 try {
                     const aadToken = req.body.aadToken;
                     const userObjectId = req.body.userObjectId;
@@ -223,7 +229,7 @@ module.exports = {
                     res.sendStatus(400);
                 }
             });
-            app.post('/teamsM365Login', async (req, res) => {
+            devServer.app.post('/teamsM365Login', async (req, res) => {
                 try {
                     const email = req.body.email;
                     const password = req.body.password;
@@ -246,6 +252,8 @@ module.exports = {
                     res.sendStatus(400);
                 }
             });
+
+            return middlewares;
         }
     }
 };
