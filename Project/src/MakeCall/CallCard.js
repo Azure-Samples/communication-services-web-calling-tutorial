@@ -61,7 +61,7 @@ export default class CallCard extends React.Component {
             canShareScreen: this.capabilities.shareScreen.isPresent || this.capabilities.shareScreen.reason === 'FeatureNotSupported',
             canRaiseHands: this.capabilities.raiseHand.isPresent || this.capabilities.raiseHand.reason === 'FeatureNotSupported',
             canSpotlight: this.capabilities.spotlightParticipant.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
-            canReact: this.capabilities.reaction.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
+            canReact: this.capabilities.useReactions.isPresent || this.capabilities.useReactions.reason === 'FeatureNotSupported',
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
