@@ -312,14 +312,14 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 
 .primary-button {
   font-size: 14px;
-  height: 45px;
+  height: 40px;
   color: #edebe9;
   background-color: #201f1e;
   border: 1px solid #adadad;
   outline: none;
   margin-right: 1em;
   margin-bottom: 1em;
-  border-radius: 15px;
+  border-radius: 20px;
   padding-right: 25px;
   padding-left: 25px;
 }
@@ -339,14 +339,14 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 
 .secondary-button {
   font-size: 14px;
-  height: 45px;
+  height: 40px;
   color: #edebe9;
   background-color: #201f1e;
   border: 1px solid #adadad;
   outline: none;
   margin-right: 1em;
   margin-bottom: 1em;
-  border-radius: 15px;
+  border-radius: 20px;
   padding-right: 25px;
   padding-left: 25px;
 }
