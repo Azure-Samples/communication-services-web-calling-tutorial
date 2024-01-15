@@ -97,6 +97,8 @@ export default class CallCard extends React.Component {
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
+        this.localVideoPreviewRef = React.createRef();
+        this.localScreenSharingPreviewRef = React.createRef();
         this.isSetCallConstraints = this.call.setConstraints !== undefined;
     }
 
@@ -342,6 +344,16 @@ export default class CallCard extends React.Component {
                     let renderer = v.streamRendererComponentRef.current;
                     renderer?.updateReceiveStats(stats[v.stream.id]);
                 });
+                if (this.state.logMediaStats) {
+                    if (data.video.send.length > 0) {
+                        let renderer = this.localVideoPreviewRef.current;
+                        renderer?.updateSendStats(data.video.send[0]);
+                    }
+                    if (data.screenShare.send.length > 0) {
+                        let renderer = this.localScreenSharingPreviewRef.current;
+                        renderer?.updateSendStats(data.screenShare.send[0]);
+                    }
+                }
             });
             mediaCollector.on('summaryReported', (data) => {
                 if (this.state.logMediaStats) {
@@ -760,7 +772,12 @@ export default class CallCard extends React.Component {
         this.setState(prevState => ({
             ...prevState,
             logMediaStats: !prevState.logMediaStats
-        }));
+        }), () => {
+            if (!this.state.logMediaStats) {
+                this.localVideoPreviewRef.current?.updateSendStats(undefined);
+                this.localScreenSharingPreviewRef.current?.updateSendStats(undefined);
+            }
+        });
     }
 
     getDummyAudioStream() {
@@ -1402,6 +1419,7 @@ export default class CallCard extends React.Component {
                         <div className="ms-Grid-row">
                             <div className="ms-Grid-col ms-sm12 ms-md4 ms-lg4">
                                 <LocalVideoPreviewCard
+                                    ref={this.localVideoPreviewRef}
                                     identifier={this.identifier}
                                     stream={this.localVideoStream}/>
                             </div>
@@ -1448,6 +1466,7 @@ export default class CallCard extends React.Component {
                             {
                                 <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
                                     <LocalVideoPreviewCard
+                                        ref={this.localScreenSharingPreviewRef}
                                         identifier={this.identifier}
                                         stream={this.localScreenSharingStream}/>
                                 </div>

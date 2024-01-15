@@ -1,6 +1,7 @@
 import React from "react";
 import { VideoStreamRenderer} from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
+import VideoSendStats from './VideoSendStats';
 
 export default class LocalVideoPreviewCard extends React.Component {
     constructor(props) {
@@ -10,6 +11,9 @@ export default class LocalVideoPreviewCard extends React.Component {
         this.type = this.stream.mediaStreamType;
         this.view = undefined;
         this.componentId = `${utils.getIdentifierText(this.identifier)}-local${this.type}Renderer`;
+        this.state = {
+            videoStats: undefined
+        };
     }
 
     async componentDidMount() {
@@ -33,7 +37,20 @@ export default class LocalVideoPreviewCard extends React.Component {
 
     render() {
         return (
-            <div style={{ width: '100%' }} id={this.componentId}></div>
+            <div style={{ width: '100%' }} id={this.componentId}>
+                {
+                    this.state.videoStats &&
+                    <h4 className="video-stats">
+                        <VideoSendStats videoStats={this.state.videoStats} />
+                    </h4>
+                }
+            </div>
         );
+    }
+
+    updateSendStats(videoStats) {
+        if (this.state.videoStats !== videoStats) {
+            this.setState({ videoStats });
+        }
     }
 }
