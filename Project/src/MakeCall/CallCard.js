@@ -11,6 +11,7 @@ import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communicati
 import { utils } from '../Utils/Utils';
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
+import AudioEffectsContainer from './AudioEffects/AudioEffectsContainer';
 import { AzureLogger } from '@azure/logger';
 import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
@@ -1403,7 +1404,8 @@ export default class CallCard extends React.Component {
                             <div className="ms-Grid-col ms-sm12 ms-md4 ms-lg4">
                                 <LocalVideoPreviewCard
                                     identifier={this.identifier}
-                                    stream={this.localVideoStream}/>
+                                    stream={this.localVideoStream}
+                                    onHold={this.state.onHold}/>
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md2 md-lg2'>
                                 <h4>Raw Video access</h4>
@@ -1434,6 +1436,11 @@ export default class CallCard extends React.Component {
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md5 md-lg6'>
                                 <VideoEffectsContainer call={this.call} />
+                            </div>
+                        </div>
+                        <div className='ms-Grid-row'>
+                            <div className='ms-Grid-col ms-sm12 ms-md5 ms-lg6'>
+                                <AudioEffectsContainer call={this.call} />
                             </div>
                         </div>
                     </div>

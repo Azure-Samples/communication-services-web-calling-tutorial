@@ -20,7 +20,7 @@
     "react-toastify": "9.0.1"
   },
   "scripts": {
-    "start-local": "webpack-dev-server --port 5000 --mode development",
+    "start-local": "webpack-dev-server --port 3000 --mode development",
     "build-local": "webpack --mode development",
     "start": "webpack-dev-server --host 0.0.0.0",
     "build": "webpack"
