@@ -1438,11 +1438,6 @@ export default class CallCard extends React.Component {
                                 <VideoEffectsContainer call={this.call} />
                             </div>
                         </div>
-                        <div className='ms-Grid-row'>
-                            <div className='ms-Grid-col ms-sm12 ms-md5 ms-lg6'>
-                                <AudioEffectsContainer call={this.call} />
-                            </div>
-                        </div>
                     </div>
                 }
                 {
@@ -1541,6 +1536,17 @@ export default class CallCard extends React.Component {
                             this.state.callState === 'Connected' &&
                                 <DataChannelCard call={this.call} ref={this.dataChannelRef} remoteParticipants={this.state.remoteParticipants} />
                         }
+                        </div>
+                    </div>
+                }
+                {
+                    this.state.callState === 'Connected' &&
+                    <div className='mt-5'>
+                        <div className='ms-Grid-row'>
+                            <h3>Audio effects and enhancements</h3>
+                        </div>
+                        <div className='ms-Grid-row'>
+                            <AudioEffectsContainer call={this.call} deviceManager={this.deviceManager} />
                         </div>
                     </div>
                 }

@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@azure/communication-calling": "1.21.1-beta.4",
-    "@azure/communication-calling-effects": "1.0.1",
+    "@azure/communication-calling-effects": "1.1.0-alpha.20231127.1",
     "@azure/communication-common": "^2.3.0",
     "@azure/communication-identity": "^1.3.0",
     "@azure/communication-network-traversal": "^1.1.0-beta.1",

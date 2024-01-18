@@ -1,5 +1,5 @@
 import React from 'react';
-import { Features } from '@azure/communication-calling';
+import { Features, LocalAudioStream } from '@azure/communication-calling';
 import { 
     EchoCancellationEffect,
     NoiseSuppressionEffect,
@@ -17,17 +17,33 @@ export default class AudioEffectsContainer extends React.Component {
     constructor(props) {
         super(props);
         this.call = props.call;
+        this.deviceManager = props.deviceManager;
         this.localAudioStreamFeatureApi = null;
+        this.localAudioStream = null;
 
         this.state = {
-            selectedAudioEffect: null,
+            selectedAudioEffects: {
+                autoGainControl: undefined,
+                echoCancellation: undefined,
+                noiseSuppression: undefined
+            },
             supportedAudioEffects: [],
             supportedAudioEffectsPopulated: false,
-            autoGainControlList: [],
-            echoCancellationList: [],
-            noiseSuppressionList: [],
-            startEffectsLoading: false,
-            stopEffectsLoading: false
+            autoGainControl: {
+                startLoading: false,
+                stopLoading: false,
+                autoGainControlList: []
+            },
+            echoCancellation: {
+                startLoading: false,
+                stopLoading: false,
+                echoCancellationList: []
+            },
+            noiseSuppression: {
+                startLoading: false,
+                stopLoading: false,
+                noiseSuppressionList: []
+            }
         };
 
         this.initLocalAudioStreamFeatureApi();
@@ -42,11 +58,11 @@ export default class AudioEffectsContainer extends React.Component {
     }
 
     logError(error) {
-        this.setState({
-            ...this.state
-        });
-
         console.error(error);
+    }
+
+    logWarn(error) {
+        console.warn(error);
     }
 
     initLocalAudioStreamFeatureApi() {
@@ -54,15 +70,20 @@ export default class AudioEffectsContainer extends React.Component {
             return a.mediaStreamType === 'Audio';
         });
 
-        console.log('call las::');
-        console.log(this.call);
-
         if (!localAudioStream) {
-            this.logError('No local audio streams found.');
-            return;
+            this.logWarn('No local audio streams found, creating a new one..');
+            const selectedMicrophone = this.deviceManager.selectedMicrophone;
+            if (selectedMicrophone) {
+                this.localAudioStream = new LocalAudioStream(selectedMicrophone);
+            } else {
+                this.logWarn('No selected microphone found, cannot create LocalAudioStream');
+                return;
+            }
+        } else {
+            this.localAudioStream = localAudioStream;
         }
 
-        const lasFeatureApi = localAudioStream.feature && localAudioStream.feature(Features?.AudioEffects);
+        const lasFeatureApi = this.localAudioStream.feature && this.localAudioStream.feature(Features?.AudioEffects);
         if (!lasFeatureApi) {
             this.logError('Could not get local audio stream feature API.');
             return;
@@ -71,30 +92,16 @@ export default class AudioEffectsContainer extends React.Component {
 
         this.localAudioStreamFeatureApi.on('effectsError', (error) => {
             this.logError(JSON.stringify(error));
-            this.setState({
-                ...this.state,
-                startEffectsLoading: false,
-                stopEffectsLoading: false
-            });
         });
 
-        this.localAudioStreamFeatureApi.on('effectsStarted', (error) => {
-            this.setState({
-                ...this.state,
-                startEffectsLoading: false
-            });
-        });
+        this.localAudioStreamFeatureApi.on('effectsStarted', (error) => { });
 
-        this.localAudioStreamFeatureApi.on('effectsStopped', (error) => {
-            this.setState({
-                ...this.state,
-                stopEffectsLoading: false
-            });
-        });
+        this.localAudioStreamFeatureApi.on('effectsStopped', (error) => { });
     }
 
     async populateAudioEffects() {
         const supported = [];
+
         const autoGainControlList = [];
         const echoCancellationList = [];
         const noiseSuppressionList = [];
@@ -152,58 +159,295 @@ export default class AudioEffectsContainer extends React.Component {
             }
 
             this.setState({
-                ...this.state,
                 supportedAudioEffects: [ ...supported ],
                 supportedAudioEffectsPopulated: true,
-                selectedAudioEffect: typeof supported[0] === 'string' ? supported[0] : supported[0].name,
-                autoGainControlList,
-                echoCancellationList,
-                noiseSuppressionList
+                autoGainControl: {
+                    ...this.state.autoGainControl,
+                    autoGainControlList
+                },
+                echoCancellation: {
+                    ...this.state.echoCancellation,
+                    echoCancellationList
+                },
+                noiseSuppression: {
+                    ...this.state.noiseSuppression,
+                    noiseSuppressionList
+                }
             });
         }
     }
 
+    findEffectFromSupportedList(name) {
+        const effect = this.state.supportedAudioEffects.find((supportedEffect) => {
+            if (typeof supportedEffect === 'string' && supportedEffect === name) {
+                return true;
+            } else if (typeof supportedEffect === 'object' && supportedEffect.name && supportedEffect.name === name) {
+                return true;
+            }
+        });
+
+        return effect;
+    }
+
+    /* ------------ AGC control functions - start ---------------- */
+    agcSelectionChanged(e, item) {
+        const effect = this.findEffectFromSupportedList(item.key);
+        if (effect) {
+            this.setState({
+                selectedAudioEffects: {
+                    autoGainControl: effect,
+                    ...this.state.selectedAudioEffects
+                }
+            });
+        }
+    }
+
+    async startAgc() {
+        this.setState({
+            autoGainControl: {
+                ...this.state.autoGainControl,
+                startLoading: true
+            }
+        });
+
+        if (this.localAudioStreamFeatureApi) {
+            await this.localAudioStreamFeatureApi.startEffects({
+                autoGainControl: this.state.selectedAudioEffects.autoGainControl
+            });
+        }
+
+        this.setState({
+            autoGainControl: {
+                ...this.state.autoGainControl,
+                startLoading: false
+            }
+        });
+    }
+
+    async stopAgc() {
+        this.setState({
+            autoGainControl: {
+                ...this.state.autoGainControl,
+                stopLoading: true
+            }
+        });
+
+        if (this.localAudioStreamFeatureApi) {
+            await this.localAudioStreamFeatureApi.stopEffects({
+                autoGainControl: true
+            });
+        }
+
+        this.setState({
+            autoGainControl: {
+                ...this.state.autoGainControl,
+                stopLoading: false
+            }
+        });
+    }
+    /* ------------ AGC control functions - end ---------------- */
+
+    /* ------------ EC control functions - start ---------------- */
+    ecSelectionChanged(e, item) {
+        const effect = this.findEffectFromSupportedList(item.key);
+        if (effect) {
+            this.setState({
+                selectedAudioEffects: {
+                    echoCancellation: effect,
+                    ...this.state.selectedAudioEffects
+                }
+            });
+        }
+    }
+
+    async startEc() {
+        this.setState({
+            echoCancellation: {
+                ...this.state.echoCancellation,
+                startLoading: true
+            }
+        });
+
+        if (this.localAudioStreamFeatureApi) {
+            await this.localAudioStreamFeatureApi.startEffects({
+                echoCancellation: this.state.selectedAudioEffects.echoCancellation
+            });
+        }
+
+        this.setState({
+            echoCancellation: {
+                ...this.state.echoCancellation,
+                startLoading: false
+            }
+        });
+    }
+
+    async stopEc() {
+        this.setState({
+            echoCancellation: {
+                ...this.state.echoCancellation,
+                stopLoading: true
+            }
+        });
+
+        if (this.localAudioStreamFeatureApi) {
+            await this.localAudioStreamFeatureApi.stopEffects({
+                echoCancellation: true
+            });
+        }
+
+        this.setState({
+            echoCancellation: {
+                ...this.state.echoCancellation,
+                stopLoading: false
+            }
+        });
+    }
+    /* ------------ EC control functions - end ---------------- */
+
+    /* ------------ NS control functions - start ---------------- */
+    nsSelectionChanged(e, item) {
+        const effect = this.findEffectFromSupportedList(item.key);
+        if (effect) {
+            this.setState({
+                selectedAudioEffects: {
+                    noiseSuppression: effect,
+                    ...this.state.selectedAudioEffects
+                }
+            });
+        }
+    }
+
+    async startNs() {
+        this.setState({
+            noiseSuppression: {
+                ...this.state.noiseSuppression,
+                startLoading: true
+            }
+        });
+
+        if (this.localAudioStreamFeatureApi) {
+            await this.localAudioStreamFeatureApi.startEffects({
+                noiseSuppression: this.state.selectedAudioEffects.noiseSuppression
+            });
+        }
+
+        this.setState({
+            noiseSuppression: {
+                ...this.state.noiseSuppression,
+                startLoading: false
+            }
+        });
+    }
+
+    async stopNs() {
+        this.setState({
+            noiseSuppression: {
+                ...this.state.noiseSuppression,
+                stopLoading: true
+            }
+        });
+
+        if (this.localAudioStreamFeatureApi) {
+            await this.localAudioStreamFeatureApi.stopEffects({
+                noiseSuppression: true
+            });
+        }
+
+        this.setState({
+            noiseSuppression: {
+                ...this.state.noiseSuppression,
+                stopLoading: false
+            }
+        });
+    }
+    /* ------------ NS control functions - end ---------------- */
+
     render() {
         return (
             <div>
-                <h4>Audio effects</h4>
                 {this.state.supportedAudioEffects.length > 0 ?
                     <div>
-                        <Dropdown
-                            label='Auto Gain Control'
-                            onChange={(e, item) => this.agcSelectionChanged(e, item)}
-                            options={this.state.autoGainControlList}
-                            placeholder={'Select an option'}
-                            styles={{ dropdown: { width: 300, color: 'black' } }}
-                        />
-                        <Dropdown
-                            label='Echo Cancellation'
-                            onChange={(e, item) => this.ecSelectionChanged(e, item)}
-                            options={this.state.echoCancellationList}
-                            placeholder={'Select an option'}
-                            styles={{ dropdown: { width: 300, color: 'black' } }}
-                        />
-                        <Dropdown
-                            label='Noise Suppression'
-                            onChange={(e, item) => this.nsSelectionChanged(e, item)}
-                            options={this.state.noiseSuppressionList}
-                            placeholder={'Select an option'}
-                            styles={{ dropdown: { width: 300, color: 'black' } }}
-                        />
+                        <div className='ms-Grid-row'>
+                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                                <Dropdown
+                                    label='Auto Gain Control'
+                                    onChange={(e, item) => this.agcSelectionChanged(e, item)}
+                                    options={this.state.autoGainControl.autoGainControlList}
+                                    placeholder={'Select an option'}
+                                    styles={{ dropdown: { width: 300, color: 'black' }, label: { color: 'white' } }}
+                                />
+                            </div>
+                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                                <PrimaryButton
+                                    className='secondary-button mt-2'
+                                    onClick={() => this.startAgc()}
+                                >
+                                    {this.state.autoGainControl.startLoading ? <LoadingSpinner /> : 'Start AGC'}
+                                </PrimaryButton>
 
-                        <PrimaryButton
-                            className='secondary-button mt-2'
-                            onClick={() => this.startEffects()}
-                        >
-                            {this.state.startEffectsLoading ? <LoadingSpinner /> : 'Start Effects'}
-                        </PrimaryButton>
+                                <PrimaryButton
+                                    className='secondary-button mt-2'
+                                    onClick={() => this.stopAgc()}
+                                >
+                                    {this.state.autoGainControl.stopLoading ? <LoadingSpinner /> : 'Stop AGC'}
+                                </PrimaryButton>
+                            </div>
+                        </div>
+                        
+                        <div className='ms-Grid-row'>
+                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                                <Dropdown
+                                    label='Echo Cancellation'
+                                    onChange={(e, item) => this.ecSelectionChanged(e, item)}
+                                    options={this.state.echoCancellation.echoCancellationList}
+                                    placeholder={'Select an option'}
+                                    styles={{ dropdown: { width: 300, color: 'black' }, label: { color: 'white' } }}
+                                />
+                            </div>
+                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                                <PrimaryButton
+                                    className='secondary-button mt-2'
+                                    onClick={() => this.startEc()}
+                                >
+                                    {this.state.echoCancellation.startLoading ? <LoadingSpinner /> : 'Start EC'}
+                                </PrimaryButton>
 
-                        <PrimaryButton
-                            className='secondary-button mt-2'
-                            onClick={() => this.stopEffects()}
-                        >
-                            {this.state.stopEffectsLoading ? <LoadingSpinner /> : 'Stop Effects'}
-                        </PrimaryButton>
+                                <PrimaryButton
+                                    className='secondary-button mt-2'
+                                    onClick={() => this.stopEc()}
+                                >
+                                    {this.state.echoCancellation.stopLoading ? <LoadingSpinner /> : 'Stop EC'}
+                                </PrimaryButton>
+                            </div>
+                        </div>
+
+                        <div className='ms-Grid-row'>
+                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                                <Dropdown
+                                    label='Noise Suppression'
+                                    onChange={(e, item) => this.nsSelectionChanged(e, item)}
+                                    options={this.state.noiseSuppression.noiseSuppressionList}
+                                    placeholder={'Select an option'}
+                                    styles={{ dropdown: { width: 300, color: 'black' }, label: { color: 'white' } }}
+                                />
+                            </div>
+                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                                <PrimaryButton
+                                    className='secondary-button mt-2'
+                                    onClick={() => this.startNs()}
+                                >
+                                    {this.state.noiseSuppression.startLoading ? <LoadingSpinner /> : 'Start NS'}
+                                </PrimaryButton>
+
+                                <PrimaryButton
+                                    className='secondary-button mt-2'
+                                    onClick={() => this.stopNs()}
+                                >
+                                    {this.state.noiseSuppression.stopLoading ? <LoadingSpinner /> : 'Stop NS'}
+                                </PrimaryButton>
+                            </div>
+                        </div>
                     </div>
                     :
                     <div>
