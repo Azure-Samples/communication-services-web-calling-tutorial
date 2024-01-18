@@ -1404,8 +1404,7 @@ export default class CallCard extends React.Component {
                             <div className="ms-Grid-col ms-sm12 ms-md4 ms-lg4">
                                 <LocalVideoPreviewCard
                                     identifier={this.identifier}
-                                    stream={this.localVideoStream}
-                                    onHold={this.state.onHold}/>
+                                    stream={this.localVideoStream}/>
                             </div>
                             <div className='ms-Grid-col ms-sm12 ms-md2 md-lg2'>
                                 <h4>Raw Video access</h4>
