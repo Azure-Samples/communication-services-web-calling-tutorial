@@ -28,22 +28,19 @@ export default class AudioEffectsContainer extends React.Component {
                 startLoading: false,
                 stopLoading: false,
                 autoGainControlList: [],
-                currentSelected: undefined,
-                currentActive: undefined
+                currentSelected: undefined
             },
             echoCancellation: {
                 startLoading: false,
                 stopLoading: false,
                 echoCancellationList: [],
-                currentSelected: undefined,
-                currentActive: undefined
+                currentSelected: undefined
             },
             noiseSuppression: {
                 startLoading: false,
                 stopLoading: false,
                 noiseSuppressionList: [],
-                currentSelected: undefined,
-                currentActive: undefined
+                currentSelected: undefined
             }
         };
 
@@ -57,7 +54,6 @@ export default class AudioEffectsContainer extends React.Component {
     componentDidMount() {
         this.populateAudioEffects();
     }
-    
 
     logError(error) {
         console.error(error);
