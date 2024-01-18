@@ -22,27 +22,28 @@ export default class AudioEffectsContainer extends React.Component {
         this.localAudioStream = null;
 
         this.state = {
-            selectedAudioEffects: {
-                autoGainControl: undefined,
-                echoCancellation: undefined,
-                noiseSuppression: undefined
-            },
             supportedAudioEffects: [],
             supportedAudioEffectsPopulated: false,
             autoGainControl: {
                 startLoading: false,
                 stopLoading: false,
-                autoGainControlList: []
+                autoGainControlList: [],
+                currentSelected: undefined,
+                currentActive: undefined
             },
             echoCancellation: {
                 startLoading: false,
                 stopLoading: false,
-                echoCancellationList: []
+                echoCancellationList: [],
+                currentSelected: undefined,
+                currentActive: undefined
             },
             noiseSuppression: {
                 startLoading: false,
                 stopLoading: false,
-                noiseSuppressionList: []
+                noiseSuppressionList: [],
+                currentSelected: undefined,
+                currentActive: undefined
             }
         };
 
@@ -94,9 +95,13 @@ export default class AudioEffectsContainer extends React.Component {
             this.logError(JSON.stringify(error));
         });
 
-        this.localAudioStreamFeatureApi.on('effectsStarted', (error) => { });
+        this.localAudioStreamFeatureApi.on('effectsStarted', (effect) => {
+            console.log(`Audio effects started: ${JSON.stringify(effect?.name ?? effect)}`);
+        });
 
-        this.localAudioStreamFeatureApi.on('effectsStopped', (error) => { });
+        this.localAudioStreamFeatureApi.on('effectsStopped', (effect) => {
+            console.log(`Audio effects stopped: ${JSON.stringify(effect?.name ?? effect)}`);
+        });
     }
 
     async populateAudioEffects() {
@@ -194,9 +199,9 @@ export default class AudioEffectsContainer extends React.Component {
         const effect = this.findEffectFromSupportedList(item.key);
         if (effect) {
             this.setState({
-                selectedAudioEffects: {
-                    autoGainControl: effect,
-                    ...this.state.selectedAudioEffects
+                autoGainControl: {
+                    ...this.state.autoGainControl,
+                    currentSelected: effect
                 }
             });
         }
@@ -212,7 +217,7 @@ export default class AudioEffectsContainer extends React.Component {
 
         if (this.localAudioStreamFeatureApi) {
             await this.localAudioStreamFeatureApi.startEffects({
-                autoGainControl: this.state.selectedAudioEffects.autoGainControl
+                autoGainControl: this.state.autoGainControl.currentSelected
             });
         }
 
@@ -252,9 +257,9 @@ export default class AudioEffectsContainer extends React.Component {
         const effect = this.findEffectFromSupportedList(item.key);
         if (effect) {
             this.setState({
-                selectedAudioEffects: {
-                    echoCancellation: effect,
-                    ...this.state.selectedAudioEffects
+                echoCancellation: {
+                    ...this.state.echoCancellation,
+                    currentSelected: effect
                 }
             });
         }
@@ -270,7 +275,7 @@ export default class AudioEffectsContainer extends React.Component {
 
         if (this.localAudioStreamFeatureApi) {
             await this.localAudioStreamFeatureApi.startEffects({
-                echoCancellation: this.state.selectedAudioEffects.echoCancellation
+                echoCancellation: this.state.echoCancellation.currentSelected
             });
         }
 
@@ -310,9 +315,9 @@ export default class AudioEffectsContainer extends React.Component {
         const effect = this.findEffectFromSupportedList(item.key);
         if (effect) {
             this.setState({
-                selectedAudioEffects: {
-                    noiseSuppression: effect,
-                    ...this.state.selectedAudioEffects
+                noiseSuppression: {
+                    ...this.state.noiseSuppression,
+                    currentSelected: effect
                 }
             });
         }
@@ -328,7 +333,7 @@ export default class AudioEffectsContainer extends React.Component {
 
         if (this.localAudioStreamFeatureApi) {
             await this.localAudioStreamFeatureApi.startEffects({
-                noiseSuppression: this.state.selectedAudioEffects.noiseSuppression
+                noiseSuppression: this.state.noiseSuppression.currentSelected
             });
         }
 
@@ -365,11 +370,33 @@ export default class AudioEffectsContainer extends React.Component {
 
     render() {
         return (
-            <div>
+            <>
                 {this.state.supportedAudioEffects.length > 0 ?
                     <div>
                         <div className='ms-Grid-row'>
-                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                            <div className='ms-Grid-col ms-sm4 ms-md4 ms-lg4'>
+                                <h4>Current active:</h4>
+                            </div>
+                        </div>
+                        <div className='ms-Grid-row' style={{ marginBottom: '1rem' }}>
+                            {this.localAudioStreamFeatureApi?.activeEffects?.autoGainControl?.length > 0 &&
+                            <div className='ms-Grid-col ms-sm4 ms-md4 ms-lg4'>
+                                {this.localAudioStreamFeatureApi.activeEffects.autoGainControl[0]}
+                            </div>
+                            }
+                            {this.localAudioStreamFeatureApi?.activeEffects?.echoCancellation?.length > 0 &&
+                            <div className='ms-Grid-col ms-sm4 ms-md4 ms-lg4'>
+                                {this.localAudioStreamFeatureApi.activeEffects.echoCancellation[0]}
+                            </div>
+                            }
+                            {this.localAudioStreamFeatureApi?.activeEffects?.noiseSuppression?.length > 0 &&
+                            <div className='ms-Grid-col ms-sm4 ms-md4 ms-lg4'>
+                                {this.localAudioStreamFeatureApi.activeEffects.noiseSuppression[0]}
+                            </div>
+                            }
+                        </div>
+                        <div className='ms-Grid-row'>
+                            <div className='ms-Grid-col ms-sm12 ms-md12 ms-lg12'>
                                 <Dropdown
                                     label='Auto Gain Control'
                                     onChange={(e, item) => this.agcSelectionChanged(e, item)}
@@ -378,7 +405,7 @@ export default class AudioEffectsContainer extends React.Component {
                                     styles={{ dropdown: { width: 300, color: 'black' }, label: { color: 'white' } }}
                                 />
                             </div>
-                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                            <div className='ms-Grid-col ms-sm12 ms-md12 ms-lg12'>
                                 <PrimaryButton
                                     className='secondary-button mt-2'
                                     onClick={() => this.startAgc()}
@@ -396,7 +423,7 @@ export default class AudioEffectsContainer extends React.Component {
                         </div>
                         
                         <div className='ms-Grid-row'>
-                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                            <div className='ms-Grid-col ms-sm12 ms-md12 ms-lg12'>
                                 <Dropdown
                                     label='Echo Cancellation'
                                     onChange={(e, item) => this.ecSelectionChanged(e, item)}
@@ -405,7 +432,7 @@ export default class AudioEffectsContainer extends React.Component {
                                     styles={{ dropdown: { width: 300, color: 'black' }, label: { color: 'white' } }}
                                 />
                             </div>
-                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                            <div className='ms-Grid-col ms-sm12 ms-md12 ms-lg12'>
                                 <PrimaryButton
                                     className='secondary-button mt-2'
                                     onClick={() => this.startEc()}
@@ -423,7 +450,7 @@ export default class AudioEffectsContainer extends React.Component {
                         </div>
 
                         <div className='ms-Grid-row'>
-                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                            <div className='ms-Grid-col ms-sm12 ms-md12 ms-lg12'>
                                 <Dropdown
                                     label='Noise Suppression'
                                     onChange={(e, item) => this.nsSelectionChanged(e, item)}
@@ -432,7 +459,7 @@ export default class AudioEffectsContainer extends React.Component {
                                     styles={{ dropdown: { width: 300, color: 'black' }, label: { color: 'white' } }}
                                 />
                             </div>
-                            <div className='ms-Grid-col ms-sm12 ms-md4 ms-lg4'>
+                            <div className='ms-Grid-col ms-sm12 ms-md12 ms-lg12'>
                                 <PrimaryButton
                                     className='secondary-button mt-2'
                                     onClick={() => this.startNs()}
@@ -455,7 +482,7 @@ export default class AudioEffectsContainer extends React.Component {
                         They are currently only supported on Windows Chrome, Windows Edge, MacOS Chrome, MacOS Edge and MacOS Safari.
                     </div>
                 }
-            </div>
+            </>
         )
     }
 }
