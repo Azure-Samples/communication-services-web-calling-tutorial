@@ -57,6 +57,7 @@ export default class AudioEffectsContainer extends React.Component {
     componentDidMount() {
         this.populateAudioEffects();
     }
+    
 
     logError(error) {
         console.error(error);
