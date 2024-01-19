@@ -11,6 +11,7 @@ import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communicati
 import { utils } from '../Utils/Utils';
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
+import AudioEffectsContainer from './AudioEffects/AudioEffectsContainer';
 import { AzureLogger } from '@azure/logger';
 import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
@@ -56,12 +57,12 @@ export default class CallCard extends React.Component {
             remoteParticipants: [],
             allRemoteParticipantStreams: [],
             remoteScreenShareStream: undefined,
-            canOnVideo: this.capabilities.turnVideoOn.isPresent || this.capabilities.turnVideoOn.reason === 'FeatureNotSupported',
-            canUnMuteMic: this.capabilities.unmuteMic.isPresent || this.capabilities.unmuteMic.reason === 'FeatureNotSupported',
-            canShareScreen: this.capabilities.shareScreen.isPresent || this.capabilities.shareScreen.reason === 'FeatureNotSupported',
-            canRaiseHands: this.capabilities.raiseHand.isPresent || this.capabilities.raiseHand.reason === 'FeatureNotSupported',
-            canSpotlight: this.capabilities.spotlightParticipant.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
-            canReact: this.capabilities.useReactions.isPresent || this.capabilities.useReactions.reason === 'FeatureNotSupported',
+            canOnVideo: this.capabilities.turnVideoOn?.isPresent || this.capabilities.turnVideoOn?.reason === 'FeatureNotSupported',
+            canUnMuteMic: this.capabilities.unmuteMic?.isPresent || this.capabilities.unmuteMic?.reason === 'FeatureNotSupported',
+            canShareScreen: this.capabilities.shareScreen?.isPresent || this.capabilities.shareScreen?.reason === 'FeatureNotSupported',
+            canRaiseHands: this.capabilities.raiseHand?.isPresent || this.capabilities.raiseHand?.reason === 'FeatureNotSupported',
+            canSpotlight: this.capabilities.spotlightParticipant?.isPresent || this.capabilities.spotlightParticipant?.reason === 'FeatureNotSupported',
+            canReact: this.capabilities.useReactions?.isPresent || this.capabilities.useReactions?.reason === 'FeatureNotSupported',
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
@@ -1534,6 +1535,17 @@ export default class CallCard extends React.Component {
                             this.state.callState === 'Connected' &&
                                 <DataChannelCard call={this.call} ref={this.dataChannelRef} remoteParticipants={this.state.remoteParticipants} />
                         }
+                        </div>
+                    </div>
+                }
+                {
+                    this.state.callState === 'Connected' &&
+                    <div className='mt-5'>
+                        <div className='ms-Grid-row'>
+                            <h3>Audio effects and enhancements</h3>
+                        </div>
+                        <div className='ms-Grid-row'>
+                            <AudioEffectsContainer call={this.call} deviceManager={this.deviceManager} />
                         </div>
                     </div>
                 }
