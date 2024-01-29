@@ -10,6 +10,7 @@ import OneSignal from "react-onesignal";
 import config from '../../clientConfig.json';
 import { TurnConfiguration } from './NetworkConfiguration/TurnConfiguration';
 import { ProxyConfiguration } from './NetworkConfiguration/ProxyConfiguration';
+import { URL_PARAM } from "../Constants";
 
 export default class Login extends React.Component {
     constructor(props) {
@@ -92,6 +93,13 @@ export default class Login extends React.Component {
 
                 await OneSignal.registerForPushNotifications();
             }
+            // Join meeting from URL
+            const params = new URLSearchParams(window.location.search);
+            if (params.get(URL_PARAM.DISPLAY_NAME) || params.get(URL_PARAM.MEETING_LINK)) {
+                this.displayName = params.get(URL_PARAM.DISPLAY_NAME);
+                this.logIn();
+            }
+
         } catch (error) {
             this.setState({
                 loginWarningMessage: error.message
