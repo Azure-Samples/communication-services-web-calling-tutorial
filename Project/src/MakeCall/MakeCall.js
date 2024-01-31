@@ -94,9 +94,9 @@ export default class MakeCall extends React.Component {
         if (this.state.loggedIn) {
             const params = new URLSearchParams(window.location.search);
             if (params.get(URL_PARAM.MEETING_LINK)) {
-                const videoOn = params.get(URL_PARAM.VIDEO) && params.get(URL_PARAM.VIDEO).toLocaleLowerCase === URL_PARAM.ON ? true : false;
-                const micOn = params.get(URL_PARAM.AUDIO) && params.get(URL_PARAM.AUDIO).toLocaleLowerCase === URL_PARAM.ON ? true : false;
-                this.joinTeamsMeeting(videoOn, micOn);
+                const videoOn = params.get(URL_PARAM.VIDEO) && params.get(URL_PARAM.VIDEO).toLocaleLowerCase() === URL_PARAM.ON ? true : false;
+                const micMuted = params.get(URL_PARAM.MIC) && params.get(URL_PARAM.MIC).toLocaleLowerCase() === URL_PARAM.ON ? false : true;
+                this.joinTeamsMeeting(videoOn, micMuted);
                 // Remove the search params from the URL
                 window.history.replaceState({}, document.title, "/");
             }
@@ -322,9 +322,9 @@ export default class MakeCall extends React.Component {
         }
     };
 
-    joinTeamsMeeting = async (withVideo, withMic = true) => {
+    joinTeamsMeeting = async (withVideo, micMuted = false) => {
         try {
-            const callOptions = await this.getCallOptions({video: withVideo, micMuted: withMic});
+            const callOptions = await this.getCallOptions({video: withVideo, micMuted: micMuted});
             if (this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({ meetingLink: this.meetingLink.value }, callOptions);
             } else if (this.meetingId.value  || this.passcode.value && !this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
