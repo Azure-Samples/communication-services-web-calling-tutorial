@@ -10,6 +10,7 @@ import OneSignal from "react-onesignal";
 import config from '../../clientConfig.json';
 import { TurnConfiguration } from './NetworkConfiguration/TurnConfiguration';
 import { ProxyConfiguration } from './NetworkConfiguration/ProxyConfiguration';
+import { URL_PARAM } from "../Constants";
 
 export default class Login extends React.Component {
     constructor(props) {
@@ -17,7 +18,10 @@ export default class Login extends React.Component {
         this.callAgent = undefined;
         this.callClient = undefined;
         this.userDetailsResponse = undefined;
-        this.displayName = undefined;
+        
+        // Set display name from the URL
+        const params = new URLSearchParams(window.location.search);
+        this.displayName = params.get(URL_PARAM.DISPLAY_NAME) === null ? undefined : params.get(URL_PARAM.DISPLAY_NAME);
         this.clientTag = uuid();
         this.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
         this._callAgentInitPromise = undefined;
@@ -693,7 +697,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                 <div className="ms-Grid-row">
                                                     <div className="ms-Grid-col ms-sm12 ms-md12 ms-lg9 ms-xl9 ms-xxl9">
                                                         <TextField
-                                                                defaultValue={undefined}
+                                                                defaultValue={this.displayName}
                                                                 placeholder="Display Name"
                                                                 label="Optional - Display name"
                                                                 onChange={(e) => { this.displayName = e.target.value }}/>
