@@ -15,6 +15,7 @@ import Login from './Login';
 import MediaConstraint from './MediaConstraint';
 import { setLogLevel, AzureLogger } from '@azure/logger';
 import { inflate } from 'pako';
+import { URL_PARAM } from "../Constants";
 export default class MakeCall extends React.Component {
     constructor(props) {
         super(props);
@@ -87,6 +88,19 @@ export default class MakeCall extends React.Component {
                 console.log(...args);
             }
         };
+    }
+    
+    autoJoinMeetingByMeetingLink = () => {
+        if (this.state.loggedIn) {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get(URL_PARAM.MEETING_LINK)) {
+                const videoOn = params.get(URL_PARAM.VIDEO) && params.get(URL_PARAM.VIDEO).toLocaleLowerCase() === URL_PARAM.ON ? true : false;
+                const micMuted = params.get(URL_PARAM.MIC) && params.get(URL_PARAM.MIC).toLocaleLowerCase() === URL_PARAM.ON ? false : true;
+                this.joinTeamsMeeting(videoOn, micMuted);
+                // Remove the search params from the URL
+                window.history.replaceState({}, document.title, "/");
+            }
+        }
     }
 
     handleMediaConstraint = (constraints) => {
@@ -176,6 +190,7 @@ export default class MakeCall extends React.Component {
                 this.setState({ loggedIn: true });
                 this.logInComponentRef.current.setCallAgent(this.callAgent);
                 this.logInComponentRef.current.setCallClient(this.callClient);
+                this.autoJoinMeetingByMeetingLink();
             } catch (e) {
                 console.error(e);
             }
@@ -307,9 +322,9 @@ export default class MakeCall extends React.Component {
         }
     };
 
-    joinTeamsMeeting = async (withVideo) => {
+    joinTeamsMeeting = async (withVideo, micMuted = false) => {
         try {
-            const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
+            const callOptions = await this.getCallOptions({video: withVideo, micMuted: micMuted});
             if (this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
                 this.callAgent.join({ meetingLink: this.meetingLink.value }, callOptions);
             } else if (this.meetingId.value  || this.passcode.value && !this.meetingLink.value && !this.messageId.value && !this.threadId.value && this.tenantId && this.organizerId) {
@@ -918,6 +933,7 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                                         className="mb-3 mt-0"
                                                         disabled={this.state.call || !this.state.loggedIn}
                                                         label="Meeting link"
+                                                        defaultValue={new URLSearchParams(window.location.search).get(URL_PARAM.MEETING_LINK) ?? ''}
                                                         componentRef={(val) => this.meetingLink = val} />
                                                 </div>
                                                 <div className={this.state.call || !this.state.loggedIn ? "call-input-panel-input-label-disabled" : ""}>
