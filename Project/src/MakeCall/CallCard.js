@@ -210,6 +210,15 @@ export default class CallCard extends React.Component {
                 if (this.call.state !== 'Disconnected') {
                     this.setState({ callState: this.call.state });
                 }
+
+                if (this.call.state === 'LocalHold' || this.call.state === 'RemoteHold') {
+                    this.setState({ canRaiseHands: false });
+                    this.setState({ canSpotlight: false });
+                }
+                if (this.call.state === 'Connected') {
+                    this.setState({ canRaiseHands:  this.capabilities.raiseHand?.isPresent || this.capabilities.raiseHand?.reason === 'FeatureNotSupported' });
+                    this.setState({ canSpotlight: this.capabilities.spotlightParticipant?.isPresent || this.capabilities.spotlightParticipant?.reason === 'FeatureNotSupported' });
+                }
             }
             callStateChanged();
             this.call.on('stateChanged', callStateChanged);
@@ -975,18 +984,6 @@ export default class CallCard extends React.Component {
     getMenuItems() {
         let menuCallBacks = this.getParticipantMenuCallBacks();
         let menuItems = [
-            this.spotlightFeature.getSpotlightedParticipants().length && {
-                key: 'Stop All Spotlight',
-                iconProps: { iconName: 'Focus'},
-                text: 'Stop All Spotlight',
-                onClick: (e) => menuCallBacks.stopAllSpotlight(e)
-            },
-            this.raiseHandFeature.getRaisedHands().length && {
-                key: 'Lower All Hands',
-                iconProps: { iconName: 'HandsFree'},
-                text: 'Lower All Hands',
-                onClick: (e) => menuCallBacks.lowerAllHands(e)
-            },
             {
                 key: 'Teams Meeting Audio Dial-In Info',
                 iconProps: { iconName: 'HandsFree'},
@@ -994,6 +991,31 @@ export default class CallCard extends React.Component {
                 onClick: (e) => menuCallBacks.meetingAudioConferenceDetails(e)
             }
         ]
+        if (this.state.canRaiseHands && this.raiseHandFeature.getRaisedHands().length) {
+            menuItems.push({
+                key: 'Lower All Hands',
+                iconProps: { iconName: 'HandsFree'},
+                text: 'Lower All Hands',
+                onClick: (e) => menuCallBacks.lowerAllHands(e)
+            });
+        }
+        if (this.state.canSpotlight) {
+            menuItems.push({
+                key: 'spotlight',
+                iconProps: { iconName: 'Focus', className: this.state.isSpotlighted ? "callFeatureEnabled" : ``},
+                text: this.state.isSpotlighted ? 'Stop Spotlight' : 'Start Spotlight',
+                onClick: (e) => this.state.isSpotlighted ?
+                        menuCallBacks.stopSpotlight(this.identifier, e):
+                        menuCallBacks.startSpotlight(this.identifier, e)
+            });
+            if (this.spotlightFeature.getSpotlightedParticipants().length)
+            menuItems.push({
+                key: 'Stop All Spotlight',
+                iconProps: { iconName: 'Focus'},
+                text: 'Stop All Spotlight',
+                onClick: (e) => menuCallBacks.stopAllSpotlight(e)
+            });
+        }
         return menuItems.filter(item => item != 0)
     }
 
@@ -1281,12 +1303,14 @@ export default class CallCard extends React.Component {
                                 <Icon iconName="ReminderPerson" />
                             }
                         </span>
-                        <span className="in-call-button"
-                            title={`${this.state.isHandRaised  ? 'LowerHand' : 'RaiseHand'}`}
-                            variant="secondary"
-                            onClick={() => this.handleRaiseHand()}>
-                            <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
-                        </span>
+                        { this.state.canRaiseHands &&
+                            <span className="in-call-button"
+                                title={`${this.state.isHandRaised  ? 'LowerHand' : 'RaiseHand'}`}
+                                variant="secondary"
+                                onClick={() => this.handleRaiseHand()}>
+                                <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
+                            </span>                        
+                        }
                         <span className="in-call-button"
                             title='Like Reaction'
                             variant="secondary"
