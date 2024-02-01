@@ -2,6 +2,8 @@ import React from "react";
 import { CallClient, LocalVideoStream, Features, CallAgentKind, VideoStreamRenderer } from '@azure/communication-calling';
 import { AzureCommunicationTokenCredential, createIdentifierFromRawId} from '@azure/communication-common';
 import {
+    Checkbox,
+    Dropdown,
     PrimaryButton,
     TextField,
     MessageBar,
@@ -38,7 +40,16 @@ export default class MakeCall extends React.Component {
         this.videoConstraints = null;
         this.tokenCredential = null;
         this.logInComponentRef = React.createRef();
-
+        this.updateCanvasHandle = null;
+        this.canvas = document.createElement("canvas");
+        this.dummyVideoHeightList = [
+            { key: 180, text: '180' },
+            { key: 240, text: '240' },
+            { key: 360, text: '360' },
+            { key: 540, text: '540' },
+            { key: 720, text: '720' },
+            { key: 1080, text: '1080' }
+        ];
         this.state = {
             id: undefined,
             loggedIn: false,
@@ -64,7 +75,9 @@ export default class MakeCall extends React.Component {
             },
             preCallDiagnosticsResults: {},
             isTeamsUser: false,
-            identityMri: undefined
+            identityMri: undefined,
+            useDummyVideo: false,
+            selectedDummyVideoHeight: 360
         };
 
         setInterval(() => {
@@ -203,6 +216,10 @@ export default class MakeCall extends React.Component {
         }
 
         this.setState({ call: null, callSurvey: this.state.call, incomingCall: null });
+        if (this.updateCanvasHandle) {
+            clearInterval(this.updateCanvasHandle);
+            this.updateCanvasHandle = null;
+        }
     }
 
     placeCall = async (withVideo) => {
@@ -374,15 +391,44 @@ export default class MakeCall extends React.Component {
                 cameraDeviceOptions: cameras.map(camera => { return { key: camera.id, text: camera.name } })
             });
         }
-        if (!!options.video) {
+
+        if (!this.state.useDummyVideo && this.updateCanvasHandle) {
+            clearInterval(this.updateCanvasHandle);
+            this.updateCanvasHandle = null;
+        }
+
+        if (options.video) {
             try {
-                if (!cameraDevice || cameraDevice?.id === 'camera:') {
-                    throw new Error('No camera devices found.');
-                } else if (cameraDevice) {
-                    callOptions.videoOptions = { localVideoStreams: [new LocalVideoStream(cameraDevice)] };
-                    if (this.videoConstraints) {
-                        callOptions.videoOptions.constraints = this.videoConstraints;
+                let localVideoStream = null;
+                if (this.state.useDummyVideo) {
+                    const canvas = this.canvas;
+                    if (!this.updateCanvasHandle) {
+                        this.updateCanvasHandle = setInterval(() => {
+                            const ctx = canvas.getContext("2d");
+                            if (this.state.selectedDummyVideoHeight !== canvas.height) {
+                                canvas.height = this.state.selectedDummyVideoHeight;
+                                canvas.width = Math.floor(this.state.selectedDummyVideoHeight / 180 * 320);
+                            }
+                            ctx.fillStyle = "blue";
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                            ctx.fillStyle = "white";
+                            ctx.font = "24px Arial";
+                            ctx.fillText((new Date()).toISOString(), 10, 50);
+                        }, 100);
                     }
+                    canvas.height = this.state.selectedDummyVideoHeight;
+                    canvas.width = Math.floor(this.state.selectedDummyVideoHeight / 180 * 320);
+                    const stream = this.canvas.captureStream(30);
+                    localVideoStream = new LocalVideoStream(stream);
+                } else {
+                    if (!cameraDevice || cameraDevice?.id === 'camera:') {
+                        throw new Error('No camera devices found.');
+                    }
+                    localVideoStream = new LocalVideoStream(cameraDevice);
+                }
+                callOptions.videoOptions = { localVideoStreams: [ localVideoStream ] };
+                if (this.videoConstraints) {
+                    callOptions.videoOptions.constraints = this.videoConstraints;
                 }
             } catch (e) {
                 cameraWarning = e.message;
@@ -1043,6 +1089,25 @@ this.deviceManager.on('selectedSpeakerChanged', () => { console.log(this.deviceM
                                                 onClick={() => this.joinRooms(true)}>
                                             </PrimaryButton>
                                         </div>
+                                    </div>
+                                </div>
+                                <div className="ms-Grid-row mt-3">
+                                    <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-lg12 ms-xl12 ms-xxl4">
+                                    <h3 className="mb-1">Video source</h3>
+                                    <Checkbox
+                                        className='mt-3'
+                                        label='Use dummy video'
+                                        checked={this.state.useDummyVideo}
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        onChange={(e, isChecked) => this.setState({ useDummyVideo: isChecked })} />
+                                    <Dropdown
+                                        id='dummyVideoHeightDropdown'
+                                        selectedKey={this.state.selectedDummyVideoHeight}
+                                        onChange={(e, item) => this.setState({ selectedDummyVideoHeight: item.key })}
+                                        label={'Dummy Video Height'}
+                                        options={this.dummyVideoHeightList}
+                                        disabled={this.state.call || !this.state.loggedIn}
+                                        styles={{ dropdown: { width: 200 }, label: { color: '#FFF'} }} />
                                     </div>
                                 </div>
                                 <div className="ms-Grid-row mt-3">
