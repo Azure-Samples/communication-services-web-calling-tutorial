@@ -119,8 +119,6 @@ export default class CustomVideoEffects extends React.Component {
                 // start processing.
                 this.bwCtx.filter = "grayscale(1)";
                 this.bwCtx.drawImage(bwVideoElem, 0, 0, width, height);
-                const imageData = this.bwCtx.getImageData(0, 0, width, height);
-                this.bwCtx.putImageData(imageData, 0, 0);
                 // schedule the next one.
                 let delay = Math.abs(1000/FPS - (Date.now() - begin));
                 this.bwTimeout = setTimeout(processVideo, delay);
