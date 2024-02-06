@@ -15,14 +15,6 @@ export const ParticipantMenuOptions = ({id, appendMenuitems, menuOptionsHandler,
     }
     
     let commonMenuItems = [
-        {
-            key: 'spotlight',
-            iconProps: { iconName: 'Focus', className: isSpotlighted ? "callFeatureEnabled" : ``},
-            text: isSpotlighted ? 'Stop Spotlight' : 'Start Spotlight',
-            onClick: (e) => isSpotlighted ?
-                                menuOptionsHandler.stopSpotlight(id, e):
-                                menuOptionsHandler.startSpotlight(id, e)
-        }
     ]
 
 
