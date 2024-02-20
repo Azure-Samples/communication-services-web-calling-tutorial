@@ -143,6 +143,11 @@ export default class MakeCall extends React.Component {
 
                 window.callAgent = this.callAgent;
                 window.videoStreamRenderer = VideoStreamRenderer;
+
+                // Current User Name
+                window.displayName = userDetails.displayName;
+                window.identityMri = this.state.identityMri;
+
                 this.callAgent.on('callsUpdated', e => {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
 
