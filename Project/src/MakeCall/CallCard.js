@@ -581,6 +581,7 @@ export default class CallCard extends React.Component {
             }
             if(key === 'spotlightParticipant' && value.reason != 'FeatureNotSupported') {
                 (value.isPresent) ? this.setState({ canSpotlight: true }) : this.setState({ canSpotlight: false });
+                console.log(`CHUK23 === > ${key}  ===>  ${this.state.canSpotlight}  ===> ${value.reason} ==== ${value.isPresent}`)
                 continue;
             }
             if(key === 'raiseHand' && value.reason != 'FeatureNotSupported') {
@@ -592,6 +593,7 @@ export default class CallCard extends React.Component {
                 continue;
             }
         }
+        this.capabilities =  this.capabilitiesFeature.capabilities;
     }
 
     dominantSpeakersChanged = () => {
@@ -1025,13 +1027,24 @@ export default class CallCard extends React.Component {
                         menuCallBacks.stopSpotlight(this.identifier, e):
                         menuCallBacks.startSpotlight(this.identifier, e)
             });
-            if (this.spotlightFeature.getSpotlightedParticipants().length)
-            menuItems.push({
-                key: 'Stop All Spotlight',
-                iconProps: { iconName: 'Focus'},
-                text: 'Stop All Spotlight',
-                onClick: (e) => menuCallBacks.stopAllSpotlight(e)
-            });
+            
+            if (this.spotlightFeature.getSpotlightedParticipants().length) {
+                menuItems.push({
+                    key: 'Stop All Spotlight',
+                    iconProps: { iconName: 'Focus'},
+                    text: 'Stop All Spotlight',
+                    onClick: (e) => menuCallBacks.stopAllSpotlight(e)
+                });
+            }
+        } else {
+            if (this.state.isSpotlighted) {
+                menuItems.push({
+                    key: 'spotlight',
+                    iconProps: { iconName: 'Focus', className: this.state.isSpotlighted ? "callFeatureEnabled" : ``},
+                    text: 'Stop Spotlight',
+                    onClick: (e) => menuCallBacks.stopSpotlight(this.identifier, e)
+                });
+            } 
         }
         return menuItems.filter(item => item != 0)
     }
