@@ -592,6 +592,7 @@ export default class CallCard extends React.Component {
                 continue;
             }
         }
+        this.capabilities =  this.capabilitiesFeature.capabilities;
     }
 
     dominantSpeakersChanged = () => {
@@ -1016,16 +1017,23 @@ export default class CallCard extends React.Component {
                 onClick: (e) => menuCallBacks.lowerAllHands(e)
             });
         }
+
+        // Include the start spotlight option only if the local participant is has the capability
+        // and is currently not spotlighted
         if (this.state.canSpotlight) {
-            menuItems.push({
-                key: 'spotlight',
-                iconProps: { iconName: 'Focus', className: this.state.isSpotlighted ? "callFeatureEnabled" : ``},
-                text: this.state.isSpotlighted ? 'Stop Spotlight' : 'Start Spotlight',
-                onClick: (e) => this.state.isSpotlighted ?
-                        menuCallBacks.stopSpotlight(this.identifier, e):
-                        menuCallBacks.startSpotlight(this.identifier, e)
-            });
-            if (this.spotlightFeature.getSpotlightedParticipants().length)
+            !this.state.isSpotlighted  && 
+                menuItems.push({
+                    key: 'Start Spotlight',
+                    iconProps: { iconName: 'Focus', className: this.state.isSpotlighted ? "callFeatureEnabled" : ``},
+                    text: 'Start Spotlight',
+                    onClick: (e) => menuCallBacks.startSpotlight(this.identifier, e)
+                });
+            
+        }
+        // Include the stop all spotlight option only if the local participant has  the capability 
+        // and the current spotlighted participant count is greater than 0
+        if ((this.call.role == 'Presenter' || this.call.role == 'Organizer' || this.call.role == 'Co-organizer')
+            && this.spotlightFeature.getSpotlightedParticipants().length) {
             menuItems.push({
                 key: 'Stop All Spotlight',
                 iconProps: { iconName: 'Focus'},
@@ -1033,6 +1041,16 @@ export default class CallCard extends React.Component {
                 onClick: (e) => menuCallBacks.stopAllSpotlight(e)
             });
         }
+
+        // Include the stop spotlight option only if the local participant is spotlighted
+        this.state.isSpotlighted && 
+            menuItems.push({
+                key: 'Stop Spotlight',
+                iconProps: { iconName: 'Focus', className: this.state.isSpotlighted ? "callFeatureEnabled" : ``},
+                text: 'Stop Spotlight',
+                onClick: (e) => menuCallBacks.stopSpotlight(this.identifier, e)
+            });
+        
         return menuItems.filter(item => item != 0)
     }
 
