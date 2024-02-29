@@ -1032,7 +1032,7 @@ export default class CallCard extends React.Component {
         }
         // Include the stop all spotlight option only if the local participant has  the capability 
         // and the current spotlighted participant count is greater than 0
-        if ((this.call.role != 'Unknown' && this.call.role != 'Attendee' && this.call.role != 'Consumer')
+        if ((this.call.role == 'Presenter' || this.call.role == 'Organizer' || this.call.role == 'Co-organizer')
             && this.spotlightFeature.getSpotlightedParticipants().length) {
             menuItems.push({
                 key: 'Stop All Spotlight',
