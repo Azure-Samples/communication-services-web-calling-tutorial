@@ -581,7 +581,6 @@ export default class CallCard extends React.Component {
             }
             if(key === 'spotlightParticipant' && value.reason != 'FeatureNotSupported') {
                 (value.isPresent) ? this.setState({ canSpotlight: true }) : this.setState({ canSpotlight: false });
-                console.log(`CHUK23 === > ${key}  ===>  ${this.state.canSpotlight}  ===> ${value.reason} ==== ${value.isPresent}`)
                 continue;
             }
             if(key === 'raiseHand' && value.reason != 'FeatureNotSupported') {
