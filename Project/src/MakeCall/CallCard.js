@@ -541,7 +541,7 @@ export default class CallCard extends React.Component {
     pptLiveChangedHandler = async () => {
         const pptLiveActive = this.pptLiveFeature && this.pptLiveFeature.isActive;
         this.setState({ pptLiveActive });
-    
+
         if (this.pptLiveHtml) {
             if (pptLiveActive) {
                 this.pptLiveHtml.current.appendChild(this.pptLiveFeature.target);
@@ -685,7 +685,7 @@ export default class CallCard extends React.Component {
     }
 
     async handleClickEmoji(index) {
-        
+
         if(!this.state.canReact) {
             // 1:1 direct call with teams user is not supported.
             const messageBarText = 'Reaction capability is not allowed for this call type';
@@ -720,7 +720,7 @@ export default class CallCard extends React.Component {
         try {
             this.meetingReaction?.sendReaction(reactionMessage);
         } catch (error) {
-            // Surface the error 
+            // Surface the error
             console.error(error);
             const messageBarText = JSON.stringify(error);
             this.setState({ callMessage: messageBarText })
@@ -827,7 +827,7 @@ export default class CallCard extends React.Component {
         this.localScreenSharingStream = this.call.localVideoStreams.find(ss => ss.mediaStreamType === 'ScreenSharing');
         this.setState({ localScreenSharingMode: 'StartWithNormal', pptLiveActive: false });
     }
-    
+
     async handleRawScreenSharingOnOff() {
         try {
             if (this.call.isScreenSharingOn) {
@@ -983,22 +983,19 @@ export default class CallCard extends React.Component {
                     const audioConferenceDetails = await audioConferencingfeature.getTeamsMeetingAudioConferencingDetails();
                     console.log(`meetingAudioConferenceDetails: ${JSON.stringify(audioConferenceDetails)}`)
                     messageBarText += `Conference Id: ${audioConferenceDetails.phoneConferenceId}\n`;
-                    
+
                     audioConferenceDetails.phoneNumbers.map(phoneNumber =>
                     {
-                        if (phoneNumber.tollPhoneNumber) { 
+                        if (phoneNumber.tollPhoneNumber) {
                             messageBarText += `Toll Number: ${phoneNumber.tollPhoneNumber.phoneNumber}\n`;
                         }
-        
-                        if (phoneNumber.tollFreePhoneNumber) { 
+                        if (phoneNumber.tollFreePhoneNumber) {
                             messageBarText += `Toll Free Number: ${phoneNumber.tollFreePhoneNumber.phoneNumber}\n`;
                         }
-        
-                        if (phoneNumber.countryName) { 
+                        if (phoneNumber.countryName) {
                             messageBarText += `Country Name: ${phoneNumber.countryName}\n`;
                         }
-        
-                        if (phoneNumber.cityName) { 
+                        if (phoneNumber.cityName) {
                             messageBarText += `City Name: ${phoneNumber.cityName}\n`;
                         }
                     });
@@ -1033,16 +1030,16 @@ export default class CallCard extends React.Component {
         // Include the start spotlight option only if the local participant is has the capability
         // and is currently not spotlighted
         if (this.state.canSpotlight) {
-            !this.state.isSpotlighted  && 
+            !this.state.isSpotlighted  &&
                 menuItems.push({
                     key: 'Start Spotlight',
                     iconProps: { iconName: 'Focus', className: this.state.isSpotlighted ? "callFeatureEnabled" : ``},
                     text: 'Start Spotlight',
                     onClick: (e) => menuCallBacks.startSpotlight(this.identifier, e)
                 });
-            
+
         }
-        // Include the stop all spotlight option only if the local participant has  the capability 
+        // Include the stop all spotlight option only if the local participant has  the capability
         // and the current spotlighted participant count is greater than 0
         if ((this.call.role == 'Presenter' || this.call.role == 'Organizer' || this.call.role == 'Co-organizer')
             && this.spotlightFeature.getSpotlightedParticipants().length) {
@@ -1055,14 +1052,14 @@ export default class CallCard extends React.Component {
         }
 
         // Include the stop spotlight option only if the local participant is spotlighted
-        this.state.isSpotlighted && 
+        this.state.isSpotlighted &&
             menuItems.push({
                 key: 'Stop Spotlight',
                 iconProps: { iconName: 'Focus', className: this.state.isSpotlighted ? "callFeatureEnabled" : ``},
                 text: 'Stop Spotlight',
                 onClick: (e) => menuCallBacks.stopSpotlight(this.identifier, e)
             });
-        
+
         return menuItems.filter(item => item != 0)
     }
 
@@ -1356,7 +1353,7 @@ export default class CallCard extends React.Component {
                                 variant="secondary"
                                 onClick={() => this.handleRaiseHand()}>
                                 <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
-                            </span>                        
+                            </span>
                         }
                         <span className="in-call-button"
                             title='Like Reaction'
