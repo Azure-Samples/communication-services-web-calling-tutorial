@@ -980,16 +980,28 @@ export default class CallCard extends React.Component {
                 let messageBarText = "call in (audio only) details: \n";
                 try {
                     const audioConferencingfeature = this.call.feature(Features.TeamsMeetingAudioConferencing);
-                    const audioConferenceDetails =
-                        await audioConferencingfeature.getTeamsMeetingAudioConferencingDetails();
+                    const audioConferenceDetails = await audioConferencingfeature.getTeamsMeetingAudioConferencingDetails();
                     console.log(`meetingAudioConferenceDetails: ${JSON.stringify(audioConferenceDetails)}`)
                     messageBarText += `Conference Id: ${audioConferenceDetails.phoneConferenceId}\n`;
-                    if (audioConferenceDetails.phoneNumbers[0].tollPhoneNumber) {
-                        messageBarText += `Toll Number: ${audioConferenceDetails.phoneNumbers[0].tollPhoneNumber.phoneNumber}\n`;
-                    }
-                    if (audioConferenceDetails.phoneNumbers[0].tollFreePhoneNumber) {
-                        messageBarText += `Toll Free Number: ${audioConferenceDetails.phoneNumbers[0].tollFreePhoneNumber.phoneNumber}\n`;
-                    }
+                    
+                    audioConferenceDetails.phoneNumbers.map(phoneNumber =>
+                    {
+                        if (phoneNumber.tollPhoneNumber) { 
+                            messageBarText += `Toll Number: ${phoneNumber.tollPhoneNumber.phoneNumber}\n`;
+                        }
+        
+                        if (phoneNumber.tollFreePhoneNumber) { 
+                            messageBarText += `Toll Free Number: ${phoneNumber.tollFreePhoneNumber.phoneNumber}\n`;
+                        }
+        
+                        if (phoneNumber.countryName) { 
+                            messageBarText += `Country Name: ${phoneNumber.countryName}\n`;
+                        }
+        
+                        if (phoneNumber.cityName) { 
+                            messageBarText += `City Name: ${phoneNumber.cityName}\n`;
+                        }
+                    });
                 } catch (error) {
                     messageBarText += JSON.stringify(error);
                 }
