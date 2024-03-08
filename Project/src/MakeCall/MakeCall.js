@@ -243,9 +243,7 @@ export default class MakeCall extends React.Component {
             }
 
             if (identitiesToCall.length > 1) {
-                if (this.callAgent.kind === CallAgentKind.TeamsCallAgent && this.threadId === '') {
-                    throw new Error('Thread ID is needed to make Teams Group Call');
-                } else {
+                if (this.callAgent.kind === CallAgentKind.TeamsCallAgent && this.threadId?.value !== '') {
                     callOptions.threadId = this.threadId.value;
                 }
             }

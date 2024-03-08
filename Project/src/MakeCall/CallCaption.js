@@ -19,6 +19,7 @@ const CallCaption = ({ call }) => {
         
         return () => {
             // cleanup
+            stopCaptions(captions);
             captions.off('CaptionsActiveChanged', captionsActiveHandler);
             captions.off('CaptionsReceived', captionsReceivedHandler);
             captions.off('SpokenLanguageChanged', activeSpokenLanguageHandler);
@@ -41,6 +42,14 @@ const CallCaption = ({ call }) => {
             }
         } catch (e) {
             console.error('startCaptions failed', e);
+        }
+    };
+
+    const stopCaptions = async () => {
+        try {
+            await captions.stopCaptions();
+        } catch (e) {
+            console.error('stopCaptions failed', e);
         }
     };
 
