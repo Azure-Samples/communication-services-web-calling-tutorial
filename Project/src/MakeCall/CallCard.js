@@ -592,6 +592,7 @@ export default class CallCard extends React.Component {
                 continue;
             }
         }
+        this.capabilities =  this.capabilitiesFeature.capabilities;
     }
 
     dominantSpeakersChanged = () => {
@@ -1025,7 +1026,6 @@ export default class CallCard extends React.Component {
                 onClick: (e) => menuCallBacks.lowerAllHands(e)
             });
         }
-        
         // Include the start spotlight option only if the local participant is has the capability
         // and is currently not spotlighted
         if (this.state.canSpotlight) {
@@ -1036,7 +1036,7 @@ export default class CallCard extends React.Component {
                     text: 'Start Spotlight',
                     onClick: (e) => menuCallBacks.startSpotlight(this.identifier, e)
                 });
-
+            
         }
         // Include the stop all spotlight option only if the local participant has  the capability 
         // and the current spotlighted participant count is greater than 0
@@ -1058,7 +1058,7 @@ export default class CallCard extends React.Component {
                 text: 'Stop Spotlight',
                 onClick: (e) => menuCallBacks.stopSpotlight(this.identifier, e)
             });
-
+        
         return menuItems.filter(item => item != 0)
     }
 
