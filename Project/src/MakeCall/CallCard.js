@@ -11,6 +11,7 @@ import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communicati
 import { utils } from '../Utils/Utils';
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
+import AudioEffectsContainer from './AudioEffects/AudioEffectsContainer';
 import { AzureLogger } from '@azure/logger';
 import VolumeVisualizer from "./VolumeVisualizer";
 import CurrentCallInformation from "./CurrentCallInformation";
@@ -56,12 +57,12 @@ export default class CallCard extends React.Component {
             remoteParticipants: [],
             allRemoteParticipantStreams: [],
             remoteScreenShareStream: undefined,
-            canOnVideo: this.capabilities.turnVideoOn.isPresent || this.capabilities.turnVideoOn.reason === 'FeatureNotSupported',
-            canUnMuteMic: this.capabilities.unmuteMic.isPresent || this.capabilities.unmuteMic.reason === 'FeatureNotSupported',
-            canShareScreen: this.capabilities.shareScreen.isPresent || this.capabilities.shareScreen.reason === 'FeatureNotSupported',
-            canRaiseHands: this.capabilities.raiseHand.isPresent || this.capabilities.raiseHand.reason === 'FeatureNotSupported',
-            canSpotlight: this.capabilities.spotlightParticipant.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
-            canReact: this.capabilities.reaction.isPresent || this.capabilities.spotlightParticipant.reason === 'FeatureNotSupported',
+            canOnVideo: this.capabilities.turnVideoOn?.isPresent || this.capabilities.turnVideoOn?.reason === 'FeatureNotSupported',
+            canUnMuteMic: this.capabilities.unmuteMic?.isPresent || this.capabilities.unmuteMic?.reason === 'FeatureNotSupported',
+            canShareScreen: this.capabilities.shareScreen?.isPresent || this.capabilities.shareScreen?.reason === 'FeatureNotSupported',
+            canRaiseHands: this.capabilities.raiseHand?.isPresent || this.capabilities.raiseHand?.reason === 'FeatureNotSupported',
+            canSpotlight: this.capabilities.spotlightParticipant?.isPresent || this.capabilities.spotlightParticipant?.reason === 'FeatureNotSupported',
+            canReact: this.capabilities.useReactions?.isPresent || this.capabilities.useReactions?.reason === 'FeatureNotSupported',
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
@@ -97,6 +98,8 @@ export default class CallCard extends React.Component {
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
+        this.localVideoPreviewRef = React.createRef();
+        this.localScreenSharingPreviewRef = React.createRef();
         this.isSetCallConstraints = this.call.setConstraints !== undefined;
     }
 
@@ -208,6 +211,15 @@ export default class CallCard extends React.Component {
 
                 if (this.call.state !== 'Disconnected') {
                     this.setState({ callState: this.call.state });
+                }
+
+                if (this.call.state === 'LocalHold' || this.call.state === 'RemoteHold') {
+                    this.setState({ canRaiseHands: false });
+                    this.setState({ canSpotlight: false });
+                }
+                if (this.call.state === 'Connected') {
+                    this.setState({ canRaiseHands:  this.capabilities.raiseHand?.isPresent || this.capabilities.raiseHand?.reason === 'FeatureNotSupported' });
+                    this.setState({ canSpotlight: this.capabilities.spotlightParticipant?.isPresent || this.capabilities.spotlightParticipant?.reason === 'FeatureNotSupported' });
                 }
             }
             callStateChanged();
@@ -342,6 +354,16 @@ export default class CallCard extends React.Component {
                     let renderer = v.streamRendererComponentRef.current;
                     renderer?.updateReceiveStats(stats[v.stream.id]);
                 });
+                if (this.state.logMediaStats) {
+                    if (data.video.send.length > 0) {
+                        let renderer = this.localVideoPreviewRef.current;
+                        renderer?.updateSendStats(data.video.send[0]);
+                    }
+                    if (data.screenShare.send.length > 0) {
+                        let renderer = this.localScreenSharingPreviewRef.current;
+                        renderer?.updateSendStats(data.screenShare.send[0]);
+                    }
+                }
             });
             mediaCollector.on('summaryReported', (data) => {
                 if (this.state.logMediaStats) {
@@ -570,6 +592,7 @@ export default class CallCard extends React.Component {
                 continue;
             }
         }
+        this.capabilities =  this.capabilitiesFeature.capabilities;
     }
 
     dominantSpeakersChanged = () => {
@@ -760,7 +783,12 @@ export default class CallCard extends React.Component {
         this.setState(prevState => ({
             ...prevState,
             logMediaStats: !prevState.logMediaStats
-        }));
+        }), () => {
+            if (!this.state.logMediaStats) {
+                this.localVideoPreviewRef.current?.updateSendStats(undefined);
+                this.localScreenSharingPreviewRef.current?.updateSendStats(undefined);
+            }
+        });
     }
 
     getDummyAudioStream() {
@@ -974,18 +1002,6 @@ export default class CallCard extends React.Component {
     getMenuItems() {
         let menuCallBacks = this.getParticipantMenuCallBacks();
         let menuItems = [
-            this.spotlightFeature.getSpotlightedParticipants().length && {
-                key: 'Stop All Spotlight',
-                iconProps: { iconName: 'Focus'},
-                text: 'Stop All Spotlight',
-                onClick: (e) => menuCallBacks.stopAllSpotlight(e)
-            },
-            this.raiseHandFeature.getRaisedHands().length && {
-                key: 'Lower All Hands',
-                iconProps: { iconName: 'HandsFree'},
-                text: 'Lower All Hands',
-                onClick: (e) => menuCallBacks.lowerAllHands(e)
-            },
             {
                 key: 'Teams Meeting Audio Dial-In Info',
                 iconProps: { iconName: 'HandsFree'},
@@ -993,6 +1009,48 @@ export default class CallCard extends React.Component {
                 onClick: (e) => menuCallBacks.meetingAudioConferenceDetails(e)
             }
         ]
+        if (this.state.canRaiseHands && this.raiseHandFeature.getRaisedHands().length) {
+            menuItems.push({
+                key: 'Lower All Hands',
+                iconProps: { iconName: 'HandsFree'},
+                text: 'Lower All Hands',
+                onClick: (e) => menuCallBacks.lowerAllHands(e)
+            });
+        }
+
+        // Include the start spotlight option only if the local participant is has the capability
+        // and is currently not spotlighted
+        if (this.state.canSpotlight) {
+            !this.state.isSpotlighted  && 
+                menuItems.push({
+                    key: 'Start Spotlight',
+                    iconProps: { iconName: 'Focus', className: this.state.isSpotlighted ? "callFeatureEnabled" : ``},
+                    text: 'Start Spotlight',
+                    onClick: (e) => menuCallBacks.startSpotlight(this.identifier, e)
+                });
+            
+        }
+        // Include the stop all spotlight option only if the local participant has  the capability 
+        // and the current spotlighted participant count is greater than 0
+        if ((this.call.role == 'Presenter' || this.call.role == 'Organizer' || this.call.role == 'Co-organizer')
+            && this.spotlightFeature.getSpotlightedParticipants().length) {
+            menuItems.push({
+                key: 'Stop All Spotlight',
+                iconProps: { iconName: 'Focus'},
+                text: 'Stop All Spotlight',
+                onClick: (e) => menuCallBacks.stopAllSpotlight(e)
+            });
+        }
+
+        // Include the stop spotlight option only if the local participant is spotlighted
+        this.state.isSpotlighted && 
+            menuItems.push({
+                key: 'Stop Spotlight',
+                iconProps: { iconName: 'Focus', className: this.state.isSpotlighted ? "callFeatureEnabled" : ``},
+                text: 'Stop Spotlight',
+                onClick: (e) => menuCallBacks.stopSpotlight(this.identifier, e)
+            });
+        
         return menuItems.filter(item => item != 0)
     }
 
@@ -1280,12 +1338,14 @@ export default class CallCard extends React.Component {
                                 <Icon iconName="ReminderPerson" />
                             }
                         </span>
-                        <span className="in-call-button"
-                            title={`${this.state.isHandRaised  ? 'LowerHand' : 'RaiseHand'}`}
-                            variant="secondary"
-                            onClick={() => this.handleRaiseHand()}>
-                            <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
-                        </span>
+                        { this.state.canRaiseHands &&
+                            <span className="in-call-button"
+                                title={`${this.state.isHandRaised  ? 'LowerHand' : 'RaiseHand'}`}
+                                variant="secondary"
+                                onClick={() => this.handleRaiseHand()}>
+                                <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
+                            </span>                        
+                        }
                         <span className="in-call-button"
                             title='Like Reaction'
                             variant="secondary"
@@ -1402,6 +1462,7 @@ export default class CallCard extends React.Component {
                         <div className="ms-Grid-row">
                             <div className="ms-Grid-col ms-sm12 ms-md4 ms-lg4">
                                 <LocalVideoPreviewCard
+                                    ref={this.localVideoPreviewRef}
                                     identifier={this.identifier}
                                     stream={this.localVideoStream}/>
                             </div>
@@ -1448,6 +1509,7 @@ export default class CallCard extends React.Component {
                             {
                                 <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6">
                                     <LocalVideoPreviewCard
+                                        ref={this.localScreenSharingPreviewRef}
                                         identifier={this.identifier}
                                         stream={this.localScreenSharingStream}/>
                                 </div>
@@ -1534,6 +1596,17 @@ export default class CallCard extends React.Component {
                             this.state.callState === 'Connected' &&
                                 <DataChannelCard call={this.call} ref={this.dataChannelRef} remoteParticipants={this.state.remoteParticipants} />
                         }
+                        </div>
+                    </div>
+                }
+                {
+                    this.state.callState === 'Connected' &&
+                    <div className='mt-5'>
+                        <div className='ms-Grid-row'>
+                            <h3>Audio effects and enhancements</h3>
+                        </div>
+                        <div className='ms-Grid-row'>
+                            <AudioEffectsContainer call={this.call} deviceManager={this.deviceManager} />
                         </div>
                     </div>
                 }

@@ -97,6 +97,19 @@ export default class RemoteParticipantCard extends React.Component {
         this.props.onSelectionChanged(this.remoteParticipant.identifier, e.target.checked);
     }
 
+    getMenuItems() {
+        let menuItems = []
+        menuItems.push({
+            key: 'spotlight',
+            iconProps: { iconName: 'Focus', className: this.state.isSpotlighted ? "callFeatureEnabled" : ``},
+            text: this.state.isSpotlighted ? 'Stop Spotlight' : 'Start Spotlight',
+            onClick: (e) => this.state.isSpotlighted ?
+                this.menuOptionsHandler.stopSpotlight(this.identifier, e):
+                this.menuOptionsHandler.startSpotlight(this.identifier, e)
+        });
+        return menuItems.filter(item => item != 0)
+    }
+
     async handleRemoteRaiseHand() {
         try {
             if (this.state.isHandRaised) {
@@ -166,6 +179,7 @@ export default class RemoteParticipantCard extends React.Component {
                         <div className="inline-block">
                             <ParticipantMenuOptions
                                 id={this.remoteParticipant.identifier}
+                                appendMenuitems={this.getMenuItems()}
                                 menuOptionsHandler={this.menuOptionsHandler}
                                 menuOptionsState={{isSpotlighted: this.state.isSpotlighted}} />
                         </div>

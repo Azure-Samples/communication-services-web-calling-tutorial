@@ -84,34 +84,36 @@ export default class VideoEffectsContainer extends React.Component {
 
     async populateVideoEffects() {
         const supported = [];
-        const backgroundBlur = new BackgroundBlurEffect();
-        const isBackgroundBlurSupported = await backgroundBlur.isSupported();
-        if (isBackgroundBlurSupported) {
-            supported.push(backgroundBlur);
-        }
-
-        const backgroundReplacement = new BackgroundReplacementEffect({
-            backgroundImageUrl: '../assets/images/ACSBackdrop.png'
-        });
-        const isBackgroundReplacementSupported = await backgroundReplacement.isSupported();
-        if (isBackgroundReplacementSupported) {
-            supported.push(backgroundReplacement);
-        }
-
-        const videoEffectsList = supported.map(effect => {
-            return {
-                key: effect.name,
-                text: effect.name.replace('Background', 'Background ')
+        if (this.localVideoStreamFeatureApi) {
+            const backgroundBlur = new BackgroundBlurEffect();
+            const isBackgroundBlurSupported = await this.localVideoStreamFeatureApi.isSupported(backgroundBlur);
+            if (isBackgroundBlurSupported) {
+                supported.push(backgroundBlur);
             }
-        });
 
-        this.setState({
-            ...this.state,
-            supportedVideoEffects: [ ...supported ],
-            supportedVideoEffectsPopulated: true,
-            selectedVideoEffect: supported[0].name,
-            videoEffectsList
-        });
+            const backgroundReplacement = new BackgroundReplacementEffect({
+                backgroundImageUrl: '../assets/images/ACSBackdrop.png'
+            });
+            const isBackgroundReplacementSupported = await this.localVideoStreamFeatureApi.isSupported(backgroundReplacement);
+            if (isBackgroundReplacementSupported) {
+                supported.push(backgroundReplacement);
+            }
+
+            const videoEffectsList = supported.map(effect => {
+                return {
+                    key: effect.name,
+                    text: effect.name.replace('Background', 'Background ')
+                }
+            });
+
+            this.setState({
+                ...this.state,
+                supportedVideoEffects: [ ...supported ],
+                supportedVideoEffectsPopulated: true,
+                selectedVideoEffect: supported[0].name,
+                videoEffectsList
+            });
+        }
     }
 
     effectSelectionChanged(event, item) {
@@ -172,7 +174,7 @@ export default class VideoEffectsContainer extends React.Component {
                         <Dropdown
                             onChange={(e, item) => this.effectSelectionChanged(e, item)}
                             options={this.state.videoEffectsList}
-                            placeHolder={'Select an option'}
+                            placeholder={'Select an option'}
                             styles={{ dropdown: { width: 300, color: 'black' } }}
                         />
                         <PrimaryButton
