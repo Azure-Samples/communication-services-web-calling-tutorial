@@ -1289,6 +1289,7 @@ export default class CallCard extends React.Component {
                         <span className="in-call-button"
                             title={`${this.state.captionOn ? 'Turn captions off' : 'Turn captions on'}`}
                             variant="secondary"
+                            hidden={this.state.callState !== 'Connected'}
                             onClick={() => { this.setState({ captionOn: !this.state.captionOn })}}>
                             {
                                 this.state.captionOn &&
