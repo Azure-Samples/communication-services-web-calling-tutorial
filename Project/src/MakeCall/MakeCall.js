@@ -389,7 +389,7 @@ export default class MakeCall extends React.Component {
 
         try {
             const speakers = await this.deviceManager.getSpeakers();
-            const speakerDevice = speakers[0];
+            const speakerDevice = speakers.find(item => item.isSystemDefault);
             if (!speakerDevice || speakerDevice.id === 'speaker:') {
                 throw new Error('No speaker devices found.');
             } else if (speakerDevice) {
@@ -405,7 +405,7 @@ export default class MakeCall extends React.Component {
 
         try {
             const microphones = await this.deviceManager.getMicrophones();
-            const microphoneDevice = microphones[0];
+            const microphoneDevice = microphones.find(item => item.isSystemDefault);
             if (!microphoneDevice || microphoneDevice.id === 'microphone:') {
                 throw new Error('No microphone devices found.');
             } else {
