@@ -2,7 +2,6 @@ import React from 'react';
 import { Features, LocalAudioStream } from '@azure/communication-calling';
 import { 
     EchoCancellationEffect,
-    NoiseSuppressionEffect,
     DeepNoiseSuppressionEffect
 } from '@azure/communication-calling-effects';
 import { Dropdown, PrimaryButton } from '@fluentui/react';
@@ -139,15 +138,6 @@ export default class AudioEffectsContainer extends React.Component {
                 echoCancellationList.push({
                     key: echoCancellation.name,
                     text: 'Echo Cancellation'
-                });
-            }
-
-            const noiseSuppression = new NoiseSuppressionEffect();
-            if (await this.localAudioStreamFeatureApi.isSupported(noiseSuppression)) {
-                supported.push(noiseSuppression);
-                noiseSuppressionList.push({
-                    key: noiseSuppression.name,
-                    text: 'Noise Suppression'
                 });
             }
 
