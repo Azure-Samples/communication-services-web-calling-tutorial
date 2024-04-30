@@ -28,6 +28,30 @@ export default class IncomingCallCard extends React.Component {
                 <div className="custom-row">
                     <div className="ringing-loader mb-4"></div>
                 </div>
+                {this.incomingCall?.customContext &&
+                    <>
+                        <div className="ms-Grid-row">
+                            <div className="ms-Grid-col ms-lg6">
+                                <h3 className="mb-0">Custom context:</h3>
+                            </div>
+                        </div>
+                        {this.incomingCall.customContext.userToUser &&
+                            <div className="ms-Grid-row">
+                                <div className="ms-Grid-col ms-lg6">
+                                    UUI: {this.incomingCall.customContext.userToUser}
+                                </div>
+                            </div>
+                        }
+                        {this.incomingCall.customContext.xHeaders && this.incomingCall.customContext.xHeaders
+                            .map(header => 
+                                <div className="ms-Grid-row">
+                                    <div className="ms-Grid-col ms-lg6">
+                                        {header.key}: {header.value}
+                                    </div>
+                                </div>)
+                        }
+                    </>
+                }
                 <div className="ms-Grid-row text-center">
                     <span className="incoming-call-button"
                         title={'Answer call with microphone unmuted and video off'}
