@@ -63,6 +63,7 @@ export default class CallCard extends React.Component {
             canRaiseHands: this.capabilities.raiseHand?.isPresent || this.capabilities.raiseHand?.reason === 'FeatureNotSupported',
             canSpotlight: this.capabilities.spotlightParticipant?.isPresent || this.capabilities.spotlightParticipant?.reason === 'FeatureNotSupported',
             canReact: this.capabilities.useReactions?.isPresent || this.capabilities.useReactions?.reason === 'FeatureNotSupported',
+            canManageLobby: this.capabilities.manageLobby?.isPresent || this.capabilities.manageLobby?.reason === 'FeatureNotSupported',
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
             micMuted: this.call.isMuted,
@@ -216,10 +217,12 @@ export default class CallCard extends React.Component {
                 if (this.call.state === 'LocalHold' || this.call.state === 'RemoteHold') {
                     this.setState({ canRaiseHands: false });
                     this.setState({ canSpotlight: false });
+                    this.setState({ canManageLobby: false });
                 }
                 if (this.call.state === 'Connected') {
                     this.setState({ canRaiseHands:  this.capabilities.raiseHand?.isPresent || this.capabilities.raiseHand?.reason === 'FeatureNotSupported' });
                     this.setState({ canSpotlight: this.capabilities.spotlightParticipant?.isPresent || this.capabilities.spotlightParticipant?.reason === 'FeatureNotSupported' });
+                    this.setState({ canManageLobby: this.capabilities.manageLobby?.isPresent || this.capabilities.manageLobby?.reason === 'FeatureNotSupported' });
                 }
             }
             callStateChanged();
@@ -589,6 +592,10 @@ export default class CallCard extends React.Component {
             }
             if(key === 'reaction' && value.reason != 'FeatureNotSupported') {
                 (value.isPresent) ? this.setState({ canReact: true }) : this.setState({ canReact: false });
+                continue;
+            }
+            if(key === 'manageLobby' && value.reason != 'FeatureNotSupported') {
+                (value.isPresent) ? this.setState({ canManageLobby: true }) : this.setState({ canManageLobby: false });
                 continue;
             }
         }
