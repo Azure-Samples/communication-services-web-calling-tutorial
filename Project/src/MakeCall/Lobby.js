@@ -1,24 +1,34 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { PrimaryButton } from 'office-ui-fabric-react';
+import { Features } from '@azure/communication-calling';
 
 // Lobby react function component
-const Lobby = ({ call }) => {
-    const [lobby, setLobby] = useState(call.lobby);
-    const [lobbyParticipantsCount, setLobbyParticipantsCount] = useState(lobby.participants.length);
+export default class Lobby extends React.Component {
+    constructor(props) {
+        super(props);
+        this.call = props.call;
+        this.lobby = this.call.lobby;
+        
+        this.capabilitiesFeature = this.call.feature(Features.Capabilities);
+        this.capabilities = this.capabilitiesFeature.capabilities;
+        this.state = {
+            canManageLobby: this.capabilities.manageLobby?.isPresent || this.capabilities.manageLobby?.reason === 'FeatureNotSupported',
+            lobbyParticipantsCount: this.lobby.participants.length
+        };
+    }
 
-    useEffect(() => {
-        return () => {
-            lobby?.off('lobbyParticipantsUpdated', lobbyParticipantsUpdatedHandler);
-        }
-    }, []);
+    componentWillUnmount() {
+        this.lobby?.off('lobbyParticipantsUpdated', () => { });
+    }
 
-    useEffect(() => {
-        lobby?.on('lobbyParticipantsUpdated', lobbyParticipantsUpdatedHandler);
-    }, [lobby]);
+    componentDidMount() {
+        this.lobby?.on('lobbyParticipantsUpdated', this.lobbyParticipantsUpdatedHandler);
+        this.capabilitiesFeature.on('capabilitiesChanged', this.capabilitiesChangedHandler);
+    }
 
-    const lobbyParticipantsUpdatedHandler = (event) => {
+    lobbyParticipantsUpdatedHandler = (event) => {
         console.log(`lobbyParticipantsUpdated, added=${event.added}, removed=${event.removed}`);
-        setLobbyParticipantsCount(lobby.participants.length);
+        this.state.lobbyParticipantsCount = this.lobby?.participants.length;
         if(event.added.length > 0) {
             event.added.forEach(participant => {
                 console.log('lobbyParticipantAdded', participant);
@@ -31,34 +41,52 @@ const Lobby = ({ call }) => {
         }
     };
 
-    const admitAllParticipants = async () => {
+    capabilitiesChangedHandler = (capabilitiesChangeInfo) => {
+        console.log('lobby:capabilitiesChanged');
+        for (const [key, value] of Object.entries(capabilitiesChangeInfo.newValue)) {
+            if(key === 'manageLobby' && value.reason != 'FeatureNotSupported') {
+                (value.isPresent) ? this.setState({ canManageLobby: true }) : this.setState({ canManageLobby: false });
+                const admitAllButton = document.getElementById('admitAllButton');
+                if(this.state.canManageLobby === true){
+                    admitAllButton.style.display = '';
+                } else {
+                    admitAllButton.style.display = 'none';
+                }
+                continue;
+            }
+        }
+    };
+
+    async admitAllParticipants() {
         console.log('admitAllParticipants');
         try {
-            await lobby.admitAll();
+            await this.lobby?.admitAll();
         } catch (e) {
             console.error(e);
         }
     }
 
-    return (
-        <div>
-            {
-                (lobbyParticipantsCount > 0) &&
-                <div className="ms-Grid-row">
-                    <div className="ml-2 inline-block">
-                        <div>In-Lobby participants number: {lobbyParticipantsCount}</div>
+    render() {
+        return (
+            <div>
+                {
+                    (this.state.lobbyParticipantsCount > 0) &&
+                    <div className="ms-Grid-row">
+                        <div className="ml-2 inline-block">
+                            <div>In-Lobby participants number: {this.state.lobbyParticipantsCount}</div>
+                        </div>
+                        <div className="ml-4 inline-block">
+                            <PrimaryButton className="primary-button"
+                                            id="admitAllButton"
+                                            style={{ display: this.state.canManageLobby ? '' : 'none' }}
+                                            iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                            text="Admit All Participants"
+                                            onClick={() => this.admitAllParticipants()}>
+                            </PrimaryButton>
+                        </div>
                     </div>
-                    <div className="ml-4 inline-block">
-                        <PrimaryButton className="primary-button"
-                                        iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                        text="Admit All Participants"
-                                        onClick={admitAllParticipants}>
-                        </PrimaryButton>
-                    </div>
-                </div>
-            }
-        </div>
-    );
-};
-
-export default Lobby;
+                }
+            </div>
+        );
+    }
+}

@@ -1173,10 +1173,12 @@ div.volumeVisualizer::before {
   margin-top: 2px;
 }
 
-.lobby-action a{
-  display: inline-block;
-  color: #75b6e7;
-  text-decoration: none;
+.red-link {
+  color: red;
+}
+
+.green-link {
+  color: green;
 }
 
 .participantMenu, .participantMenu:hover{
