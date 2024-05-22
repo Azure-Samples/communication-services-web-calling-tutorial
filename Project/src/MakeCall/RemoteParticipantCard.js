@@ -110,6 +110,10 @@ export default class RemoteParticipantCard extends React.Component {
         return menuItems.filter(item => item != 0)
     }
 
+    getSecondaryText() {
+        return `${this.state.state} | ${this.state.participantIds.toString()}`;
+    }
+
     async handleRemoteRaiseHand() {
         try {
             if (this.state.isHandRaised) {
@@ -157,7 +161,7 @@ export default class RemoteParticipantCard extends React.Component {
                                     this.state.displayName :
                                     this.state.participantIds.toString()
                                 }
-                                secondaryText={this.state.state}
+                                secondaryText={this.getSecondaryText()}
                                 styles={{ primaryText: {color: '#edebe9'}, secondaryText: {color: '#edebe9'} }}/>
                         </div>
                     </div>
