@@ -23,7 +23,7 @@ export default class RemoteParticipantCard extends React.Component {
 
         this.spotlightFeature = this.call.feature(Features.Spotlight);
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
-        this.capabilitiesFeature = this.call.feature(Features.Capabilities);
+        this.capabilitiesFeature = props.capabilitiesFeature;
         this.capabilities = this.capabilitiesFeature.capabilities;
         this.menuOptionsHandler= props.menuOptionsHandler;
         this.state = {

@@ -9,7 +9,7 @@ export default class Lobby extends React.Component {
         this.call = props.call;
         this.lobby = this.call.lobby;
         
-        this.capabilitiesFeature = this.call.feature(Features.Capabilities);
+        this.capabilitiesFeature = props.capabilitiesFeature;
         this.capabilities = this.capabilitiesFeature.capabilities;
         this.state = {
             canManageLobby: this.capabilities.manageLobby?.isPresent || this.capabilities.manageLobby?.reason === 'FeatureNotSupported',
