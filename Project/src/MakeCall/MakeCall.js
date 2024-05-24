@@ -162,21 +162,41 @@ export default class MakeCall extends React.Component {
                         this.setState({ call: call });
 
                         const diagnosticChangedListener = (diagnosticInfo) => {
-                            const rmsg = `UFD Diagnostic changed:
-                            Diagnostic: ${diagnosticInfo.diagnostic}
-                            Value: ${diagnosticInfo.value}
-                            Value type: ${diagnosticInfo.valueType}`;
-                            if (this.state.ufdMessages.length > 0) {
-                                this.setState({ ufdMessages: [...this.state.ufdMessages, rmsg] });
-                            } else {
-                                this.setState({ ufdMessages: [rmsg] });
-                            }
+                                const rmsg = `UFD Diagnostic changed:
+                                Diagnostic: ${diagnosticInfo.diagnostic}
+                                Value: ${diagnosticInfo.value}
+                                Value type: ${diagnosticInfo.valueType}`;
+                                if (this.state.ufdMessages.length > 0) {
+                                    // limit speakingWhileMicrophoneIsMuted diagnostic until another diagnostic is received
+                                    if (diagnosticInfo.diagnostic === 'speakingWhileMicrophoneIsMuted' && this.state.ufdMessages[0].includes('speakingWhileMicrophoneIsMuted')) {
+                                        console.info(rmsg);
+                                        return;
+                                    }
+                                    this.setState({ ufdMessages: [rmsg, ...this.state.ufdMessages] });
+                                } else {
+                                    this.setState({ ufdMessages: [rmsg] });
+                                }
+                        };
 
-
+                        const remoteDiagnosticChangedListener = (diagnosticArgs) => {
+                            diagnosticArgs.diagnostics.forEach(diagnosticInfo => {
+                                const rmsg = `UFD Diagnostic changed:
+                                Diagnostic: ${diagnosticInfo.diagnostic}
+                                Value: ${diagnosticInfo.value}
+                                Value type: ${diagnosticInfo.valueType}
+                                Participant Id: ${diagnosticInfo.participantId}
+                                Participant name: ${diagnosticInfo.remoteParticipant?.displayName}`;
+                                if (this.state.ufdMessages.length > 0) {
+                                    this.setState({ ufdMessages: [rmsg, ...this.state.ufdMessages] });
+                                } else {
+                                    this.setState({ ufdMessages: [rmsg] });
+                                }
+                            });
                         };
 
                         call.feature(Features.UserFacingDiagnostics).media.on('diagnosticChanged', diagnosticChangedListener);
                         call.feature(Features.UserFacingDiagnostics).network.on('diagnosticChanged', diagnosticChangedListener);
+                        call.feature(Features.UserFacingDiagnostics).remote?.on('diagnosticChanged', remoteDiagnosticChangedListener);
                     });
 
                     e.removed.forEach(call => {
