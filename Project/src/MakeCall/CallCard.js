@@ -1131,7 +1131,7 @@ export default class CallCard extends React.Component {
                                 }
                             </div>
                             <div>
-                                <Lobby call={this.call}/>
+                                <Lobby call={this.call} capabilitiesFeature={this.capabilitiesFeature}/>
                             </div>
                             {
                                 this.state.dominantSpeakerMode &&
@@ -1152,6 +1152,7 @@ export default class CallCard extends React.Component {
                                             call={this.call}
                                             menuOptionsHandler={this.getParticipantMenuCallBacks()}
                                             onSelectionChanged={(identifier, isChecked) => this.remoteParticipantSelectionChanged(identifier, isChecked)}
+                                            capabilitiesFeature={this.capabilitiesFeature}
                                             />
                                     )
                                 }
