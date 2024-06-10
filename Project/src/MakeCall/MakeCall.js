@@ -129,7 +129,7 @@ export default class MakeCall extends React.Component {
                 setLogLevel('verbose');
 
                 const proxyConfiguration = userDetails.proxy.useProxy ? { url: userDetails.proxy.url } : undefined;
-                const turnConfiguration = userDetails.customTurn.useCustomTurn && !userDetails.customTurn.isLoading ? userDetails.customTurn.turn : undefined;
+                const turnConfiguration = userDetails.customTurn.useCustomTurn ? userDetails.customTurn.turn : undefined;
                 this.callClient = new CallClient({
                     diagnostics: {
                         appName: 'azure-communication-services',

@@ -46,7 +46,6 @@ export default class Login extends React.Component {
             },
             customTurn: {
                 useCustomTurn: false,
-                isLoading: false,
                 turn: null
             },
             isTeamsUser: false,
@@ -295,32 +294,8 @@ export default class Login extends React.Component {
                 ...this.state,
                 customTurn: {
                     ...this.state.customTurn,
-                    useCustomTurn: true,
-                    isLoading: true
+                    useCustomTurn: true
                 }
-            });
-    
-            this.getOrCreateCustomTurnConfiguration().then(res => {
-                this.setState({
-                    ...this.state,
-                    customTurn: {
-                        ...this.state.customTurn,
-                        useCustomTurn: !!res ?? false,
-                        isLoading: false,
-                        turn: res
-                    }
-                });
-            }).catch(error => {
-                console.error(`Not able to fetch custom TURN: ${error}`);
-                this.setState({
-                    ...this.state,
-                    customTurn: {
-                        ...this.state.customTurn,
-                        useCustomTurn: false,
-                        isLoading: false,
-                        turn: null
-                    }
-                });
             });
         } else {
             this.setState({
@@ -328,7 +303,6 @@ export default class Login extends React.Component {
                 customTurn: {
                     ...this.state.customTurn,
                     useCustomTurn: false,
-                    isLoading: false,
                     turn: null
                 }
             });
@@ -336,14 +310,7 @@ export default class Login extends React.Component {
     }
 
     getOrCreateCustomTurnConfiguration = async () => {
-        if (!this.currentCustomTurnConfig || Date.now() > new Date(this.currentCustomTurnConfig.expiresOn).getTime()) {
-            // Credentials expired. Try to get new ones.
-            const response = await fetch(`${window.location.protocol}//${window.location.host}/customRelayConfig`);
-            const relayConfig = (await response.json()).relayConfig;
-            this.currentCustomTurnConfig = relayConfig;
-        }
-
-        const iceServers = this.currentCustomTurnConfig.iceServers.map(iceServer => {
+        const iceServers = this.state.customTurn.turn.iceServers.map(iceServer => {
             return {
                 urls: [...iceServer.urls],
                 username: iceServer.username,
@@ -358,8 +325,7 @@ export default class Login extends React.Component {
         this.setState({
             ...this.state,
             customTurn: {
-                ...this.state.customTurn,
-                isLoading: true
+                ...this.state.customTurn
             }
         });
 
@@ -368,7 +334,6 @@ export default class Login extends React.Component {
                 ...this.state,
                 customTurn: {
                     ...this.state.customTurn,
-                    isLoading: false,
                     turn: res
                 }
             });
@@ -379,7 +344,6 @@ export default class Login extends React.Component {
                 customTurn: {
                     ...this.state.customTurn,
                     useCustomTurn: false,
-                    isLoading: false,
                     turn: null
                 }
             });

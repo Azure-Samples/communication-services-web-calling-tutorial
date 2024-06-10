@@ -49,8 +49,8 @@ body {
     sans-serif !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #161514;
-  color: #edebe9 !important;
+  background-color: #0D1114;
+  color: #c5c5c5 !important;
   font-weight: 500;
 }
 
@@ -75,6 +75,7 @@ h3,
 h4,
 h5,
 h6 {
+  color: #ffffff;
   margin-top: 0;
   margin-bottom: .5rem;
   font-weight: unset;
@@ -259,17 +260,18 @@ ul {
 }
 
 .ms-TextField-fieldGroup {
-  height:23px;
-  border-bottom: 1px solid #605e5c !important;
   border: 0px;
   box-sizing: unset;
+  background-color: #0D1114;
 }
 
 .ms-TextField-field {
-  font-size: 14px;
-  background-color: #161514;
+  border: 1px solid #3b3b3b !important;
+  background-color: #0D1114;
   color: #edebe9;
-  height: 23px;
+  border-radius: 20px;
+  height: 35px;
+  padding-left: 1em;
 }
 
 .ms-TextField-field::placeholder {
@@ -277,12 +279,12 @@ ul {
 }
 
 .ms-TextField-field:hover {
-  background-color: #161514;
+  background-color: #0D1114;
   color: #edebe9;
 }
 
 .ms-TextField-wrapper>label {
-  color: #edebe9;
+  color: #c5c5c5;
   font-weight: 400;
   font-size: 12px;
 }
@@ -315,7 +317,7 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
   height: 40px;
   color: #edebe9;
   background-color: #201f1e;
-  border: 1px solid #adadad;
+  border: 1px solid #3b3b3b;
   outline: none;
   margin-right: 1em;
   margin-bottom: 1em;
@@ -342,7 +344,7 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
   height: 40px;
   color: #edebe9;
   background-color: #201f1e;
-  border: 1px solid #adadad;
+  border: 1px solid #3b3b3b;
   outline: none;
   margin-right: 1em;
   margin-bottom: 1em;

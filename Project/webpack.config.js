@@ -4,7 +4,6 @@ const config = require("./serverConfig.json");
 const clientConfig = require("./clientConfig.json");
 const axios = require("axios");
 const bodyParser = require('body-parser');
-const CommunicationRelayClient = require('@azure/communication-network-traversal').CommunicationRelayClient;
 const msal = require('@azure/msal-node');
 
 const {authConfig, authScopes} = require('./oAuthConfig');
@@ -194,23 +193,6 @@ module.exports = {
                     });
                 } catch (e) {
                     console.log('Error setting registration token', e);
-                    res.sendStatus(500);
-                }
-            });
-            devServer.app.get('/customRelayConfig', async (req, res) => {
-                console.log('Requesting custom TURN server configuration');
-                try {
-                    const relayClient = new CommunicationRelayClient(config.connectionString);
-                    const relayConfig = await relayClient.getRelayConfiguration();
-                    if (relayConfig) {
-                        res.status(200).json({
-                            relayConfig
-                        });
-                    } else {
-                        throw 'No relay config returned from service';
-                    }
-                } catch (e) {
-                    console.log(`Error creating custom TURN configuration: ${e}`);
                     res.sendStatus(500);
                 }
             });
