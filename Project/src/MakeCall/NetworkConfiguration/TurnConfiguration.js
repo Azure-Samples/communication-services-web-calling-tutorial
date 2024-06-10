@@ -27,7 +27,6 @@ export const TurnConfiguration = (props) => {
             Turn configuration
             <Checkbox 
                 className='mt-2'
-                disabled={props.customTurn.isLoading}
                 label='Use custom TURN'
                 checked={props.customTurn.useCustomTurn}
                 onChange={props.handleCustomTurnChecked}

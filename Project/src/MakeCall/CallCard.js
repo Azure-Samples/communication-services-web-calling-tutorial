@@ -41,6 +41,8 @@ export default class CallCard extends React.Component {
         this.capabilitiesFeature = this.call.feature(Features.Capabilities);
         this.capabilities = this.capabilitiesFeature.capabilities;
         this.dominantSpeakersFeature = this.call.feature(Features.DominantSpeakers);
+        this.recordingFeature = this.call.feature(Features.Recording);
+        this.transcriptionFeature = this.call.feature(Features.Transcription);
         if (Features.Reaction) {
             this.meetingReaction = this.call.feature(Features.Reaction);
         }
@@ -95,7 +97,9 @@ export default class CallCard extends React.Component {
             showDataChannel: false,
             showAddParticipantPanel: false,
             reactionRows:[],
-            pptLiveActive: false
+            pptLiveActive: false,
+            isRecordingActive: false,
+            isTranscriptionActive: false
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
@@ -122,6 +126,8 @@ export default class CallCard extends React.Component {
         this.call.feature(Features.Spotlight).off('spotlightChanged', this.spotlightStateChangedHandler);
         this.call.feature(Features.RaiseHand).off('raisedHandEvent', this.raiseHandChangedHandler);
         this.call.feature(Features.RaiseHand).off('loweredHandEvent', this.raiseHandChangedHandler);
+        this.recordingFeature.off('isRecordingActiveChanged', this.isRecordingActiveChangedHandler);
+        this.transcriptionFeature.off('isTranscriptionActiveChanged', this.isTranscriptionActiveChangedHandler);
         if (Features.Reaction) {
             this.call.feature(Features.Reaction).off('reaction', this.reactionChangeHandler);
         }
@@ -442,6 +448,8 @@ export default class CallCard extends React.Component {
             this.dominantSpeakersFeature.on('dominantSeapkersChanged', this.dominantSpeakersChanged);
             this.meetingReaction?.on('reaction', this.reactionChangeHandler);
             this.pptLiveFeature?.on('isActiveChanged', this.pptLiveChangedHandler);
+            this.recordingFeature.on('isRecordingActiveChanged', this.isRecordingActiveChangedHandler);
+            this.transcriptionFeature.on('isTranscriptionActiveChanged', this.isTranscriptionActiveChangedHandler);
         }
     }
 
@@ -501,6 +509,14 @@ export default class CallCard extends React.Component {
     spotlightStateChangedHandler = (event) => {
         this.setState({isSpotlighted: utils.isParticipantSpotlighted(
             this.identifier, this.spotlightFeature.getSpotlightedParticipants())})
+    }
+
+    isRecordingActiveChangedHandler = (event) => {
+        this.setState({ isRecordingActive: this.recordingFeature.isRecordingActive })
+    }
+
+    isTranscriptionActiveChangedHandler = (event) => {
+        this.setState({ isTranscriptionActive: this.transcriptionFeature.isTranscriptionActive })
     }
 
     raiseHandChangedHandler = (event) => {
@@ -1101,7 +1117,7 @@ export default class CallCard extends React.Component {
                         </MessageBar>
                     }
                 </div>
-                <div className="ms-Grid-row">
+                <div className="ms-Grid-row mb-3">
                     <div className="ms-Grid-col ms-lg6">
                         <div>
                             {
@@ -1109,6 +1125,11 @@ export default class CallCard extends React.Component {
                                 <div className="inline-block ringing-loader mr-2"></div>
                             }
                             <h2 className="inline-block">{this.state.callState !== 'Connected' ? `${this.state.callState}...` : `Connected`}</h2>
+                            {
+                                this.state.isRecordingActive && this.state.isTranscriptionActive ? <div>Recording and transcription are active</div> :
+                                this.state.isRecordingActive ? <div>Recording is active</div> :
+                                this.state.isTranscriptionActive ? <div>Transcription is active</div> : null
+                            }
                         </div>
                     </div>
                     {
@@ -1160,7 +1181,6 @@ export default class CallCard extends React.Component {
                             
                         </div>
                     }
-                    
                     <div className={this.state.isShowParticipants ? "ms-Grid-col ms-lg8" : undefined}>
                         <div className="video-grid-row">
                             {
