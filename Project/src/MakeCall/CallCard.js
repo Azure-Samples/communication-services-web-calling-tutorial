@@ -264,7 +264,6 @@ export default class CallCard extends React.Component {
 
             this.call.on('mutedByOthers', () => {
                 const messageBarText = 'You have been muted by someone else. Unmute to speak.';
-                console.log(messageBarText);
                 this.setState(prevState => ({
                     ...prevState,
                     callMessage: `${prevState.callMessage ? prevState.callMessage + `\n` : ``} ${messageBarText}.`
