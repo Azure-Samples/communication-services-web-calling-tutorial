@@ -5,7 +5,8 @@ import {
     PrimaryButton,
     TextField,
     MessageBar,
-    MessageBarType
+    MessageBarType,
+    Toggle
 } from 'office-ui-fabric-react'
 import { Icon } from '@fluentui/react/lib/Icon';
 import IncomingCallCard from './IncomingCallCard';
@@ -272,6 +273,10 @@ export default class MakeCall extends React.Component {
 
             if (this.callAgent.kind === CallAgentKind.CallAgent && this.alternateCallerId.value !== '') {
                 callOptions.alternateCallerId = { phoneNumber: this.alternateCallerId.value.trim() };
+            }
+
+            if (this.callAgent.kind === CallAgentKind.CallAgent && this.hideCallerId.state?.checked === true) {
+                callOptions.privacyOptions = { hideCallerId: true };
             }
 
             if (identitiesToCall.length > 1) {
@@ -989,11 +994,22 @@ this.callAgent.on('incomingCall', async (args) => {
                                                     label="Destination Phone Identity or Phone Identities"
                                                     placeholder="4:+18881231234"
                                                     componentRef={(val) => this.destinationPhoneIds = val} />
-                                                <TextField
-                                                    disabled={this.state.call || !this.state.loggedIn}
-                                                    label="If calling a Phone Identity, your Alternate Caller Id must be specified."
-                                                    placeholder="4:+18881231234"
-                                                    componentRef={(val) => this.alternateCallerId = val} />
+                                                <div className="ms-Grid-row phonenumber-id-container">
+                                                    <div className="ms-sm9 ms-md9 ms-lg8 phonenumber-id-element">
+                                                        <TextField
+                                                            disabled={this.state.call || !this.state.loggedIn}
+                                                            label="If calling a Phone Identity, your Alternate Caller Id must be specified."
+                                                            placeholder="4:+18881231234"
+                                                            componentRef={(val) => this.alternateCallerId = val} />
+                                                    </div>
+                                                    <div className="ms-sm1 ms-md1 ms-lg1 phonenumber-id-element"/>
+                                                    <div className="ms-sm2 ms-md2 ms-lg3 phonenumber-id-element">
+                                                        <Toggle
+                                                            disabled={this.state.call || !this.state.loggedIn}
+                                                            label="Hide caller id"
+                                                            componentRef={(val) => this.hideCallerId = val} />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <PrimaryButton

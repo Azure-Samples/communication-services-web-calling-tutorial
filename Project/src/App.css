@@ -289,11 +289,18 @@ ul {
   font-size: 12px;
 }
 
+.ms-Toggle>label {
+  color: #c5c5c5;
+  font-weight: 400;
+  font-size: 12px;
+}
+
 div.push-notification-options[disabled],
 div.ms-Checkbox.is-disabled>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-text,
 .ms-TextField-field:disabled,
 .ms-TextField-field::placeholder,
 .ms-TextField.is-disabled>.ms-TextField-wrapper>label,
+.ms-Toggle.is-disabled>label,
 div.ms-Checkbox.is-disabled>input[type="checkbox"]+label.ms-Checkbox-label>div.ms-Checkbox-checkbox>i.ms-Checkbox-checkmark {
   color: #484644 !important;
 }
@@ -455,6 +462,16 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 .remote-video-container {
   position: relative;
   height: 100%;
+}
+
+.phonenumber-id-element {
+  display: table-cell;
+  margin: auto;
+}
+
+.phonenumber-id-container {
+  display: table;
+  margin: 0;
 }
 
 .remote-video-container video {
