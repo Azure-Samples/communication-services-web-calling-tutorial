@@ -40,6 +40,11 @@ export default class AudioEffectsContainer extends React.Component {
                 stopLoading: false,
                 noiseSuppressionList: [],
                 currentSelected: undefined
+            },
+            activeEffects: {
+                autoGainControl: [],
+                echoCancellation: [],
+                noiseSuppression: []
             }
         };
 
@@ -92,11 +97,23 @@ export default class AudioEffectsContainer extends React.Component {
         });
 
         this.localAudioStreamFeatureApi.on('effectsStarted', (effect) => {
+            this.updateActiveEffects();
             console.log(`Audio effects started: ${JSON.stringify(effect?.name ?? effect)}`);
         });
 
         this.localAudioStreamFeatureApi.on('effectsStopped', (effect) => {
+            this.updateActiveEffects();
             console.log(`Audio effects stopped: ${JSON.stringify(effect?.name ?? effect)}`);
+        });
+    }
+
+    updateActiveEffects() {
+        this.setState({
+            activeEffects: {
+                autoGainControl: this.localAudioStreamFeatureApi?.activeEffects?.autoGainControl,
+                echoCancellation: this.localAudioStreamFeatureApi?.activeEffects?.echoCancellation,
+                noiseSuppression: this.localAudioStreamFeatureApi?.activeEffects?.noiseSuppression
+            }
         });
     }
 
@@ -164,6 +181,11 @@ export default class AudioEffectsContainer extends React.Component {
                 noiseSuppression: {
                     ...this.state.noiseSuppression,
                     noiseSuppressionList
+                },
+                activeEffects: {
+                    autoGainControl: this.localAudioStreamFeatureApi?.activeEffects?.autoGainControl,
+                    echoCancellation: this.localAudioStreamFeatureApi?.activeEffects?.echoCancellation,
+                    noiseSuppression: this.localAudioStreamFeatureApi?.activeEffects?.noiseSuppression
                 }
             });
         }
@@ -366,19 +388,19 @@ export default class AudioEffectsContainer extends React.Component {
                             </div>
                         </div>
                         <div className='ms-Grid-row' style={{ marginBottom: '1rem' }}>
-                            {this.localAudioStreamFeatureApi?.activeEffects?.autoGainControl?.length > 0 &&
+                            {this.state.activeEffects.autoGainControl?.length > 0 &&
                             <div className='ms-Grid-col ms-sm4 ms-md4 ms-lg4'>
-                                {this.localAudioStreamFeatureApi.activeEffects.autoGainControl[0]}
+                                {this.state.activeEffects.autoGainControl[0]}
                             </div>
                             }
-                            {this.localAudioStreamFeatureApi?.activeEffects?.echoCancellation?.length > 0 &&
+                            {this.state.activeEffects.echoCancellation?.length > 0 &&
                             <div className='ms-Grid-col ms-sm4 ms-md4 ms-lg4'>
                                 {this.localAudioStreamFeatureApi.activeEffects.echoCancellation[0]}
                             </div>
                             }
-                            {this.localAudioStreamFeatureApi?.activeEffects?.noiseSuppression?.length > 0 &&
+                            {this.state.activeEffects.noiseSuppression?.length > 0 &&
                             <div className='ms-Grid-col ms-sm4 ms-md4 ms-lg4'>
-                                {this.localAudioStreamFeatureApi.activeEffects.noiseSuppression[0]}
+                                {this.state.activeEffects.noiseSuppression[0]}
                             </div>
                             }
                         </div>
