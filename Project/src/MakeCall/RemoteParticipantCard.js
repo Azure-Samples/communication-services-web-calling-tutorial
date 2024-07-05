@@ -35,6 +35,7 @@ export default class RemoteParticipantCard extends React.Component {
             isHandRaised: utils.isParticipantHandRaised(this.remoteParticipant.identifier, this.raiseHandFeature.getRaisedHands()),
             isSpotlighted: utils.isParticipantHandRaised(this.remoteParticipant.identifier, this.spotlightFeature.getSpotlightedParticipants()),
             canManageLobby: this.capabilities.manageLobby?.isPresent || this.capabilities.manageLobby?.reason === 'FeatureNotSupported',
+            canMuteOthers: this.capabilities.muteOthers?.isPresent || this.capabilities.muteOthers?.reason === 'FeatureNotSupported',
         };
     }
 
@@ -108,7 +109,11 @@ export default class RemoteParticipantCard extends React.Component {
 
     handleMuteParticipant(e, remoteParticipant) {
         e.preventDefault();
-        remoteParticipant.mute?.().catch((e) => console.error('Failed to mute specific participant.', e))
+        if (this.state.canMuteOthers) {
+            remoteParticipant.mute?.().catch((e) => console.error('Failed to mute specific participant.', e.message, e));
+        } else {
+            console.error('Soft mute of remote participants is not a supported capability for this participant.');
+        }
     }
 
     handleCheckboxChange(e) {
