@@ -64,6 +64,7 @@ export default class CallCard extends React.Component {
             canShareScreen: this.capabilities.shareScreen?.isPresent || this.capabilities.shareScreen?.reason === 'FeatureNotSupported',
             canRaiseHands: this.capabilities.raiseHand?.isPresent || this.capabilities.raiseHand?.reason === 'FeatureNotSupported',
             canSpotlight: this.capabilities.spotlightParticipant?.isPresent || this.capabilities.spotlightParticipant?.reason === 'FeatureNotSupported',
+            canMuteOthers: this.capabilities.muteOthers?.isPresent || this.capabilities.muteOthers?.reason === 'FeatureNotSupported',
             canReact: this.capabilities.useReactions?.isPresent || this.capabilities.useReactions?.reason === 'FeatureNotSupported',
             videoOn: this.call.isLocalVideoStarted,
             screenSharingOn: this.call.isScreenSharingOn,
@@ -610,6 +611,10 @@ export default class CallCard extends React.Component {
             }
             if(key === 'raiseHand' && value.reason != 'FeatureNotSupported') {
                 (value.isPresent) ? this.setState({ canRaiseHands: true }) : this.setState({ canRaiseHands: false });
+                continue;
+            }
+            if(key === 'muteOthers' && value.reason != 'FeatureNotSupported') {
+                (value.isPresent) ? this.setState({ canMuteOthers: true }) : this.setState({ canMuteOthers: false });
                 continue;
             }
             if(key === 'reaction' && value.reason != 'FeatureNotSupported') {
@@ -1319,12 +1324,15 @@ export default class CallCard extends React.Component {
                                 <Icon iconName="Volume2" />
                             }
                         </span>
-                        <span className="in-call-button"
-                            title={`Mute all other participants`}
-                            variant="secondary"
-                            onClick={() => this.handleMuteAllRemoteParticipants()}>
-                            <Icon iconName="VolumeDisabled" />
-                        </span>
+                        {
+                            this.state.canMuteOthers &&
+                            <span className="in-call-button"
+                                title={`Mute all other participants`}
+                                variant="secondary"
+                                onClick={() => this.handleMuteAllRemoteParticipants()}>
+                                <Icon iconName="VolumeDisabled" />
+                            </span>
+                        }
                         <span className="in-call-button"
                             title={`${this.state.screenSharingOn && this.localScreenSharingStream?.mediaStreamType === 'RawMedia' ? 'Stop' : 'Start'} screen sharing a dummy stream`}
                             variant="secondary"
