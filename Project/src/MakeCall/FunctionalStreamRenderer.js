@@ -23,6 +23,7 @@ export const FunctionalStreamRenderer = forwardRef(({
     const [isMuted, setIsMuted] = useState(!!remoteParticipant?.isMuted);
     const [displayName, setDisplayName] = useState(remoteParticipant?.displayName?.trim() ?? '');
     const [videoStats, setVideoStats] = useState();
+    const [transportStats, setTransportStats] = useState();
 
     useEffect(() => {
         initializeComponent();
@@ -125,10 +126,11 @@ export const FunctionalStreamRenderer = forwardRef(({
     }
 
     useImperativeHandle(ref, () => ({
-        updateReceiveStats(videoStatsReceived) {
+        updateReceiveStats(videoStatsReceived, transportStatsReceived) {
             if (videoStatsReceived) {
                 if (videoStatsReceived !== videoStats && stream.isAvailable) {
                     setVideoStats(videoStatsReceived);
+                    setTransportStats(transportStatsReceived);
                 }
             }
         },
@@ -166,7 +168,7 @@ export const FunctionalStreamRenderer = forwardRef(({
                 {
                     videoStats && showMediaStats &&
                     <h4 className="video-stats">
-                        <VideoReceiveStats videoStats={videoStats} />
+                        <VideoReceiveStats videoStats={videoStats} transportStats={transportStats} />
                     </h4>
                 }
             </div>

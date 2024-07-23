@@ -26,7 +26,7 @@ export default class VideoReceiveStats extends React.Component {
                     </tr>
                     <tr>
                         <td>rtt:</td>
-                        <td>{this.props.videoStats.pairRttInMs} ms</td>
+                        <td>{this.props.transportStats?.rttInMs ?? ''} ms</td>
                     </tr>
                     <tr>
                         <td>packetsPerSecond:</td>

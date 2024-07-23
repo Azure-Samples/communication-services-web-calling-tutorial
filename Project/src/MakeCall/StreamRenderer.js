@@ -21,7 +21,8 @@ export default class StreamRenderer extends React.Component {
         this.state = {
             isSpeaking: false,
             displayName: this.remoteParticipant.displayName?.trim(),
-            videoStats: undefined
+            videoStats: undefined,
+            transportStats: undefined
         };
         this.call = props.call;
     }
@@ -122,9 +123,9 @@ export default class StreamRenderer extends React.Component {
         return this.renderer;
     }
 
-    updateReceiveStats(videoStats) {
+    updateReceiveStats(videoStats, transportStats) {
         if (this.state.videoStats !== videoStats) {
-            this.setState({ videoStats });
+            this.setState({ videoStats, transportStats });
         }
     }
 
@@ -172,7 +173,7 @@ export default class StreamRenderer extends React.Component {
                     {
                         this.state.videoStats &&
                         <h4 className="video-stats">
-                            <VideoReceiveStats videoStats={this.state.videoStats} />
+                            <VideoReceiveStats videoStats={this.state.videoStats} transportStats={this.state.transportStats} />
                         </h4>
                     }
                 </div>

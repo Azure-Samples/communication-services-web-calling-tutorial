@@ -368,7 +368,10 @@ export default class CallCard extends React.Component {
                 }
                 this.state.allRemoteParticipantStreams.forEach(v => {
                     let renderer = v.streamRendererComponentRef.current;
-                    renderer?.updateReceiveStats(stats[v.stream.id]);
+                    const videoStats = stats[v.stream.id];
+                    const transportId = videoStats?.transportId;
+                    const transportStats = transportId && data?.transports?.length ? data.transports.find(item => item.id === transportId) : undefined;
+                    renderer?.updateReceiveStats(videoStats, transportStats);
                 });
                 if (this.state.logMediaStats) {
                     if (data.video.send.length > 0) {
