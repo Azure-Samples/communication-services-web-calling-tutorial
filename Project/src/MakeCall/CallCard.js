@@ -143,8 +143,8 @@ export default class CallCard extends React.Component {
             this.deviceManager.on('videoDevicesUpdated', async e => {
                 e.added.forEach(addedCameraDevice => {
                     const addedCameraDeviceOption = { key: addedCameraDevice.id, text: addedCameraDevice.name };
-                     // If there were no cameras in the system and then a camera is plugged in / enabled, select it for use.
-                     if (this.state.cameraDeviceOptions.length === 0 && !this.state.selectedCameraDeviceId) {
+                    // If there were no cameras in the system and then a camera is plugged in / enabled, select it for use.
+                    if (this.state.cameraDeviceOptions.length === 0 && !this.state.selectedCameraDeviceId) {
                         this.setState({ selectedCameraDeviceId: addedCameraDevice.id });
                     }
                     this.setState(prevState => ({
