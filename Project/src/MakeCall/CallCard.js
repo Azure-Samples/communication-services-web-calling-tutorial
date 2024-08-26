@@ -146,12 +146,18 @@ export default class CallCard extends React.Component {
                     this.setState(prevState => ({
                         ...prevState,
                         cameraDeviceOptions: [...prevState.cameraDeviceOptions, addedCameraDeviceOption]
-                    }));
+                    }), () => {
+                        // If there are no cameras in the system and then a camera is plugged in / enabled, select it for use.
+                        if (!this.state.selectedCameraDeviceId) {
+                            this.setState({ selectedCameraDeviceId: addedCameraDevice.id });
+                        }
+                    });
                 });
 
                 e.removed.forEach(async removedCameraDevice => {
                     // If the selected camera is removed, select a new camera.
-                    // Note: When the selected camera is removed, the calling sdk automatically turns video off.
+                    // When the selected camera is removed, the calling sdk automatically turns video off.
+                    // User need to manually turn video on again
                     this.setState(prevState => ({
                         ...prevState,
                         cameraDeviceOptions: prevState.cameraDeviceOptions.filter(option => { return option.key !== removedCameraDevice.id })
@@ -210,11 +216,6 @@ export default class CallCard extends React.Component {
                     if (this.callFinishConnectingResolve) {
                         this.callFinishConnectingResolve();
                     }
-                }
-                if (this.call.state === 'Incoming') {
-                    this.setState({ selectedCameraDeviceId: cameraDevices[0]?.id });
-                    this.setState({ selectedSpeakerDeviceId: speakerDevices[0]?.id });
-                    this.setState({ selectedMicrophoneDeviceId: microphoneDevices[0]?.id });
                 }
 
                 if (this.call.state !== 'Disconnected') {
