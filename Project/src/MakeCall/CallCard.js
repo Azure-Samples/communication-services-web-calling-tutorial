@@ -43,6 +43,7 @@ export default class CallCard extends React.Component {
         this.dominantSpeakersFeature = this.call.feature(Features.DominantSpeakers);
         this.recordingFeature = this.call.feature(Features.Recording);
         this.transcriptionFeature = this.call.feature(Features.Transcription);
+        this.lobby = this.call.lobby;
         if (Features.Reaction) {
             this.meetingReaction = this.call.feature(Features.Reaction);
         }
@@ -100,7 +101,8 @@ export default class CallCard extends React.Component {
             reactionRows:[],
             pptLiveActive: false,
             isRecordingActive: false,
-            isTranscriptionActive: false
+            isTranscriptionActive: false,
+            lobbyParticipantsCount: this.lobby?.participants.length
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
@@ -129,6 +131,7 @@ export default class CallCard extends React.Component {
         this.call.feature(Features.RaiseHand).off('loweredHandEvent', this.raiseHandChangedHandler);
         this.recordingFeature.off('isRecordingActiveChanged', this.isRecordingActiveChangedHandler);
         this.transcriptionFeature.off('isTranscriptionActiveChanged', this.isTranscriptionActiveChangedHandler);
+        this.call.lobby?.off('lobbyParticipantsUpdated', () => { });
         if (Features.Reaction) {
             this.call.feature(Features.Reaction).off('reaction', this.reactionChangeHandler);
         }
@@ -463,6 +466,7 @@ export default class CallCard extends React.Component {
             this.pptLiveFeature?.on('isActiveChanged', this.pptLiveChangedHandler);
             this.recordingFeature.on('isRecordingActiveChanged', this.isRecordingActiveChangedHandler);
             this.transcriptionFeature.on('isTranscriptionActiveChanged', this.isTranscriptionActiveChangedHandler);
+            this.lobby?.on('lobbyParticipantsUpdated', this.lobbyParticipantsUpdatedHandler);
         }
     }
 
@@ -531,6 +535,21 @@ export default class CallCard extends React.Component {
     isTranscriptionActiveChangedHandler = (event) => {
         this.setState({ isTranscriptionActive: this.transcriptionFeature.isTranscriptionActive })
     }
+
+    lobbyParticipantsUpdatedHandler = (event) => {
+        console.log(`lobbyParticipantsUpdated, added=${event.added}, removed=${event.removed}`);
+        this.state.lobbyParticipantsCount = this.lobby?.participants.length;
+        if(event.added.length > 0) {
+            event.added.forEach(participant => {
+                console.log('lobbyParticipantAdded', participant);
+            });
+        }
+        if(event.removed.length > 0) {
+            event.removed.forEach(participant => {
+                console.log('lobbyParticipantRemoved', participant);
+            });
+        }
+    };
 
     raiseHandChangedHandler = (event) => {
         this.setState({isHandRaised: utils.isParticipantHandRaised(this.identifier, this.raiseHandFeature.getRaisedHands())})
@@ -1169,7 +1188,10 @@ export default class CallCard extends React.Component {
                                 }
                             </div>
                             <div>
-                                <Lobby call={this.call} capabilitiesFeature={this.capabilitiesFeature}/>
+                                {
+                                    (this.state.lobbyParticipantsCount > 0) &&
+                                    <Lobby call={this.call} capabilitiesFeature={this.capabilitiesFeature} lobbyParticipantsCount={this.state.lobbyParticipantsCount} />
+                                }
                             </div>
                             {
                                 this.state.dominantSpeakerMode &&
