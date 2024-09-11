@@ -125,6 +125,9 @@ input:disabled {
   height: 30px;
   animation: spin 1.5s linear infinite;
 }
+.graybutton {
+  disabled: true;
+}
 
 @keyframes spin {
   0% {
@@ -377,6 +380,12 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 .incoming-call-button,
 .incoming-call-label {
   display: inline;
+}
+
+.in-call-button.disabled {
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  color: gray
 }
 
 .in-call-button:hover,
