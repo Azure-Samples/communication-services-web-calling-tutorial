@@ -396,6 +396,7 @@ export default class CallCard extends React.Component {
 
             const dominantSpeakersChangedHandler = async () => {
                 try {
+                    this.dominantSpeakersChanged();
                     if (this.state.dominantSpeakerMode) {
 
                         const newDominantSpeakerIdentifier = this.call.feature(Features.DominantSpeakers).dominantSpeakers.speakersList[0];
@@ -819,13 +820,6 @@ export default class CallCard extends React.Component {
     }
 
     async handleDominantSpeakersListActive() {
-        if (this.state.dominantSpeakersListActive) {
-            this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged)
-        } else {
-            this.dominantSpeakersFeature.on('dominantSpeakersChanged', this.dominantSpeakersChanged)
-            this.dominantSpeakersChanged();
-        }
-
         this.setState(prevState => ({
             ...prevState,
             dominantSpeakersListActive: !prevState.dominantSpeakersListActive
@@ -1676,7 +1670,7 @@ export default class CallCard extends React.Component {
                         <div className="dominant-speakers-list">
                            {
                                 this.state.dominantSpeakers.map((dominantSpeaker, index) =>
-                                    <div>
+                                    <div key={index}>
                                         <div>
                                             Index {index}
                                         </div>
