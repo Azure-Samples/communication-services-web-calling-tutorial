@@ -10,7 +10,8 @@ export default class MediaConstraint extends React.Component {
             { key: 240, text: '240' },
             { key: 360, text: '360' },
             { key: 540, text: '540' },
-            { key: 720, text: '720' }
+            { key: 720, text: '720' },
+            { key: 1080, text: '1080' },
         ];
         this.videoSendBitRateConstraint = [
             { key: 0, text: 'None' },
