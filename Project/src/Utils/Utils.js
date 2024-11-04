@@ -2,29 +2,100 @@ import {
     isCommunicationUserIdentifier,
     isPhoneNumberIdentifier,
     isMicrosoftTeamsUserIdentifier,
-    isUnknownIdentifier
+    isUnknownIdentifier,
+    createIdentifierFromRawId
 } from '@azure/communication-common';
+import { PublicClientApplication } from "@azure/msal-browser";
+import { authConfig, authScopes } from "../../oAuthConfig"
+import axios from 'axios';
 
 export const utils = {
     getAppServiceUrl: () => {
         return window.location.origin;
     },
-    provisionNewUser: async (user) => {
-        const url = user && user.userId ? `/tokens/provisionUser?userId=${user.userId}` : '/tokens/provisionUser';
-        let response = await fetch(url, {
+    getCommunicationUserToken: async (communicationUserId, isJoinOnlyToken) => {
+        let data = {};
+        if (communicationUserId) {
+            data.communicationUserId = communicationUserId;
+        }
+        if (isJoinOnlyToken) {
+            data.isJoinOnlyToken = isJoinOnlyToken;
+        }
+        let response = await axios({
+            url: 'getCommunicationUserToken',
             method: 'POST',
-            body: { userId: user },
             headers: {
-                'Accept': 'application/json, text/plain, */*',
                 'Content-Type': 'application/json'
             },
-        });
-
-        if (response.ok) {
-            return response.json();
+            data: JSON.stringify(data)
+        })
+        if (response.status === 200) {
+            return response.data;
         }
-
-        throw new Error('Invalid token response');
+        throw new Error('Failed to get ACS User Access token');
+    },
+    getCommunicationUserTokenForOneSignalRegistrationToken: async (oneSignalRegistrationToken) => {
+        let response = await axios({
+            url: 'getCommunicationUserTokenForOneSignalRegistrationToken',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify({oneSignalRegistrationToken})
+        });
+        if (response.status === 200) {
+            return response.data;
+        }
+        throw new Error('Failed to get ACS User Acccess token for the given OneSignal Registration Token');
+    },
+    getOneSignalRegistrationTokenForCommunicationUserToken: async (token, communicationUserId) => {
+        let response = await axios({
+            url: 'getOneSignalRegistrationTokenForCommunicationUserToken',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify({token, communicationUserId})
+        });
+        if (response.status === 200) {
+            return response.data;
+        }
+        throw new Error('Failed to get ACS User Acccess token for the given OneSignal Registration Token');
+    },
+    teamsPopupLogin: async () => {
+        const oAuthObj = new PublicClientApplication(authConfig);
+        const popupLoginRespoonse = await oAuthObj.loginPopup({scopes: authScopes.popUpLogin});
+        const response = await axios({
+            url: 'teamsPopupLogin',
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json, text/plain, */*',
+                'Content-type': 'application/json'
+            },
+            data: JSON.stringify({
+                aadToken: popupLoginRespoonse.accessToken,
+                userObjectId: popupLoginRespoonse.uniqueId
+            })
+        });
+        if (response.status === 200) {
+            return response.data;
+        }
+        throw new Error('Failed to get Teams User Acccess token');
+    },
+    teamsM365Login: async (email, password) => {
+        const response = await axios({
+            url: 'teamsM365Login',
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json, text/plain, */*',
+                'Content-type': 'application/json'
+            },
+            data: JSON.stringify({email, password })
+        })
+        if (response.status === 200) {
+            return response.data;
+        }
+        throw new Error('Failed to get Teams User Acccess token');
     },
     getIdentifierText: (identifier) => {
         if (isCommunicationUserIdentifier(identifier)) {
@@ -65,5 +136,22 @@ export const utils = {
                 });
             }
         }
+    },
+    isParticipantSpotlighted(participantId, spotlightState) {
+        if (!participantId || !spotlightState) { return false }
+        let rtn = spotlightState.find(element => this.getIdentifierText(element.identifier) === this.getIdentifierText(participantId));
+        return !!rtn
+        
+    },
+    isParticipantHandRaised(participantId, raisedHandState) {
+        if (!participantId || !raisedHandState) { return false }
+        let rtn = raisedHandState.find(element => this.getIdentifierText(element.identifier) === this.getIdentifierText(participantId));
+        return !!rtn
+    },
+    getParticipantPublishStates(participantId, publishedStates) {
+        let states = {isSpotlighted: false, isHandRaised: false}
+        states.isSpotlighted = this.isParticipantSpotlighted(participantId, publishedStates.spotlight)
+        states.isHandRaised = this.isParticipantHandRaised(participantId, publishedStates.raiseHand)
+        return states
     }
 }
