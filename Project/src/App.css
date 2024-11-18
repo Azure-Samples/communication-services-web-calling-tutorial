@@ -392,7 +392,8 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
   display: grid;
   gap: 1px;
   padding-bottom: 25px;
-  grid-template-columns: repeat(auto-fit, minmax(min(99%/1, 100%/4), 1fr));
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-flow: column;
 }
 @media screen and (max-width: 1024px){
   .video-grid-row {
