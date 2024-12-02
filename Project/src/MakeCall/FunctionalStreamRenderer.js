@@ -10,14 +10,15 @@ export const FunctionalStreamRenderer = forwardRef(({
     dominantRemoteParticipant,
     dominantSpeakerMode,
     call,
+    streamCount,
     showMediaStats
 }, ref) => {
     const componentId = `${utils.getIdentifierText(remoteParticipant.identifier)}-${stream.mediaStreamType}-${stream.id}`;
     const videoContainerId = componentId + '-videoContainer';
     const componentContainer = useRef(null);
     const videoContainer = useRef(null);
-    let renderer;
-    let view;
+    const renderer = useRef(null);
+    const view = useRef(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(!!remoteParticipant?.isSpeaking);
     const [isMuted, setIsMuted] = useState(!!remoteParticipant?.isMuted);
@@ -32,21 +33,21 @@ export const FunctionalStreamRenderer = forwardRef(({
             remoteParticipant.off('isSpeakingChanged', isSpeakingChanged);
             remoteParticipant.off('isMutedChanged', isMutedChanged);
             remoteParticipant.off('displayNameChanged', isDisplayNameChanged);
-            if (renderer) {
+            if (renderer.current === undefined) {
                 disposeRenderer();
             }
         }
     }, []);
 
     const getRenderer = () => {
-        return view;
+        return view.current;
     }
 
     const createRenderer = async () => {
-        if (!renderer) {
-            renderer = new VideoStreamRenderer(stream);
-            view = await renderer.createView();
-            return view;
+        if (!renderer.current) {
+            renderer.current = new VideoStreamRenderer(stream);
+            view.current = await renderer.current.createView();
+            return view.current;
         } else {
             throw new Error(`[App][StreamMedia][id=${stream.id}][createRenderer] stream already has a renderer`);
         }
@@ -55,14 +56,14 @@ export const FunctionalStreamRenderer = forwardRef(({
     const attachRenderer = (v) => {
         try {
             if (v) {
-                view = v;
+                view.current = v;
             }
 
-            if (!view.target) {
+            if (!view.current.target) {
                 throw new Error(`[App][StreamMedia][id=${stream.id}][attachRenderer] target is undefined. Must create renderer first`);
             } else {
                 componentContainer.current.style.display = 'block';
-                videoContainer.current.appendChild(view?.target);
+                videoContainer.current.appendChild(view.current?.target);
             }
         } catch (e) {
             console.error(e);
@@ -74,8 +75,8 @@ export const FunctionalStreamRenderer = forwardRef(({
             videoContainer.current.innerHTML = '';
             componentContainer.current.style.display = 'none';
         }
-        if (renderer) {
-            renderer.dispose();
+        if (renderer.current) {
+            renderer.current.dispose();
         } else {
             console.warn(`[App][StreamMedia][id=${stream.id}][disposeRender] no renderer to dispose`);
         }
@@ -116,7 +117,7 @@ export const FunctionalStreamRenderer = forwardRef(({
         }
 
         try {
-            if (stream.isAvailable && !renderer) {
+            if (stream.isAvailable && !renderer.current) {
                 await createRenderer();
                 attachRenderer();
             }
@@ -142,7 +143,7 @@ export const FunctionalStreamRenderer = forwardRef(({
 
     if (stream.isAvailable) {
         return (
-            <div id={componentId} ref={componentContainer} className={`stream-container ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``} ${stream.isAvailable ? 'rendering' : ''}`}>
+            <div id={componentId} ref={componentContainer} className={`stream-container stream-count-${streamCount} ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``} ${stream.isAvailable ? 'rendering' : ''}`}>
                 <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`} id={videoContainerId} ref={videoContainer}>
                     <h4 className="video-title">
                         {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
