@@ -1171,7 +1171,7 @@ export default class CallCard extends React.Component {
 
     render() {
         const emojis = ['👍', '❤️', '😂', '👏', '😲'];
-
+        const streamCount = this.state.allRemoteParticipantStreams.length;
         return (
             <div className="ms-Grid mt-2">
                 <div className="ms-Grid-row">
@@ -1208,7 +1208,7 @@ export default class CallCard extends React.Component {
                 </div>
                 <div className="ms-Grid-row">
                     <div className="ms-Grid-col">
-                        <h2 className="inline-block" onClick={() => this.setState({isShowParticipants: !this.state.isShowParticipants})}>&equiv; Participants</h2>
+                        <h2 className="inline-block" onClick={() => this.setState((prevState) => ({isShowParticipants: !prevState.isShowParticipants}))}>&equiv; Participants</h2>
                     </div>
                 </div>
                 <div className="ms-Grid-row">
@@ -1269,6 +1269,7 @@ export default class CallCard extends React.Component {
                                         dominantRemoteParticipant={this.state.dominantRemoteParticipant}
                                         call={this.call}
                                         showMediaStats={this.state.logMediaStats}
+                                        streamCount={streamCount}
                                     />
                                 )
                             }
@@ -1284,6 +1285,7 @@ export default class CallCard extends React.Component {
                                             dominantRemoteParticipant={this.state.dominantRemoteParticipant}
                                             call={this.call}
                                             showMediaStats={this.state.logMediaStats}
+                                            streamCount={streamCount}
                                         />
                                 )
                             }
@@ -1347,7 +1349,7 @@ export default class CallCard extends React.Component {
                         <span className="in-call-button"
                             title={`${this.state.showAddParticipantPanel ? 'Hide' : 'Show'} add participant panel`}
                             variant="secondary"
-                            onClick={() => this.setState({showAddParticipantPanel: !this.state.showAddParticipantPanel})}>
+                            onClick={() => this.setState((prevState) => ({showAddParticipantPanel: !prevState.showAddParticipantPanel}))}>
                             {
                                 this.state.showAddParticipantPanel &&
                                 <Icon iconName="AddFriend" />
@@ -1443,7 +1445,7 @@ export default class CallCard extends React.Component {
                             title={`${this.state.captionOn ? 'Turn captions off' : 'Turn captions on'}`}
                             variant="secondary"
                             hidden={this.state.callState !== 'Connected'}
-                            onClick={() => { this.setState({ captionOn: !this.state.captionOn })}}>
+                            onClick={() => { this.setState((prevState) => ({ captionOn: !prevState.captionOn }))}}>
                             {
                                 this.state.captionOn &&
                                 <Icon iconName="TextBox" />
@@ -1456,7 +1458,7 @@ export default class CallCard extends React.Component {
                         <span className="in-call-button"
                             title={`${this.state.showDataChannel ? 'Turn data channel off' : 'Turn data channel on'}`}
                             variant="secondary"
-                            onClick={() => { this.setState({ showDataChannel: !this.state.showDataChannel })}}>
+                            onClick={() => { this.setState((prevState) => ({ showDataChannel: !prevState.showDataChannel }))}}>
                             {
                                 this.state.showDataChannel &&
                                 <Icon iconName="Send" />

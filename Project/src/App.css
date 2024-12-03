@@ -389,23 +389,15 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 }
 
 .video-grid-row {
-  display: grid;
-  gap: 1px;
+  display: flex;
   padding-bottom: 25px;
-  grid-template-columns: repeat(auto-fit, minmax(min(99%/1, 100%/4), 1fr));
+  flex-flow: row wrap;
 }
+
 @media screen and (max-width: 1024px){
   .video-grid-row {
     display: block;
   }
-}
-
-.video-grid-row >  .stream-container.rendering:nth-child(3n-1):nth-last-of-type(1) {
-  grid-column: span 2;
-}
-
-.video-grid-row > .stream-container.rendering:nth-child(3n-2):nth-last-of-type(1) {
-  grid-column: span 3;
 }
 
 .pptLive {
@@ -1122,9 +1114,22 @@ div.volumeVisualizer::before {
   order: 1;
   display: none;
   position: relative;
-  flex-grow: 0;
-  flex-shrink: 0;
-  flex-basis: 100%;
+  flex: 1 20%;
+}
+
+.stream-container.stream-count-1,
+.stream-container.stream-count-2,
+.stream-container.stream-count-3,
+.stream-container.stream-count-4 {
+  flex: 1 49%;
+}
+
+.stream-container.stream-count-5,
+.stream-container.stream-count-6,
+.stream-container.stream-count-7,
+.stream-container.stream-count-8,
+.stream-container.stream-count-9 {
+  flex: 1 33%;
 }
 
 .stream-container[id*="ScreenSharing"] {
