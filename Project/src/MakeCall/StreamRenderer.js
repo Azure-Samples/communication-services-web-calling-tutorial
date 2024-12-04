@@ -24,7 +24,6 @@ export default class StreamRenderer extends React.Component {
             videoStats: undefined,
             transportStats: undefined
         };
-        this.call = props.call;
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
@@ -177,7 +176,7 @@ export default class StreamRenderer extends React.Component {
                         </h4>
                     }
                 </div>
-                <CustomVideoEffects call={this.call} videoContainerId={this.videoContainerId} remoteParticipantId={this.remoteParticipant.identifier}/>
+                <CustomVideoEffects call={this.props.call} videoContainerId={this.videoContainerId} remoteParticipantId={this.remoteParticipant.identifier}/>
             </div>
         );
     }

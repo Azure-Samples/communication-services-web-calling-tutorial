@@ -11,7 +11,6 @@ import { TextField } from 'office-ui-fabric-react';
 export default class CallSurvey extends React.Component {
     constructor(props) {
         super(props);
-        this.call = props.call;
         this.state = {
             overallIssue: '',
             overallRating: 0,
@@ -85,7 +84,7 @@ export default class CallSurvey extends React.Component {
         if (this.state.screenShareRating !== 0) rating.screenshareRating = { score: this.state.screenShareRating };
         if (this.state.screenShareIssue) rating.screenshareRating.issues = [this.state.screenShareIssue];
         
-        this.call.feature(Features.CallSurvey).submitSurvey(rating).then((res) => {
+        this.props.call.feature(Features.CallSurvey).submitSurvey(rating).then((res) => {
             if (this.appInsights && this.state.improvementSuggestion !== '') {
                 this.appInsights.trackEvent({
                     name: "CallSurvey", properties: {
