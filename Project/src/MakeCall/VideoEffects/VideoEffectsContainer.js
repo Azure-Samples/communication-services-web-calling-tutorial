@@ -166,6 +166,9 @@ export default class VideoEffectsContainer extends React.Component {
     }
 
     render() {
+        if (!this.localVideoStreamFeatureApi || this.state.videoEffectsList.length === 0) {
+            return <></>
+        }
         return (
             <div>
                 <h4>Video effects</h4>
