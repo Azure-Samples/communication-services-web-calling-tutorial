@@ -1052,6 +1052,20 @@ export default class CallCard extends React.Component {
                 console.log(`meetingAudioConferenceDetails MessageBarText = ${messageBarText}`)
                 this.setState({ callMessage: messageBarText })
             },
+            consentToBeingRecorded: async () => {
+                try {
+                    this.recordingFeature.consentToBeingRecordedAndTranscribed();
+                } catch(e) {
+                    console.error(e);
+                }
+            },
+            consentToBringTranscribed: async () => {
+                try {
+                    this.transcriptionFeature.consentToBeingRecordedAndTranscribed();
+                } catch(e) {
+                    console.error(e);
+                }
+            },
         }
     }
 
@@ -1107,6 +1121,31 @@ export default class CallCard extends React.Component {
                 onClick: (e) => menuCallBacks.stopSpotlight(this.identifier, e)
             });
         
+        this.recordingFeature.isConsentRequired && this.state.isRecordingActive && 
+        menuItems.push({
+            key: 'Provide consent to be Recorded',
+            text: 'Provide consent to be Recorded',
+            iconProps: { iconName: 'ReminderPerson'},
+            onClick: (e) => menuCallBacks.consentToBeingRecorded(e)
+        });
+
+        this.transcriptionFeature.isConsentRequired && this.state.isTranscriptionActive && menuItems.push({
+            key: 'Provide consent to be Transcribed',
+            text: 'Provide consent to be Transcribed',
+            iconProps: { iconName: 'ReminderPerson'},
+            onClick: (e) => menuCallBacks.consentToBeingTranscribed(this.identifier, e)
+        });
+
+        // Proactively provide consent for recording and transcription in the call if it is required
+        !this.state.isRecordingActive && !this.state.isTranscriptionActive && 
+        this.recordingFeature.isConsentRequired && this.transcriptionFeature.isConsentRequired &&
+        menuItems.push({
+            key: 'Provide consent to being Recorded and Transcribed',
+            text: 'Provide consent to being Recorded and Transcribed',
+            iconProps: { iconName: 'ReminderPerson'},
+            onClick: (e) => menuCallBacks.consentToBeingRecorded(e)
+        });
+
         return menuItems.filter(item => item != 0)
     }
 
