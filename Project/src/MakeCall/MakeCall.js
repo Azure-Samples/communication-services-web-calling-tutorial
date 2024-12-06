@@ -51,7 +51,7 @@ export default class MakeCall extends React.Component {
             id: undefined,
             loggedIn: false,
             isCallClientActiveInAnotherTab: false,
-            call: undefined,
+            call: [],
             callSurvey: undefined,
             incomingCall: undefined,
             showCallSampleCode: false,
@@ -159,7 +159,9 @@ export default class MakeCall extends React.Component {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
 
                     e.added.forEach(call => {
-                        this.setState({ call: call });
+                        this.setState(prevState => ({ 
+                            call: [...prevState.call, call]
+                        }));
 
                         const diagnosticChangedListener = (diagnosticInfo) => {
                                 const rmsg = `UFD Diagnostic changed:
@@ -201,22 +203,24 @@ export default class MakeCall extends React.Component {
                     });
 
                     e.removed.forEach(call => {
-                        if (this.state.call && this.state.call === call) {
-                            this.displayCallEndReason(this.state.call.callEndReason);
+                        const newCallsArray = this.state.call.filter(c => c.id != call.id)
+
+                        if (newCallsArray.length < this.state.call.length) {
+                            this.setState({call: newCallsArray});
+
+                            if (newCallsArray.length === 0) {
+                                this.displayCallEndReason(call.callEndReason, false);
+                            }
                         }
                     });
                 });
                 this.callAgent.on('incomingCall', args => {
                     const incomingCall = args.incomingCall;
-                    if (this.state.call) {
-                        incomingCall.reject();
-                        return;
-                    }
-
+                    
                     this.setState({ incomingCall: incomingCall });
 
                     incomingCall.on('callEnded', args => {
-                        this.displayCallEndReason(args.callEndReason);
+                        this.displayCallEndReason(args.callEndReason, true);
                     });
 
                 });
@@ -230,12 +234,15 @@ export default class MakeCall extends React.Component {
         }
     }
 
-    displayCallEndReason = (callEndReason) => {
+    displayCallEndReason = (callEndReason, incoming) => {
         if (callEndReason.code !== 0 || callEndReason.subCode !== 0) {
             this.setState({ callSurvey: this.state.call, callError: `Call end reason: code: ${callEndReason.code}, subcode: ${callEndReason.subCode}` });
         }
 
-        this.setState({ call: null, callSurvey: this.state.call, incomingCall: null });
+        if (incoming) {
+            this.setState({incomingCall: null});
+            return;
+        }
     }
 
     placeCall = async (withVideo) => {
@@ -968,7 +975,7 @@ this.callAgent.on('incomingCall', async (args) => {
                             </MessageBar>
                         }
                         {
-                            !this.state.incomingCall && !this.state.call && !this.state.callSurvey &&
+                            !this.state.incomingCall && !this.state.call[0] && !this.state.callSurvey &&
                             <div>
                                 <div className="ms-Grid-row mt-3">
                                     <div className="call-input-panel mb-5 ms-Grid-col ms-sm12 ms-md12 ms-lg12 ms-xl6 ms-xxl3">
@@ -981,17 +988,17 @@ this.callAgent.on('incomingCall', async (args) => {
                                             <div className="md-Grid-col ml-2 mt-0 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                 <TextField
                                                     className="mt-0"
-                                                    disabled={this.state.call || !this.state.loggedIn}
+                                                    disabled={this.state.call[0] || !this.state.loggedIn}
                                                     label={`Enter an Identity to make a call to. You can specify multiple Identities to call by using \",\" separated values.`}
                                                     placeholder="8:acs:<ACA resource ID>_<GUID>"
                                                     componentRef={(val) => this.destinationUserIds = val} />
                                                 <TextField
-                                                    disabled={this.state.call || !this.state.loggedIn}
+                                                    disabled={this.state.call[0] || !this.state.loggedIn}
                                                     label="Destination Phone Identity or Phone Identities"
                                                     placeholder="4:+18881231234"
                                                     componentRef={(val) => this.destinationPhoneIds = val} />
                                                 <TextField
-                                                    disabled={this.state.call || !this.state.loggedIn}
+                                                    disabled={this.state.call[0] || !this.state.loggedIn}
                                                     label="If calling a Phone Identity, your Alternate Caller Id must be specified."
                                                     placeholder="4:+18881231234"
                                                     componentRef={(val) => this.alternateCallerId = val} />
@@ -1001,21 +1008,21 @@ this.callAgent.on('incomingCall', async (args) => {
                                             className="primary-button"
                                             iconProps={{ iconName: 'Phone', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                             text="Place call"
-                                            disabled={this.state.call || !this.state.loggedIn}
+                                            disabled={this.state.call[0] || !this.state.loggedIn}
                                             onClick={() => this.placeCall(false)}>
                                         </PrimaryButton>
                                         <PrimaryButton
                                             className="primary-button"
                                             iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                             text="Place call with video"
-                                            disabled={this.state.call || !this.state.loggedIn}
+                                            disabled={this.state.call[0] || !this.state.loggedIn}
                                             onClick={() => this.placeCall(true)}>
                                         </PrimaryButton>
                                         <PrimaryButton 
                                             className="primary-button"
                                             iconProps={{iconName: 'Settings', style: {verticalAlign: 'middle', fontSize: 'large'}}}
                                             text={this.state.showCustomContext ? 'Remove context' : 'Custom context'}
-                                            disabled={this.state.call || !this.state.loggedIn}
+                                            disabled={this.state.call[0] || !this.state.loggedIn}
                                             onClick={() => this.setState({showCustomContext: !this.state.showCustomContext})}>
                                         </PrimaryButton>
                                         <div className="ms-Grid-row" 
@@ -1023,7 +1030,7 @@ this.callAgent.on('incomingCall', async (args) => {
                                             <div className="md-Grid-col ml-2 mt-0 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                 <TextField
                                                     className="mt-0"
-                                                    disabled={this.state.call || !this.state.loggedIn}
+                                                    disabled={this.state.call[0] || !this.state.loggedIn}
                                                     label="Add user to user value"
                                                     placeholder=""
                                                     componentRef={(val) => this.userToUser = val} />
@@ -1035,14 +1042,14 @@ this.callAgent.on('incomingCall', async (args) => {
                                                 <div className="md-Grid-col inline-flex ml-2 mt-0 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                     <TextField
                                                         className="mt-0 ms-sm6 ms-md6 ms-lg6 ms-xl6 ms-xxl6"
-                                                        disabled={this.state.call || !this.state.loggedIn}
+                                                        disabled={this.state.call[0] || !this.state.loggedIn}
                                                         label="Custom header key"
                                                         placeholder=""
                                                         onChange={() => this.xHeadersChanged()}
                                                         componentRef={(val) => this.xHeaders[i].key = val} />
                                                     <TextField
                                                         className="mt-0 ml-2 ms-sm6 ms-md6 ms-lg6 ms-xl6 ms-xxl6"
-                                                        disabled={this.state.call || !this.state.loggedIn}
+                                                        disabled={this.state.call[0] || !this.state.loggedIn}
                                                         label="Custom header value"
                                                         placeholder=""
                                                         onChange={() => this.xHeadersChanged()}
@@ -1061,52 +1068,52 @@ this.callAgent.on('incomingCall', async (args) => {
                                         </div>
                                         <div className="ms-Grid-row">
                                             <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
-                                                <div className={this.state.call || !this.state.loggedIn ? "call-input-panel-input-label-disabled" : ""}>
+                                                <div className={this.state.call[0] || !this.state.loggedIn ? "call-input-panel-input-label-disabled" : ""}>
                                                     Enter meeting link
                                                 </div>
                                                 <div className="ml-3">
                                                     <TextField
                                                         className="mb-3 mt-0"
-                                                        disabled={this.state.call || !this.state.loggedIn}
+                                                        disabled={this.state.call[0] || !this.state.loggedIn}
                                                         label="Meeting link"
                                                         defaultValue={new URLSearchParams(window.location.search).get(URL_PARAM.MEETING_LINK) ?? ''}
                                                         componentRef={(val) => this.meetingLink = val} />
                                                 </div>
-                                                <div className={this.state.call || !this.state.loggedIn ? "call-input-panel-input-label-disabled" : ""}>
+                                                <div className={this.state.call[0] || !this.state.loggedIn ? "call-input-panel-input-label-disabled" : ""}>
                                                     Or enter meeting id (and) passcode
                                                 </div>
                                                 <div className="ml-3">
                                                     <TextField
                                                         className="mb-3 mt-0"
-                                                        disabled={this.state.call || !this.state.loggedIn}
+                                                        disabled={this.state.call[0] || !this.state.loggedIn}
                                                         label="Meeting id"
                                                         componentRef={(val) => this.meetingId = val} />
                                                     <TextField
                                                         className="mb-3"
-                                                        disabled={this.state.call || !this.state.loggedIn}
+                                                        disabled={this.state.call[0] || !this.state.loggedIn}
                                                         label="Meeting passcode (optional)"
                                                         componentRef={(val) => this.passcode = val} />
                                                 </div>
-                                                <div className={this.state.call || !this.state.loggedIn ? "call-input-panel-input-label-disabled" : ""}>
+                                                <div className={this.state.call[0] || !this.state.loggedIn ? "call-input-panel-input-label-disabled" : ""}>
                                                     Or enter meeting coordinates (Thread Id, Message Id, Organizer Id, and Tenant Id)
                                                 </div>
                                                 <div className="ml-3">
                                                     <TextField
                                                         className="mt-0"
-                                                        disabled={this.state.call || !this.state.loggedIn}
+                                                        disabled={this.state.call[0] || !this.state.loggedIn}
                                                         label="Thread Id"
                                                         componentRef={(val) => this.threadId = val} />
                                                     <TextField
-                                                        disabled={this.state.call || !this.state.loggedIn}
+                                                        disabled={this.state.call[0] || !this.state.loggedIn}
                                                         label="Message Id"
                                                         componentRef={(val) => this.messageId = val} />
                                                     <TextField
-                                                        disabled={this.state.call || !this.state.loggedIn}
+                                                        disabled={this.state.call[0] || !this.state.loggedIn}
                                                         label="Organizer Id"
                                                         componentRef={(val) => this.organizerId = val} />
                                                     <TextField
                                                         className="mb-3"
-                                                        disabled={this.state.call || !this.state.loggedIn}
+                                                        disabled={this.state.call[0] || !this.state.loggedIn}
                                                         label="Tenant Id"
                                                         componentRef={(val) => this.tenantId = val} />
                                                 </div>
@@ -1115,13 +1122,13 @@ this.callAgent.on('incomingCall', async (args) => {
                                         <PrimaryButton className="primary-button"
                                             iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                             text="Join Teams meeting"
-                                            disabled={this.state.call || !this.state.loggedIn}
+                                            disabled={this.state.call[0] || !this.state.loggedIn}
                                             onClick={() => this.joinTeamsMeeting(false)}>
                                         </PrimaryButton>
                                         <PrimaryButton className="primary-button"
                                             iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                             text="Join Teams meeting with video"
-                                            disabled={this.state.call || !this.state.loggedIn}
+                                            disabled={this.state.call[0] || !this.state.loggedIn}
                                             onClick={() => this.joinTeamsMeeting(true)}>
                                         </PrimaryButton>
                                     </div>
@@ -1134,7 +1141,7 @@ this.callAgent.on('incomingCall', async (args) => {
                                                 <div className="ms-Grid-col ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                     <TextField
                                                         className="mb-3 mt-0"
-                                                        disabled={this.state.call || !this.state.loggedIn}
+                                                        disabled={this.state.call[0] || !this.state.loggedIn}
                                                         label="Group Id"
                                                         defaultValue="29228d3e-040e-4656-a70e-890ab4e173e5"
                                                         componentRef={(val) => this.destinationGroup = val} />
@@ -1144,14 +1151,14 @@ this.callAgent.on('incomingCall', async (args) => {
                                                 className="primary-button"
                                                 iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                                 text="Join group call"
-                                                disabled={this.state.call || !this.state.loggedIn}
+                                                disabled={this.state.call[0] || !this.state.loggedIn}
                                                 onClick={() => this.joinGroup(false)}>
                                             </PrimaryButton>
                                             <PrimaryButton
                                                 className="primary-button"
                                                 iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                                 text="Join group call with video"
-                                                disabled={this.state.call || !this.state.loggedIn}
+                                                disabled={this.state.call[0] || !this.state.loggedIn}
                                                 onClick={() => this.joinGroup(true)}>
                                             </PrimaryButton>
                                         </div>
@@ -1160,7 +1167,7 @@ this.callAgent.on('incomingCall', async (args) => {
                                             <div className="ms-Grid-row">
                                                 <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                     <TextField className="mb-3 mt-0"
-                                                        disabled={this.state.call || !this.state.loggedIn}
+                                                        disabled={this.state.call[0] || !this.state.loggedIn}
                                                         label="Rooms id"
                                                         placeholder="<GUID>"
                                                         componentRef={(val) => this.roomsId = val} />
@@ -1169,13 +1176,13 @@ this.callAgent.on('incomingCall', async (args) => {
                                             <PrimaryButton className="primary-button"
                                                 iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                                 text="Join Rooms call"
-                                                disabled={this.state.call || !this.state.loggedIn}
+                                                disabled={this.state.call[0] || !this.state.loggedIn}
                                                 onClick={() => this.joinRooms(false)}>
                                             </PrimaryButton>
                                             <PrimaryButton className="primary-button"
                                                 iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                                 text="Join Rooms call with video"
-                                                disabled={this.state.call || !this.state.loggedIn}
+                                                disabled={this.state.call[0] || !this.state.loggedIn}
                                                 onClick={() => this.joinRooms(true)}>
                                             </PrimaryButton>
                                         </div>
@@ -1186,7 +1193,7 @@ this.callAgent.on('incomingCall', async (args) => {
                                         <h3 className="mb-1">Video Send Constraints</h3>
                                         <MediaConstraint
                                             onChange={this.handleMediaConstraint}
-                                            disabled={this.state.call || !this.state.loggedIn}
+                                            disabled={this.state.call[0] || !this.state.loggedIn}
                                         />
                                     </div>
                                 </div>
@@ -1194,15 +1201,15 @@ this.callAgent.on('incomingCall', async (args) => {
 
                         }
                         {
-                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress &&
+                            this.state.call.length && this.state.isPreCallDiagnosticsCallInProgress &&
                             <div>
                                 Pre Call Diagnostics call in progress...
                             </div>
                         }
                         {
-                            this.state.call && !this.state.callSurvey && !this.state.isPreCallDiagnosticsCallInProgress &&
+                            this.state.call.length === 1 && !this.state.callSurvey && !this.state.isPreCallDiagnosticsCallInProgress &&
                             <CallCard
-                                call={this.state.call}
+                                call={this.state.call[0]}
                                 deviceManager={this.deviceManager}
                                 selectedCameraDeviceId={this.state.selectedCameraDeviceId}
                                 cameraDeviceOptions={this.state.cameraDeviceOptions}
@@ -1215,7 +1222,7 @@ this.callAgent.on('incomingCall', async (args) => {
                                 onShowMicrophoneNotFoundWarning={(show) => { this.setState({ showMicrophoneNotFoundWarning: show }) }} />
                         }
                         {
-                            this.state.incomingCall && !this.state.call &&
+                            this.state.incomingCall &&
                             <IncomingCallCard
                                 incomingCall={this.state.incomingCall}
                                 acceptCallMicrophoneUnmutedVideoOff={async () => await this.getCallOptions({ video: false, micMuted: false })}
@@ -1235,7 +1242,7 @@ this.callAgent.on('incomingCall', async (args) => {
                                     className="secondary-button"
                                     iconProps={{ iconName: 'TestPlan', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                     text={`Run Pre Call Diagnostics`}
-                                    disabled={this.state.call || !this.state.loggedIn}
+                                    disabled={this.state.call[0] || !this.state.loggedIn}
                                     onClick={() => this.runPreCallDiagnostics()}>
                                 </PrimaryButton>
                                 <PrimaryButton
@@ -1247,7 +1254,7 @@ this.callAgent.on('incomingCall', async (args) => {
                             </div>
                         </div>
                         {
-                            this.state.call && this.state.isPreCallDiagnosticsCallInProgress &&
+                            this.state.call.length && this.state.isPreCallDiagnosticsCallInProgress &&
                             <div>
                                 Pre Call Diagnostics call in progress...
                                 <div className="custom-row">

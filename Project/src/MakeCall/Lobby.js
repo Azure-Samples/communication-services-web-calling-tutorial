@@ -6,8 +6,7 @@ import { Features } from '@azure/communication-calling';
 export default class Lobby extends React.Component {
     constructor(props) {
         super(props);
-        this.call = props.call;
-        this.lobby = this.call.lobby;
+        this.lobby = this.props.call.lobby;
         this.capabilitiesFeature = props.capabilitiesFeature;
         this.capabilities = this.capabilitiesFeature.capabilities;
         this.state = {

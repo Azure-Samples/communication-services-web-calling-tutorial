@@ -14,15 +14,14 @@ import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 export default class RemoteParticipantCard extends React.Component {
     constructor(props) {
         super(props);
-        this.call = props.call;
         this.remoteParticipant = props.remoteParticipant;
         this.identifier = this.remoteParticipant.identifier;
         this.id = utils.getIdentifierText(this.remoteParticipant.identifier);
         this.isCheckable = isCommunicationUserIdentifier(this.remoteParticipant.identifier) ||
             isMicrosoftTeamsUserIdentifier(this.remoteParticipant.identifier);
 
-        this.spotlightFeature = this.call.feature(Features.Spotlight);
-        this.raiseHandFeature = this.call.feature(Features.RaiseHand);
+        this.spotlightFeature = this.props.call.feature(Features.Spotlight);
+        this.raiseHandFeature = this.props.call.feature(Features.RaiseHand);
         this.capabilitiesFeature = props.capabilitiesFeature;
         this.capabilities = this.capabilitiesFeature.capabilities;
         this.menuOptionsHandler= props.menuOptionsHandler;
@@ -61,6 +60,7 @@ export default class RemoteParticipantCard extends React.Component {
         });
 
         this.remoteParticipant.on('stateChanged', () => {
+            console.log('EVENT, remote participant state: ' + this.remoteParticipant.state)
             this.setState({ state: this.remoteParticipant.state });
         });
 
@@ -104,7 +104,7 @@ export default class RemoteParticipantCard extends React.Component {
 
     handleRemoveParticipant(e, identifier) {
         e.preventDefault();
-        this.call.removeParticipant(identifier).catch((e) => console.error(e))
+        this.props.call.removeParticipant(identifier).catch((e) => console.error(e))
     }
 
     handleMuteParticipant(e, remoteParticipant) {
@@ -151,7 +151,7 @@ export default class RemoteParticipantCard extends React.Component {
     async admitParticipant() {
         console.log('admit');
         try {
-            await this.call.lobby.admit(this.identifier);
+            await this.props.call.lobby.admit(this.identifier);
         } catch (e) {
             console.error(e);
         }
@@ -160,7 +160,7 @@ export default class RemoteParticipantCard extends React.Component {
     async rejectParticipant() {
         console.log('reject');
         try {
-            await this.call.lobby.reject(this.identifier);
+            await this.props.call.lobby.reject(this.identifier);
         } catch (e) {
             console.error(e);
         }

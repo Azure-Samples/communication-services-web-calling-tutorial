@@ -15,7 +15,6 @@ export const LoadingSpinner = () => {
 export default class AudioEffectsContainer extends React.Component {
     constructor(props) {
         super(props);
-        this.call = props.call;
         this.deviceManager = props.deviceManager;
         this.localAudioStreamFeatureApi = null;
         this.localAudioStream = null;
@@ -68,7 +67,7 @@ export default class AudioEffectsContainer extends React.Component {
     }
 
     initLocalAudioStreamFeatureApi() {
-        const localAudioStream = this.call.localAudioStreams.find(a => {
+        const localAudioStream = this.props.call.localAudioStreams.find(a => {
             return a.mediaStreamType === 'Audio';
         });
 

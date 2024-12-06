@@ -13,7 +13,6 @@ export const LoadingSpinner = () => {
 export default class VideoEffectsContainer extends React.Component {
     constructor(props) {
         super(props);
-        this.call = props.call;
         this.localVideoStreamFeatureApi = null;
 
         this.state = {
@@ -45,7 +44,7 @@ export default class VideoEffectsContainer extends React.Component {
     }
 
     initLocalVideoStreamFeatureApi() {
-        const localVideoStream =  this.call.localVideoStreams.find(v => { return v.mediaStreamType === 'Video'});
+        const localVideoStream =  this.props.call.localVideoStreams.find(v => { return v.mediaStreamType === 'Video'});
 
         if (!localVideoStream) {
             this.logError('No local video streams found.');
