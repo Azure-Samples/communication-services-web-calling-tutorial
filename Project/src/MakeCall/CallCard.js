@@ -1054,18 +1054,18 @@ export default class CallCard extends React.Component {
             },
             consentToBeingRecorded: async () => {
                 try {
-                    this.recordingFeature.consentToBeingRecordedAndTranscribed();
+                    this.recordingFeature.grantTeamsConsent();
                 } catch(e) {
                     console.error(e);
                 }
             },
             consentToBringTranscribed: async () => {
                 try {
-                    this.transcriptionFeature.consentToBeingRecordedAndTranscribed();
+                    this.transcriptionFeature.grantTeamsConsent();
                 } catch(e) {
                     console.error(e);
                 }
-            },
+            }
         }
     }
 
@@ -1121,7 +1121,7 @@ export default class CallCard extends React.Component {
                 onClick: (e) => menuCallBacks.stopSpotlight(this.identifier, e)
             });
         
-        this.recordingFeature.isConsentRequired && this.state.isRecordingActive && 
+        this.recordingFeature.isTeamsConsentRequired && this.state.isRecordingActive && 
         menuItems.push({
             key: 'Provide consent to be Recorded',
             text: 'Provide consent to be Recorded',
@@ -1129,7 +1129,7 @@ export default class CallCard extends React.Component {
             onClick: (e) => menuCallBacks.consentToBeingRecorded(e)
         });
 
-        this.transcriptionFeature.isConsentRequired && this.state.isTranscriptionActive && menuItems.push({
+        this.transcriptionFeature.isTeamsConsentRequired && this.state.isTranscriptionActive && menuItems.push({
             key: 'Provide consent to be Transcribed',
             text: 'Provide consent to be Transcribed',
             iconProps: { iconName: 'ReminderPerson'},
@@ -1138,7 +1138,7 @@ export default class CallCard extends React.Component {
 
         // Proactively provide consent for recording and transcription in the call if it is required
         !this.state.isRecordingActive && !this.state.isTranscriptionActive && 
-        this.recordingFeature.isConsentRequired && this.transcriptionFeature.isConsentRequired &&
+        this.recordingFeature.isTeamsConsentRequired && this.transcriptionFeature.isTeamsConsentRequired &&
         menuItems.push({
             key: 'Provide consent to being Recorded and Transcribed',
             text: 'Provide consent to being Recorded and Transcribed',
