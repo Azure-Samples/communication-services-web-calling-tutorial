@@ -1054,14 +1054,14 @@ export default class CallCard extends React.Component {
             },
             consentToBeingRecorded: async () => {
                 try {
-                    this.recordingFeature.grantTeamsConsent();
+                    await this.recordingFeature.grantTeamsConsent();
                 } catch(e) {
                     console.error(e);
                 }
             },
             consentToBringTranscribed: async () => {
                 try {
-                    this.transcriptionFeature.grantTeamsConsent();
+                    await this.transcriptionFeature.grantTeamsConsent();
                 } catch(e) {
                     console.error(e);
                 }
