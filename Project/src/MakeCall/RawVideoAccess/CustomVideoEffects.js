@@ -5,7 +5,6 @@ export default class CustomVideoEffects extends React.Component {
 
     constructor(props) {
         super(props);
-        this.call = props.call;
         this.stream = props.stream;
         this.isLocal = props.isLocal;
         this.bwStream = undefined;
