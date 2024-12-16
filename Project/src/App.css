@@ -1148,6 +1148,13 @@ div.volumeVisualizer::before {
     transform: translateZ(0);
 }
 
+.scrollable-rtt-container {
+  overflow: auto;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
 .custom-video-effects-buttons:not(.outgoing) {
   display: flex;
   position: absolute;
