@@ -20,6 +20,7 @@ import CallCaption from "./CallCaption";
 import Lobby from "./Lobby";
 import { ParticipantMenuOptions } from './ParticipantMenuOptions';
 import MediaConstraint from './MediaConstraint';
+import RealTimeTextCard from "./RealTimeTextCard";
 
 export default class CallCard extends React.Component {
     constructor(props) {
@@ -40,6 +41,9 @@ export default class CallCard extends React.Component {
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.capabilitiesFeature = this.call.feature(Features.Capabilities);
         this.capabilities = this.capabilitiesFeature.capabilities;
+        if (Features.RealTimeText) {
+            this.realTimeTextFeature = this.call.feature(Features.RealTimeText);
+        }
         this.dominantSpeakersFeature = this.call.feature(Features.DominantSpeakers);
         this.recordingFeature = this.call.feature(Features.Recording);
         this.transcriptionFeature = this.call.feature(Features.Transcription);
@@ -86,6 +90,9 @@ export default class CallCard extends React.Component {
             callMessage: undefined,
             dominantSpeakerMode: false,
             captionOn: false,
+            realTimeTextOn: false,
+            firstRealTimeTextReceivedorSent: false,
+            showCanNotHideorCloseRealTimeTextBanner: false,
             dominantRemoteParticipant: undefined,
             logMediaStats: false,
             sentResolution: '',
@@ -109,6 +116,10 @@ export default class CallCard extends React.Component {
         this.localVideoPreviewRef = React.createRef();
         this.localScreenSharingPreviewRef = React.createRef();
         this.isSetCallConstraints = this.call.setConstraints !== undefined;
+    }
+
+    setFirstRealTimeTextReceivedorSent = (state) => {
+        this.setState({ firstRealTimeTextReceivedorSent: state });
     }
 
     componentWillUnmount() {
@@ -468,6 +479,7 @@ export default class CallCard extends React.Component {
             this.recordingFeature.on('isRecordingActiveChanged', this.isRecordingActiveChangedHandler);
             this.transcriptionFeature.on('isTranscriptionActiveChanged', this.isTranscriptionActiveChangedHandler);
             this.lobby?.on('lobbyParticipantsUpdated', this.lobbyParticipantsUpdatedHandler);
+            this.realTimeTextFeature?.on('realTimeTextReceived', this.realTimeTextReceivedHandler);
         }
     }
 
@@ -647,6 +659,62 @@ export default class CallCard extends React.Component {
             }
         }
         this.capabilities =  this.capabilitiesFeature.capabilities;
+    }
+
+    realTimeTextReceivedHandler = (rttData) => {
+        this.setState({ realTimeTextOn: true });
+        if (!this.state.firstRealTimeTextReceivedorSent) {
+            this.setState({ firstRealTimeTextReceivedorSent: true });
+        }
+        if (rttData) {
+    
+            let mri = '';
+            let displayName = '';
+            switch (rttData.sender.identifier.kind) {
+                case 'communicationUser': { mri = rttData.sender.identifier.communicationUserId; displayName = rttData.sender.displayName; break; }
+                case 'microsoftTeamsUser': { mri = rttData.sender.identifier.microsoftTeamsUserId; displayName = rttData.sender.displayName; break; }
+                case 'phoneNumber': { mri = rttData.sender.identifier.phoneNumber;  displayName = rttData.sender.displayName; break; }
+            }
+
+            let rttAreaContainer = document.getElementById('rttArea');
+
+            const newClassName = `prefix${mri.replace(/:/g, '').replace(/-/g, '').replace(/\+/g, '')}`;
+            const rttText = `${(rttData.receivedTimestamp).toUTCString()} ${displayName ?? mri} isTyping: `;
+
+            let foundRTTContainer = rttAreaContainer.querySelector(`.${newClassName}[isNotFinal='true']`);
+
+            if (!foundRTTContainer) {
+                if (rttData.text.trim() === '') {
+                    return
+                }
+                let rttContainer = document.createElement('div');
+                rttContainer.setAttribute('isNotFinal', 'true');
+                rttContainer.style['borderBottom'] = '1px solid';
+                rttContainer.style['whiteSpace'] = 'pre-line';
+                rttContainer.textContent = rttText + rttData.text;
+                rttContainer.classList.add(newClassName);
+
+                rttAreaContainer.appendChild(rttContainer);
+
+                setTimeout(() => {
+                    rttAreaContainer.removeChild(rttContainer);
+                }, 40000);
+            } else {
+                if (rttData.text.trim() === '') {
+                    rttAreaContainer.removeChild(foundRTTContainer);
+                }
+                if (rttData.resultType === 'Final') {
+                    foundRTTContainer.setAttribute('isNotFinal', 'false');
+                    foundRTTContainer.textContent = foundRTTContainer.textContent.replace(' isTyping', '');
+                    if (rttData.isLocal) {
+                        let rttTextField = document.getElementById('rttTextField');
+                        rttTextField.value = null;
+                    }
+                } else {
+                    foundRTTContainer.textContent = rttText + rttData.text;
+                }
+            }
+        }
     }
 
     dominantSpeakersChanged = () => {
@@ -1455,6 +1523,27 @@ export default class CallCard extends React.Component {
                                 <Icon iconName="TextBox" />
                             }
                         </span>
+                        { Features.RealTimeText &&
+                            <span className="in-call-button"
+                                title={`${this.state.realTimeTextOn ? 'Hide RealTimeText Card' : 'Show RealTimeText Card'}`}
+                                variant="secondary"
+                                hidden={this.state.callState !== 'Connected'}
+                                onClick={() => { 
+                                    if (!this.state.firstRealTimeTextReceivedorSent) {
+                                        this.setState((prevState) => ({ realTimeTextOn: !prevState.realTimeTextOn }))
+                                    } else {
+                                        this.setState((prevState) => ({ showCanNotHideorCloseRealTimeTextBanner: true}))
+                                    }}}>
+                                {
+                                    this.state.realTimeTextOn &&
+                                    <Icon iconName="Comment" />
+                                }
+                                {
+                                    !this.state.realTimeTextOn &&
+                                    <Icon iconName="Comment" />
+                                }
+                            </span>
+                        }
                         <span className="in-call-button"
                             title={`${this.state.showDataChannel ? 'Turn data channel off' : 'Turn data channel on'}`}
                             variant="secondary"
@@ -1737,6 +1826,38 @@ export default class CallCard extends React.Component {
                             {
                                 this.state.captionOn &&
                                 <CallCaption call={this.call} isTeamsUser={this.isTeamsUser}/>
+                            }
+                        </div>
+                    </div>
+                }
+                {
+                    Features.RealTimeText && this.state.realTimeTextOn &&
+                    <div className="mt-5">
+                        <div className="ms-Grid-row">
+                            <h3>RealTimeText</h3>
+                        </div>
+                        <div className="md-grid-row">
+                            {
+                                this.state.realTimeTextOn &&
+                                this.state.firstRealTimeTextReceivedorSent &&
+                                this.state.showCanNotHideorCloseRealTimeTextBanner &&
+                                <MessageBar
+                                    messageBarType={MessageBarType.warn}
+                                    isMultiline={true}
+                                    onDismiss={() => { this.setState({ showCanNotHideorCloseRealTimeTextBanner: undefined }) }}
+                                    dismissButtonAriaLabel="Close">
+                                    <b>Note: RealTimeText can not be closed or hidden after you have sent or received a message.</b>
+                                </MessageBar>
+                            }
+                            {
+                                this.state.realTimeTextOn &&
+                                <RealTimeTextCard
+                                    call={this.call}
+                                    state={{
+                                        firstRealTimeTextReceivedorSent: this.state.firstRealTimeTextReceivedorSent,
+                                        setFirstRealTimeTextReceivedorSent: this.setFirstRealTimeTextReceivedorSent
+                                    }}
+                                />
                             }
                         </div>
                     </div>
