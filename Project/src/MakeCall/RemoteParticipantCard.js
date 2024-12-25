@@ -26,7 +26,6 @@ export default class RemoteParticipantCard extends React.Component {
         this.capabilitiesFeature = props.capabilitiesFeature;
         this.capabilities = this.capabilitiesFeature.capabilities;
         this.menuOptionsHandler= props.menuOptionsHandler;
-        this.mediaAccess = props.mediaAccess;
         this.state = {
             isSpeaking: this.remoteParticipant.isSpeaking,
             state: this.remoteParticipant.state,
@@ -37,7 +36,8 @@ export default class RemoteParticipantCard extends React.Component {
             isSpotlighted: utils.isParticipantHandRaised(this.remoteParticipant.identifier, this.spotlightFeature.getSpotlightedParticipants()),
             canManageLobby: this.capabilities.manageLobby?.isPresent || this.capabilities.manageLobby?.reason === 'FeatureNotSupported',
             canMuteOthers: this.capabilities.muteOthers?.isPresent || this.capabilities.muteOthers?.reason === 'FeatureNotSupported',
-            mediaAccess: this.mediaAccess
+            forbidOthersAudio: this.capabilities.forbidOthersAudio?.isPresent || this.capabilities.forbidOthersAudio?.reason === 'FeatureNotSupported',
+            forbidOthersVideo: this.capabilities.forbidOthersVideo?.isPresent || this.capabilities.forbidOthersVideo?.reason === 'FeatureNotSupported',
         };
     }
 
@@ -51,12 +51,6 @@ export default class RemoteParticipantCard extends React.Component {
         this.raiseHandFeature.off("raisedHandEvent", ()=>{});
         if (this.props.onSelectionChanged) {
             this.props.onSelectionChanged(this.remoteParticipant.identifier, false);
-        }
-    }
-
-    componentDidUpdate(prevProps) {
-        if (prevProps.mediaAccess !== this.props.mediaAccess) {
-            this.setState({ mediaAccess: this.props.mediaAccess });
         }
     }
 
@@ -95,20 +89,25 @@ export default class RemoteParticipantCard extends React.Component {
         this.raiseHandFeature.on("raisedHandEvent", isRaiseHandChangedHandler);
         this.capabilitiesFeature.on('capabilitiesChanged', (capabilitiesChangeInfo) => {
             for (const [key, value] of Object.entries(capabilitiesChangeInfo.newValue)) {
-                if(key === 'manageLobby' && value.reason != 'FeatureNotSupported') {
+                if(key === 'forbidOthersAudio' && value.reason != 'FeatureNotSupported') {
+                    (value.isPresent) ? this.setState({ forbidOthersAudio: true }) : this.setState({ forbidOthersAudio: false });
+                } else if(key === 'forbidOthersVideo' && value.reason != 'FeatureNotSupported') {
+                    (value.isPresent) ? this.setState({ forbidOthersVideo: true }) : this.setState({ forbidOthersVideo: false });
+                } else if(key === 'manageLobby' && value.reason != 'FeatureNotSupported') {
                     (value.isPresent) ? this.setState({ canManageLobby: true }) : this.setState({ canManageLobby: false });
                     let lobbyActions = document.getElementById('lobbyAction');
-                    if(this.state.canManageLobby === false){
-                        lobbyActions.hidden = true;
-                    }
-                    else{
-                        lobbyActions.hidden = false;
+                    if (lobbyActions) {
+                        if(this.state.canManageLobby === false){
+                            lobbyActions.hidden = true;
+                        }
+                        else{
+                            lobbyActions.hidden = false;
+                        }
                     }
                     continue;
                 }
             }
         });
-        this.setState({ mediaAccess: this.props.mediaAccess });
     }
 
     handleRemoveParticipant(e, identifier) {
@@ -139,6 +138,26 @@ export default class RemoteParticipantCard extends React.Component {
                 this.menuOptionsHandler.stopSpotlight(this.identifier, e):
                 this.menuOptionsHandler.startSpotlight(this.identifier, e)
         });
+        if (this.state.forbidOthersAudio && this.remoteParticipant.role === 'Attendee') {
+            menuItems.push({
+                key: 'forbidAudio',
+                iconProps: { iconName: this.props.mediaAccess?.isAudioPermitted ? 'MicOff':'MicOff2', className: this.props.mediaAccess?.isAudioPermitted ? `` : "callFeatureEnabled"},
+                text: this.props.mediaAccess?.isAudioPermitted ? 'Forbid Audio' : 'Allow Audio',
+                onClick: (e) => this.props.mediaAccess?.isAudioPermitted ?
+                    this.menuOptionsHandler.forbidAudio(this.identifier, e):
+                    this.menuOptionsHandler.permitAudio(this.identifier, e)
+            });
+        }
+        if (this.state.forbidOthersVideo && this.remoteParticipant.role === 'Attendee') {
+            menuItems.push({
+                key: 'forbidVideo',
+                iconProps: { iconName: this.props.mediaAccess?.isVideoPermitted ? 'VideoOff':'VideoOff2', className: this.props.mediaAccess?.isVideoPermitted ? `` : "callFeatureEnabled"},
+                text: this.props.mediaAccess?.isVideoPermitted ? 'Forbid Video' : 'Allow Video',
+                onClick: (e) => this.props.mediaAccess?.isVideoPermitted ?
+                    this.menuOptionsHandler.forbidVideo(this.identifier, e):
+                    this.menuOptionsHandler.permitVideo(this.identifier, e)
+            });
+        }
         return menuItems.filter(item => item != 0)
     }
 
@@ -199,14 +218,14 @@ export default class RemoteParticipantCard extends React.Component {
                     </div>
                     <div className="inline-flex align-items-center ml-5">
                         {
-                            this.state.mediaAccess?.isVideoPermitted === false ? <div className="in-call-button inline-block"
+                            this.props.mediaAccess?.isVideoPermitted === false ? <div className="in-call-button inline-block"
                                 title={`${this.state.isMuted ? 'Participant camera disabled': ``}`}
                                 disabled={true}>
                                     <Icon iconName={this.state.isMuted ? "VideoOff" : "Video"}/>
                             </div> : undefined
                         }
                         {
-                            this.state.mediaAccess?.isAudioPermitted === false ? <div className="in-call-button inline-block"
+                            this.props.mediaAccess?.isAudioPermitted === false ? <div className="in-call-button inline-block"
                                 title={`${this.state.isMuted ? 'Participant mic disabled': ``}`}
                                 disabled={true}>
                                     <Icon iconName={this.state.isMuted ? "MicOff" : "Microphone"}/>

@@ -1148,6 +1148,34 @@ export default class CallCard extends React.Component {
                 } catch(e) {
                     console.error(e);
                 }
+            },
+            forbidAudio: async (identifier) => {
+                try {
+                    await this.mediaAccessCallFeature.forbidAudio([identifier]);
+                } catch(e) {
+                    console.error(e);
+                }
+            },
+            permitAudio: async (identifier) => {
+                try {
+                    await this.mediaAccessCallFeature.permitAudio([identifier]);
+                } catch(e) {
+                    console.error(e);
+                }
+            },
+            forbidVideo: async (identifier) => {
+                try {
+                    await this.mediaAccessCallFeature.forbidVideo([identifier]);
+                } catch(e) {
+                    console.error(e);
+                }
+            },
+            permitVideo: async (identifier) => {
+                try {
+                    await this.mediaAccessCallFeature.permitVideo([identifier]);
+                } catch(e) {
+                    console.error(e);
+                }
             }
         }
     }

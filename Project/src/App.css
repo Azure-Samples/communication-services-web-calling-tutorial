@@ -218,6 +218,7 @@ ul {
   padding-top: 2em;
   padding-bottom: 2em;
   padding-left: 1em;
+  white-space: nowrap;
 }
 
 .participant-item:hover {
