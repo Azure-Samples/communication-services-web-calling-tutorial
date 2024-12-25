@@ -651,11 +651,11 @@ export default class CallCard extends React.Component {
     capabilitiesChangedHandler = (capabilitiesChangeInfo) => {
         for (const [key, value] of Object.entries(capabilitiesChangeInfo.newValue)) {
             if(key === 'turnVideoOn' && value.reason != 'FeatureNotSupported') {
-                (value.isPresent) ? this.setState({ canOnVideo: true }) : this.setState({ canOnVideo: false });
+                (value.isPresent) ? this.setState({ canOnVideo: true }) : this.setState({ canOnVideo: false, callMessage: 'Your camera has been disabled.'  });
                 continue;
             }
             if(key === 'unmuteMic' && value.reason != 'FeatureNotSupported') {
-                (value.isPresent) ? this.setState({ canUnMuteMic: true }) : this.setState({ canUnMuteMic: false });
+                (value.isPresent) ? this.setState({ canUnMuteMic: true }) : this.setState({ canUnMuteMic: false, callMessage: 'Your mic has been disabled.' });
                 continue;
             }
             if(key === 'shareScreen' && value.reason != 'FeatureNotSupported') {
