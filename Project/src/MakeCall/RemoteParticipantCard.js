@@ -138,7 +138,7 @@ export default class RemoteParticipantCard extends React.Component {
                 this.menuOptionsHandler.stopSpotlight(this.identifier, e):
                 this.menuOptionsHandler.startSpotlight(this.identifier, e)
         });
-        if (this.state.forbidOthersAudio && this.remoteParticipant.role === 'Attendee') {
+        if (this.props.mediaAccess && this.state.forbidOthersAudio && this.remoteParticipant.role === 'Attendee') {
             menuItems.push({
                 key: 'forbidAudio',
                 iconProps: { iconName: this.props.mediaAccess?.isAudioPermitted ? 'MicOff':'MicOff2', className: this.props.mediaAccess?.isAudioPermitted ? `` : "callFeatureEnabled"},
@@ -148,7 +148,7 @@ export default class RemoteParticipantCard extends React.Component {
                     this.menuOptionsHandler.permitAudio(this.identifier, e)
             });
         }
-        if (this.state.forbidOthersVideo && this.remoteParticipant.role === 'Attendee') {
+        if (this.props.mediaAccess && this.state.forbidOthersVideo && this.remoteParticipant.role === 'Attendee') {
             menuItems.push({
                 key: 'forbidVideo',
                 iconProps: { iconName: this.props.mediaAccess?.isVideoPermitted ? 'VideoOff':'VideoOff2', className: this.props.mediaAccess?.isVideoPermitted ? `` : "callFeatureEnabled"},

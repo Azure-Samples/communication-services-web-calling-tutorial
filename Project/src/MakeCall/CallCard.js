@@ -41,7 +41,6 @@ export default class CallCard extends React.Component {
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.capabilitiesFeature = this.call.feature(Features.Capabilities);
         this.capabilities = this.capabilitiesFeature.capabilities;
-        this.mediaAccessCallFeature = this.call.feature(Features.MediaAccess);
         if (Features.RealTimeText) {
             this.realTimeTextFeature = this.call.feature(Features.RealTimeText);
         }
@@ -55,6 +54,9 @@ export default class CallCard extends React.Component {
         if (Features.PPTLive) {
             this.pptLiveFeature = this.call.feature(Features.PPTLive);
             this.pptLiveHtml = React.createRef();
+        }
+        if (Features.MediaAccess) {
+            this.mediaAccessCallFeature = this.call.feature(Features.MediaAccess);
         }
         this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
@@ -154,7 +156,9 @@ export default class CallCard extends React.Component {
             this.call.feature(Features.PPTLive).off('isActiveChanged', this.pptLiveChangedHandler);
         }
         this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged);
-        this.mediaAccessCallFeature.off('mediaAccessChanged', this.mediaAccessChangedHandler);
+        if (Features.mediaAccess) {
+            this.mediaAccessCallFeature.off('mediaAccessChanged', this.mediaAccessChangedHandler);
+        }
     }
 
     componentDidMount() {
@@ -485,7 +489,9 @@ export default class CallCard extends React.Component {
             this.transcriptionFeature.on('isTranscriptionActiveChanged', this.isTranscriptionActiveChangedHandler);
             this.lobby?.on('lobbyParticipantsUpdated', this.lobbyParticipantsUpdatedHandler);
             this.realTimeTextFeature?.on('realTimeTextReceived', this.realTimeTextReceivedHandler);
-            this.mediaAccessCallFeature.on('mediaAccessChanged', this.mediaAccessChangedHandler);
+            if (Features.MediaAccess) {
+                this.mediaAccessCallFeature.on('mediaAccessChanged', this.mediaAccessChangedHandler);
+            }
         }
     }
 
@@ -549,8 +555,8 @@ export default class CallCard extends React.Component {
 
     mediaAccessChangedHandler = (event) => {
         const mediaAccessMap = new Map();
-        event.mediaAccesses.forEach((ma) => {
-            mediaAccessMap.set(ma.participant.rawId, ma);
+        event.mediaAccesses.forEach((mediaAccess) => {
+            mediaAccessMap.set(mediaAccess.participant.rawId, mediaAccess);
         });    
       
         this.setState({mediaAccessMap});
@@ -1283,7 +1289,7 @@ export default class CallCard extends React.Component {
     render() {
         const emojis = ['👍', '❤️', '😂', '👏', '😲'];
         const streamCount = this.state.allRemoteParticipantStreams.length;
-        const mediaAccessMap = this.state.mediaAccessMap;
+        const mediaAccessMap = this.state.mediaAccessMap || new Map();
         return (
             <div className="ms-Grid mt-2">
                 <div className="ms-Grid-row">
