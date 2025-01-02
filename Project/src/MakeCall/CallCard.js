@@ -7,7 +7,7 @@ import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
 import { Icon } from '@fluentui/react/lib/Icon';
 import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
-import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
+import { LocalVideoStream, Features, LocalAudioStream, MediaAccess } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
@@ -55,8 +55,17 @@ export default class CallCard extends React.Component {
             this.pptLiveFeature = this.call.feature(Features.PPTLive);
             this.pptLiveHtml = React.createRef();
         }
+        let meetingMediaAccess = undefined;
+        let remoteParticipantsMediaAccess = undefined;
+        let mediaAccessMap = undefined;
         if (Features.MediaAccess) {
             this.mediaAccessCallFeature = this.call.feature(Features.MediaAccess);
+            meetingMediaAccess = this.call.feature(Features.MediaAccess).getMeetingMediaAccess();
+            remoteParticipantsMediaAccess = this.call.feature(Features.MediaAccess).getAllOthersMediaAccess();
+            mediaAccessMap = new Map();
+            remoteParticipantsMediaAccess.forEach((mediaAccess) => {
+                mediaAccessMap.set(mediaAccess.participant.rawId, mediaAccess);
+            });
         }
         this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
@@ -115,7 +124,11 @@ export default class CallCard extends React.Component {
             isRecordingActive: false,
             isTranscriptionActive: false,
             lobbyParticipantsCount: this.lobby?.participants.length,
-            mediaAccessMap: Map
+            mediaAccessMap,
+            meetingMediaAccess: {
+                isAudioPermitted: meetingMediaAccess?.isAudioPermitted,
+                isVideoPermitted: meetingMediaAccess?.isVideoPermitted,
+            }
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
@@ -158,6 +171,7 @@ export default class CallCard extends React.Component {
         this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged);
         if (Features.mediaAccess) {
             this.mediaAccessCallFeature.off('mediaAccessChanged', this.mediaAccessChangedHandler);
+            this.mediaAccessCallFeature.off('meetingMediaAccessChanged', this.meetingMediaAccessChangedHandler);
         }
     }
 
@@ -248,10 +262,14 @@ export default class CallCard extends React.Component {
                 if (this.call.state === 'LocalHold' || this.call.state === 'RemoteHold') {
                     this.setState({ canRaiseHands: false });
                     this.setState({ canSpotlight: false });
+                    this.setState({ canForbidOthersAudio: false });
+                    this.setState({ canForbidOthersVideo: false });
                 }
                 if (this.call.state === 'Connected') {
                     this.setState({ canRaiseHands:  this.capabilities.raiseHand?.isPresent || this.capabilities.raiseHand?.reason === 'FeatureNotSupported' });
                     this.setState({ canSpotlight: this.capabilities.spotlightParticipant?.isPresent || this.capabilities.spotlightParticipant?.reason === 'FeatureNotSupported' });
+                    this.setState({ canForbidOthersAudio: this.capabilities.forbidOthersAudio?.isPresent || this.capabilities.forbidOthersAudio?.reason === 'FeatureNotSupported' });
+                    this.setState({ canForbidOthersVideo: this.capabilities.forbidOthersVideo?.isPresent || this.capabilities.forbidOthersVideo?.reason === 'FeatureNotSupported' });
                 }
             }
             callStateChanged();
@@ -491,6 +509,7 @@ export default class CallCard extends React.Component {
             this.realTimeTextFeature?.on('realTimeTextReceived', this.realTimeTextReceivedHandler);
             if (Features.MediaAccess) {
                 this.mediaAccessCallFeature.on('mediaAccessChanged', this.mediaAccessChangedHandler);
+                this.mediaAccessCallFeature.on('meetingMediaAccessChanged', this.meetingMediaAccessChangedHandler);
             }
         }
     }
@@ -560,6 +579,15 @@ export default class CallCard extends React.Component {
         });    
       
         this.setState({mediaAccessMap});
+    }
+
+    meetingMediaAccessChangedHandler = (event) => {
+        if (event.meetingMediaAccess) {
+            this.setState({meetingMediaAccess: {
+                isAudioPermitted: event.meetingMediaAccess.isAudioPermitted,
+                isVideoPermitted: event.meetingMediaAccess.isVideoPermitted,
+            }});
+        }
     }
 
     isRecordingActiveChangedHandler = (event) => {
@@ -676,6 +704,14 @@ export default class CallCard extends React.Component {
             }
             if(key === 'reaction' && value.reason != 'FeatureNotSupported') {
                 (value.isPresent) ? this.setState({ canReact: true }) : this.setState({ canReact: false });
+                continue;
+            }
+            if(key === 'forbidOthersAudio' && value.reason != 'FeatureNotSupported') {
+                (value.isPresent) ? this.setState({ canForbidOthersAudio: true }) : this.setState({ canForbidOthersAudio: false });
+                continue;
+            }
+            if(key === 'forbidOthersVideo' && value.reason != 'FeatureNotSupported') {
+                (value.isPresent) ? this.setState({ canForbidOthersVideo: true }) : this.setState({ canForbidOthersVideo: false });
                 continue;
             }
         }
@@ -1182,6 +1218,34 @@ export default class CallCard extends React.Component {
                 } catch(e) {
                     console.error(e);
                 }
+            },
+            forbidOthersAudio: async () => {
+                try {
+                    await this.mediaAccessCallFeature.forbidOthersAudio();
+                } catch(e) {
+                    console.error(e);
+                }
+            },
+            permitOthersAudio: async () => {
+                try {
+                    await this.mediaAccessCallFeature.permitOthersAudio();
+                } catch(e) {
+                    console.error(e);
+                }
+            },
+            forbidOthersVideo: async () => {
+                try {
+                    await this.mediaAccessCallFeature.forbidOthersVideo();
+                } catch(e) {
+                    console.error(e);
+                }
+            },
+            permitOthersVideo: async () => {
+                try {
+                    await this.mediaAccessCallFeature.permitOthersVideo();
+                } catch(e) {
+                    console.error(e);
+                }
             }
         }
     }
@@ -1262,6 +1326,43 @@ export default class CallCard extends React.Component {
             iconProps: { iconName: 'ReminderPerson'},
             onClick: (e) => menuCallBacks.consentToBeingRecorded(e)
         });
+
+        
+        if (this.state.canForbidOthersAudio && this.state.meetingMediaAccess.isAudioPermitted){
+            menuItems.push({
+                key: 'Disable mic for all attendees',
+                iconProps: { iconName: 'Focus'},
+                text: 'Disable mic for all attendees',
+                onClick: () => menuCallBacks.forbidOthersAudio()
+            });
+        }
+
+        if (this.state.canForbidOthersAudio && !this.state.meetingMediaAccess.isAudioPermitted){
+            menuItems.push({
+                key: 'Enable mic for all attendees',
+                iconProps: { iconName: 'Focus'},
+                text: 'Enable mic for all attendees',
+                onClick: () => menuCallBacks.permitOthersAudio()
+            });
+        }
+
+        if (this.state.canForbidOthersVideo && this.state.meetingMediaAccess.isVideoPermitted){
+            menuItems.push({
+                key: 'Disable camera for all attendees',
+                iconProps: { iconName: 'Focus'},
+                text: 'Disable camera for all attendees',
+                onClick: () => menuCallBacks.forbidOthersVideo()
+            });
+        }
+
+        if (this.state.canForbidOthersVideo && !this.state.meetingMediaAccess.isVideoPermitted){
+            menuItems.push({
+                key: 'Enable camera for all attendees',
+                iconProps: { iconName: 'Focus'},
+                text: 'Enable camera for all attendees',
+                onClick: () => menuCallBacks.permitOthersVideo()
+            });
+        }
 
         return menuItems.filter(item => item != 0)
     }
