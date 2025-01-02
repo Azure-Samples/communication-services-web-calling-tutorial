@@ -141,8 +141,8 @@ export default class RemoteParticipantCard extends React.Component {
         if (this.props.mediaAccess && this.state.forbidOthersAudio && this.remoteParticipant.role === 'Attendee') {
             menuItems.push({
                 key: 'forbidAudio',
-                iconProps: { iconName: this.props.mediaAccess?.isAudioPermitted ? 'MicOff':'MicOff2', className: this.props.mediaAccess?.isAudioPermitted ? `` : "callFeatureEnabled"},
-                text: this.props.mediaAccess?.isAudioPermitted ? 'Forbid Audio' : 'Allow Audio',
+                iconProps: { iconName: this.props.mediaAccess?.isAudioPermitted ? 'MicOff':'Microphone', className: this.props.mediaAccess?.isAudioPermitted ? `` : "callFeatureEnabled"},
+                text: this.props.mediaAccess?.isAudioPermitted ? 'Disable mic' : 'Allow mic',
                 onClick: (e) => this.props.mediaAccess?.isAudioPermitted ?
                     this.menuOptionsHandler.forbidAudio(this.identifier, e):
                     this.menuOptionsHandler.permitAudio(this.identifier, e)
@@ -151,8 +151,8 @@ export default class RemoteParticipantCard extends React.Component {
         if (this.props.mediaAccess && this.state.forbidOthersVideo && this.remoteParticipant.role === 'Attendee') {
             menuItems.push({
                 key: 'forbidVideo',
-                iconProps: { iconName: this.props.mediaAccess?.isVideoPermitted ? 'VideoOff':'VideoOff2', className: this.props.mediaAccess?.isVideoPermitted ? `` : "callFeatureEnabled"},
-                text: this.props.mediaAccess?.isVideoPermitted ? 'Forbid Video' : 'Allow Video',
+                iconProps: { iconName: this.props.mediaAccess?.isVideoPermitted ? 'VideoOff':'Video', className: this.props.mediaAccess?.isVideoPermitted ? `` : "callFeatureEnabled"},
+                text: this.props.mediaAccess?.isVideoPermitted ? 'Disable camera' : 'Allow camera',
                 onClick: (e) => this.props.mediaAccess?.isVideoPermitted ?
                     this.menuOptionsHandler.forbidVideo(this.identifier, e):
                     this.menuOptionsHandler.permitVideo(this.identifier, e)
