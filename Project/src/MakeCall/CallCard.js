@@ -7,7 +7,7 @@ import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
 import { Icon } from '@fluentui/react/lib/Icon';
 import LocalVideoPreviewCard from './LocalVideoPreviewCard';
 import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
-import { LocalVideoStream, Features, LocalAudioStream, MediaAccess } from '@azure/communication-calling';
+import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
 import VideoEffectsContainer from './VideoEffects/VideoEffectsContainer';
