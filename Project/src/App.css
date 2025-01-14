@@ -388,24 +388,30 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
   border-radius: 0px;
 }
 
+/* Video grid with 2 columns*/
 .video-grid-row {
   display: grid;
   gap: 1px;
   padding-bottom: 25px;
-  grid-template-columns: repeat(auto-fit, minmax(min(99%/1, 100%/4), 1fr));
+  grid-template-columns: repeat(2, 1fr);
 }
+
+/* On mobile, just display all videos full width, one on top of the other */
 @media screen and (max-width: 1024px){
   .video-grid-row {
     display: block;
   }
 }
 
-.video-grid-row >  .stream-container.rendering:nth-child(3n-1):nth-last-of-type(1) {
-  grid-column: span 2;
+.stream-container {
+  order: 1;
+  position: relative;
 }
 
-.video-grid-row > .stream-container.rendering:nth-child(3n-2):nth-last-of-type(1) {
-  grid-column: span 3;
+/* Make a pinned video take up 2 columns and render them first before videos that are not pinned */
+.video-grid-row > .stream-container.rendering.pinned {
+  order: 0;
+  grid-column: span 2 !important;
 }
 
 .pptLive {
@@ -452,10 +458,23 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
   box-shadow: 0px 0px 0px 3px #75b6e7;
 }
 
+/* .speaking-border-for-video-on {
+  border: 3px solid #75b6e7;
+}
+
+.speaking-border-for-video-off {
+    border: 3px solid #0D1114;;
+} */
+
 .remote-video-container {
   position: relative;
   height: 100%;
 }
+
+/* 
+.remote-video-container video {
+  display: block;
+} */
 
 .remote-video-container video {
   object-fit: cover !important;
@@ -1116,20 +1135,6 @@ div.volumeVisualizer::before {
   width: 300px;
   border: 1px solid #605e5c;
   padding: 8px;
-}
-
-.stream-container {
-  order: 1;
-  display: none;
-  position: relative;
-  flex-grow: 0;
-  flex-shrink: 0;
-  flex-basis: 100%;
-}
-
-.stream-container[id*="ScreenSharing"] {
-  order: 0;
-  grid-column: span 3 !important;
 }
 
 .scrollable-captions-container {
