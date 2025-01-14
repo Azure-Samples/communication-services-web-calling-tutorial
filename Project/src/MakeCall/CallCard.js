@@ -128,7 +128,8 @@ export default class CallCard extends React.Component {
             meetingMediaAccess: {
                 isAudioPermitted: meetingMediaAccess?.isAudioPermitted,
                 isVideoPermitted: meetingMediaAccess?.isVideoPermitted,
-            }
+            },
+            showPin2VideosList: false,
         };
         this.selectedRemoteParticipants = new Set();
         this.dataChannelRef = React.createRef();
@@ -1387,6 +1388,27 @@ export default class CallCard extends React.Component {
         this.call.setConstraints(constraints);
     }
 
+    handleVideoPin = (streamTuple, e) => {
+        // e.preventDefault();
+        const checked = e.target.checked;
+        const allRemoteParticipantStreams = this.state.allRemoteParticipantStreams;
+        if (allRemoteParticipantStreams.filter(streamTuple => streamTuple.isPinned).length >= 2 && checked) {
+            return;
+        } 
+
+        allRemoteParticipantStreams.forEach(v => {
+            if (streamTuple === v) {
+                v.isPinned = checked;
+            } else {
+                v.isPinned = !!v.isPinned;
+            }
+        });
+
+        this.setState({ allRemoteParticipantStreams: allRemoteParticipantStreams }, () => {
+            this.updateListOfParticipantsToRender('Pinned videos changed');
+        });
+    }
+
     render() {
         const emojis = ['👍', '❤️', '😂', '👏', '😲'];
         const streamCount = this.state.allRemoteParticipantStreams.length;
@@ -1433,7 +1455,7 @@ export default class CallCard extends React.Component {
                 <div className="ms-Grid-row">
                     {
                         this.state.callState === 'Connected' && this.state.isShowParticipants &&
-                        <div className="ms-Grid-col ms-lg4">
+                        <div className="ms-Grid-col ms-lg12">
                             <div>
                                 {   this.state.showAddParticipantPanel &&
                                     <AddParticipantPopover call={this.call} />
@@ -1473,47 +1495,46 @@ export default class CallCard extends React.Component {
                             
                         </div>
                     }
-                    <div className={this.state.isShowParticipants ? "ms-Grid-col ms-lg8" : undefined}>
-                        <div className="video-grid-row">
-                            {
-                                (this.state.callState === 'Connected' ||
-                                    this.state.callState === 'LocalHold' ||
-                                    this.state.callState === 'RemoteHold') &&
-                                this.state.allRemoteParticipantStreams.map(v =>
-                                    <StreamRenderer
-                                        key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`}
-                                        ref={v.streamRendererComponentRef}
-                                        stream={v.stream}
-                                        remoteParticipant={v.participant}
-                                        dominantSpeakerMode={this.state.dominantSpeakerMode}
-                                        dominantRemoteParticipant={this.state.dominantRemoteParticipant}
-                                        call={this.call}
-                                        showMediaStats={this.state.logMediaStats}
-                                        streamCount={streamCount}
-                                    />
-                                )
-                            }
-                            {
-                                (
-                                    this.state.remoteScreenShareStream &&
-                                        <StreamRenderer
-                                            key={`${utils.getIdentifierText(this.state.remoteScreenShareStream.participant.identifier)}-${this.state.remoteScreenShareStream.stream.mediaStreamType}-${this.state.remoteScreenShareStream.stream.id}`}
-                                            ref={this.state.remoteScreenShareStream.streamRendererComponentRef}
-                                            stream={this.state.remoteScreenShareStream.stream}
-                                            remoteParticipant={this.state.remoteScreenShareStream.participant}
-                                            dominantSpeakerMode={this.state.dominantSpeakerMode}
-                                            dominantRemoteParticipant={this.state.dominantRemoteParticipant}
-                                            call={this.call}
-                                            showMediaStats={this.state.logMediaStats}
-                                            streamCount={streamCount}
-                                        />
-                                )
-                            }
-                        </div>
+                    <div>
+                        {
+                            this.state.remoteScreenShareStream &&
+                                <StreamRenderer
+                                    key={`${utils.getIdentifierText(this.state.remoteScreenShareStream.participant.identifier)}-${this.state.remoteScreenShareStream.stream.mediaStreamType}-${this.state.remoteScreenShareStream.stream.id}`}
+                                    ref={this.state.remoteScreenShareStream.streamRendererComponentRef}
+                                    stream={this.state.remoteScreenShareStream.stream}
+                                    remoteParticipant={this.state.remoteScreenShareStream.participant}
+                                    dominantSpeakerMode={this.state.dominantSpeakerMode}
+                                    dominantRemoteParticipant={this.state.dominantRemoteParticipant}
+                                    call={this.call}
+                                    showMediaStats={this.state.logMediaStats}
+                                    streamCount={streamCount}
+                                />
+                        }
+                    </div>
+                    <div className="video-grid-row">
+                        {
+                            (this.state.callState === 'Connected' ||
+                                this.state.callState === 'LocalHold' ||
+                                this.state.callState === 'RemoteHold') &&
+                            this.state.allRemoteParticipantStreams.map(v =>
+                                <StreamRenderer
+                                    key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`}
+                                    ref={v.streamRendererComponentRef}
+                                    stream={v.stream}
+                                    isPinned={v.isPinned}
+                                    remoteParticipant={v.participant}
+                                    dominantSpeakerMode={this.state.dominantSpeakerMode}
+                                    dominantRemoteParticipant={this.state.dominantRemoteParticipant}
+                                    call={this.call}
+                                    showMediaStats={this.state.logMediaStats}
+                                    streamCount={streamCount}
+                                />
+                            )
+                        }
                     </div>
                 </div>
                 <div className="ms-Grid-row">
-                    <div className="text-center">
+                    <div className="text-center mt-4">
                         <span className="in-call-button"
                             title = {`${this.state.canOnVideo ? (this.state.videoOn ? 'Turn your video off' : 'Turn your video on') : 'Video is disabled'}`}
                             variant="secondary"
@@ -1748,7 +1769,15 @@ export default class CallCard extends React.Component {
                                 variant="secondary"
                                 onClick={() => this.handleRaiseHand()}>
                                 <Icon iconName="HandsFree"  className={this.state.isHandRaised ? "callFeatureEnabled" : ``}/>
-                            </span>                        
+                            </span>
+                        }
+                        {
+                            <span className="in-call-button"
+                                title={`Pin 2 videos`}
+                                variant="secondary"
+                                onClick={() =>  this.setState({showPin2VideosList: !this.state.showPin2VideosList})}>
+                                <Icon iconName="Pinned"/>
+                            </span>
                         }
                         <span className="in-call-button"
                             title='Like Reaction'
@@ -2073,6 +2102,28 @@ export default class CallCard extends React.Component {
                                    }
                                </tbody>
                             </table>
+                        </div>
+                    </div>
+                }
+                {
+                    this.state.showPin2VideosList &&
+                    <div className="mt-5">
+                        <div>
+                            <h3>
+                                Pin 2 videos
+                            </h3>
+                        </div>
+                        <div>
+                            {this.state.allRemoteParticipantStreams.map((streamTuple) => (
+                                <div key={utils.getIdentifierText(streamTuple.participant.identifier)}>
+                                <input
+                                    type="checkbox"
+                                    checked={streamTuple.isPinned}
+                                    onChange={(e) => this.handleVideoPin(streamTuple, e)}
+                                />
+                                {utils.getIdentifierText(streamTuple.participant.identifier)}
+                                </div>
+                            ))}
                         </div>
                     </div>
                 }

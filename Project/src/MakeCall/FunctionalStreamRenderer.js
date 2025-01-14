@@ -7,6 +7,7 @@ import VideoReceiveStats from './VideoReceiveStats';
 export const FunctionalStreamRenderer = forwardRef(({
     remoteParticipant,
     stream,
+    isPinned,
     dominantRemoteParticipant,
     dominantSpeakerMode,
     call,
@@ -143,7 +144,7 @@ export const FunctionalStreamRenderer = forwardRef(({
 
     if (stream.isAvailable) {
         return (
-            <div id={componentId} ref={componentContainer} className={`stream-container stream-count-${streamCount} ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``} ${stream.isAvailable ? 'rendering' : ''}`}>
+            <div id={componentId} ref={componentContainer} className={`stream-container  stream-count-${streamCount} ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``} ${stream.isAvailable ? 'rendering' : ''} ${isPinned ? 'pinned' : ''}`}>
                 <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`} id={videoContainerId} ref={videoContainer}>
                     <h4 className="video-title">
                         {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}

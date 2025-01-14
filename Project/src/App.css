@@ -393,6 +393,7 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
   display: flex;
   padding-bottom: 25px;
   flex-flow: row wrap;
+  justify-content: center;
 }
 
 @media screen and (max-width: 1024px){
@@ -401,11 +402,31 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
   }
 }
 
-.pptLive {
-  display: block;
-  padding: 2vh 2vw;  
-  width: 100%;  
-  height: 50vh; 
+.stream-container.pinned {
+    order: 0;
+    flex: 0 100% !important;
+}
+
+.stream-container {
+  order: 1;
+  display: none;
+  position: relative;
+  flex: 0 20%;
+}
+
+.stream-container.stream-count-1,
+.stream-container.stream-count-2,
+.stream-container.stream-count-3,
+.stream-container.stream-count-4 {
+  flex: 0 49%;
+}
+
+.stream-container.stream-count-5,
+.stream-container.stream-count-6,
+.stream-container.stream-count-7,
+.stream-container.stream-count-8,
+.stream-container.stream-count-9 {
+  flex: 0 33%;
 }
 
 .video-title {
@@ -471,6 +492,13 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
   left: 0;
   right: 0;
   transform: translate(-50%, -50%);
+}
+
+.pptLive {
+  display: block;
+  padding: 2vh 2vw;  
+  width: 100%;  
+  height: 50vh; 
 }
 
 .icon-text-large {
@@ -1109,33 +1137,6 @@ div.volumeVisualizer::before {
   width: 300px;
   border: 1px solid #605e5c;
   padding: 8px;
-}
-
-.stream-container {
-  order: 1;
-  display: none;
-  position: relative;
-  flex: 1 20%;
-}
-
-.stream-container.stream-count-1,
-.stream-container.stream-count-2,
-.stream-container.stream-count-3,
-.stream-container.stream-count-4 {
-  flex: 1 49%;
-}
-
-.stream-container.stream-count-5,
-.stream-container.stream-count-6,
-.stream-container.stream-count-7,
-.stream-container.stream-count-8,
-.stream-container.stream-count-9 {
-  flex: 1 33%;
-}
-
-.stream-container[id*="ScreenSharing"] {
-  order: 0;
-  grid-column: span 3 !important;
 }
 
 .scrollable-captions-container {
