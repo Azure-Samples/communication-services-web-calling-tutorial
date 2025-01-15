@@ -7,6 +7,7 @@ import VideoReceiveStats from './VideoReceiveStats';
 export const FunctionalStreamRenderer = forwardRef(({
     remoteParticipant,
     stream,
+    isPinningActive,
     isPinned,
     dominantRemoteParticipant,
     dominantSpeakerMode,
@@ -144,35 +145,42 @@ export const FunctionalStreamRenderer = forwardRef(({
 
     if (stream.isAvailable) {
         return (
-            <div id={componentId} ref={componentContainer} className={`stream-container  stream-count-${streamCount} ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``} ${stream.isAvailable ? 'rendering' : ''} ${isPinned ? 'pinned' : ''}`}>
-                <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`} id={videoContainerId} ref={videoContainer}>
-                    <h4 className="video-title">
-                        {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
-                    </h4>
-                    <CustomVideoEffects
-                        stream={stream}
-                        buttons={{
-                            add: {
-                                label: "Set B/W effect",
-                                disabled: false
-                            },
-                            remove: {
-                                label: "Remove B/W effect", 
-                                disabled: false
+            <div id={componentId}
+                ref={componentContainer}
+                className={`stream-container  stream-count-${streamCount}
+                ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``}
+                ${stream.isAvailable ? 'rendering' : ''}
+                ${isPinned ? 'pinned' : (isPinningActive ? 'pinning-is-active' : '')}`}>
+                    <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`}
+                        id={videoContainerId}
+                        ref={videoContainer}>
+                            <h4 className="video-title">
+                                {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
+                            </h4>
+                            <CustomVideoEffects
+                                stream={stream}
+                                buttons={{
+                                    add: {
+                                        label: "Set B/W effect",
+                                        disabled: false
+                                    },
+                                    remove: {
+                                        label: "Remove B/W effect", 
+                                        disabled: false
+                                    }
+                                }}
+                                isLocal={false}
+                                videoContainerId={videoContainerId}/>
+                            {
+                                isLoading && <div className="remote-video-loading-spinner"></div>
                             }
-                        }}
-                        isLocal={false}
-                        videoContainerId={videoContainerId}/>
+                    </div>
                     {
-                        isLoading && <div className="remote-video-loading-spinner"></div>
+                        videoStats && showMediaStats &&
+                        <h4 className="video-stats">
+                            <VideoReceiveStats videoStats={videoStats} transportStats={transportStats} />
+                        </h4>
                     }
-                </div>
-                {
-                    videoStats && showMediaStats &&
-                    <h4 className="video-stats">
-                        <VideoReceiveStats videoStats={videoStats} transportStats={transportStats} />
-                    </h4>
-                }
             </div>
         );
     }

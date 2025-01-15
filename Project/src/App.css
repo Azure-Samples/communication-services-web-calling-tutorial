@@ -402,16 +402,20 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
   }
 }
 
-.stream-container.pinned {
-    order: 0;
-    flex: 0 100% !important;
-}
-
 .stream-container {
   order: 1;
   display: none;
   position: relative;
   flex: 0 20%;
+}
+
+.stream-container.pinned {
+    order: 0;
+    flex: 0 100% !important;
+}
+
+.stream-container.pinning-is-active {
+  flex: 0 25% !important;
 }
 
 .stream-container.stream-count-1,

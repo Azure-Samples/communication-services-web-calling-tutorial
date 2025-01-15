@@ -129,6 +129,7 @@ export default class CallCard extends React.Component {
                 isAudioPermitted: meetingMediaAccess?.isAudioPermitted,
                 isVideoPermitted: meetingMediaAccess?.isVideoPermitted,
             },
+            isPinningActive: false,
             showPin2VideosList: false,
         };
         this.selectedRemoteParticipants = new Set();
@@ -1392,9 +1393,10 @@ export default class CallCard extends React.Component {
         // e.preventDefault();
         const checked = e.target.checked;
         const allRemoteParticipantStreams = this.state.allRemoteParticipantStreams;
+        // If there is already 2 streams pinned and the user is trying to pin another stream, return
         if (allRemoteParticipantStreams.filter(streamTuple => streamTuple.isPinned).length >= 2 && checked) {
             return;
-        } 
+        }
 
         allRemoteParticipantStreams.forEach(v => {
             if (streamTuple === v) {
@@ -1404,7 +1406,10 @@ export default class CallCard extends React.Component {
             }
         });
 
-        this.setState({ allRemoteParticipantStreams: allRemoteParticipantStreams }, () => {
+        this.setState({
+            allRemoteParticipantStreams: allRemoteParticipantStreams,
+            isPinningActive: allRemoteParticipantStreams.some(v => v.isPinned)
+        }, () => {
             this.updateListOfParticipantsToRender('Pinned videos changed');
         });
     }
@@ -1521,6 +1526,7 @@ export default class CallCard extends React.Component {
                                     key={`${utils.getIdentifierText(v.participant.identifier)}-${v.stream.mediaStreamType}-${v.stream.id}`}
                                     ref={v.streamRendererComponentRef}
                                     stream={v.stream}
+                                    isPinningActive={this.state.isPinningActive}
                                     isPinned={v.isPinned}
                                     remoteParticipant={v.participant}
                                     dominantSpeakerMode={this.state.dominantSpeakerMode}
