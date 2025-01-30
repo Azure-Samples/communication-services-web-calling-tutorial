@@ -4,7 +4,7 @@ import MakeCall from './MakeCall/MakeCall'
 import { initializeIcons } from '@uifabric/icons';
 import { ToastContainer } from 'react-toastify';
 
-initializeIcons();
+initializeIcons('https://res.cdn.office.net/files/fabric-cdn-prod_20241209.001/assets/icons/');
 
 function App() {
   let [users, setUsers] = useState([<MakeCall/>]);
