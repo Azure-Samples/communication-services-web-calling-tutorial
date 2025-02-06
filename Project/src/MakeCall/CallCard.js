@@ -1550,7 +1550,7 @@ export default class CallCard extends React.Component {
                                 <Icon iconName="Video" />
                             }
                             {
-                                (this.state.canOnVideo || !this.state.videoOn) &&
+                                (this.state.canOnVideo && !this.state.videoOn) &&
                                 <Icon iconName="VideoOff2" />
                             }
                             {
