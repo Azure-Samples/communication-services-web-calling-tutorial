@@ -1390,11 +1390,14 @@ export default class CallCard extends React.Component {
     }
 
     handleVideoPin = (streamTuple, e) => {
-        // e.preventDefault();
         const checked = e.target.checked;
         const allRemoteParticipantStreams = this.state.allRemoteParticipantStreams;
         // If there is already 2 streams pinned and the user is trying to pin another stream, return
         if (allRemoteParticipantStreams.filter(streamTuple => streamTuple.isPinned).length >= 2 && checked) {
+            allRemoteParticipantStreams.find(v => v === streamTuple).isPinned = false;
+            this.setState({
+                allRemoteParticipantStreams: allRemoteParticipantStreams,
+            });
             return;
         }
 
@@ -2121,13 +2124,14 @@ export default class CallCard extends React.Component {
                         </div>
                         <div>
                             {this.state.allRemoteParticipantStreams.map((streamTuple) => (
+                                streamTuple.participant.state === 'Connected' &&
                                 <div key={utils.getIdentifierText(streamTuple.participant.identifier)}>
-                                <input
-                                    type="checkbox"
-                                    checked={streamTuple.isPinned}
-                                    onChange={(e) => this.handleVideoPin(streamTuple, e)}
-                                />
-                                {utils.getIdentifierText(streamTuple.participant.identifier)}
+                                    <input
+                                        type="checkbox"
+                                        checked={streamTuple.isPinned}
+                                        onChange={(e) => this.handleVideoPin(streamTuple, e)}
+                                    />
+                                    {utils.getIdentifierText(streamTuple.participant.identifier)}
                                 </div>
                             ))}
                         </div>
