@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Features } from '@azure/communication-calling';
-import { PrimaryButton } from 'office-ui-fabric-react/lib/components/Button';
+import { PrimaryButton } from '@fluentui/react/lib/Button';
 
 // RealTimeText react function component
 const RealTimeTextCard = ({ call, state }) => {

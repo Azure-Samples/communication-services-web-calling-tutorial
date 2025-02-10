@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { PrimaryButton, TextField } from 'office-ui-fabric-react';
+import { PrimaryButton } from '@fluentui/react/lib/Button';
+import { TextField } from '@fluentui/react/lib/TextField';
 import { CallKind } from "@azure/communication-calling";
 import { createIdentifierFromRawId } from '@azure/communication-common';
 

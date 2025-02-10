@@ -1,12 +1,12 @@
 import React from "react";
 import {
     PrimaryButton
-} from 'office-ui-fabric-react'
+} from '@fluentui/react/lib/Button'
 import StarRating from '../MakeCall/StarRating';
 import { Features } from '@azure/communication-calling';
 import config from '../../clientConfig.json';
 import { ApplicationInsights } from '@microsoft/applicationinsights-web';
-import { TextField } from 'office-ui-fabric-react';
+import { TextField } from '@fluentui/react/lib/TextField';
 
 export default class CallSurvey extends React.Component {
     constructor(props) {

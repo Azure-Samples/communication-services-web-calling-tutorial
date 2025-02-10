@@ -1,5 +1,6 @@
 import React from 'react';
-import { PrimaryButton, Dropdown } from 'office-ui-fabric-react';
+import { PrimaryButton } from '@fluentui/react/lib/Button';
+import { Dropdown } from '@fluentui/react/lib/Dropdown';
 import { Features } from '@azure/communication-calling';
 import { BackgroundBlurEffect, BackgroundReplacementEffect } from '@azure/communication-calling-effects';
 import VideoEffectsImagePicker from './VideoEffectsImagePicker';

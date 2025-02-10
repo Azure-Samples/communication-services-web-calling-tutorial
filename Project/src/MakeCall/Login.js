@@ -1,8 +1,7 @@
 import React from "react";
-import {
-    TextField, PrimaryButton, Checkbox,
-    MessageBar, MessageBarType
-} from 'office-ui-fabric-react'
+import { Checkbox, MessageBar, MessageBarType } from '@fluentui/react';
+import { PrimaryButton } from '@fluentui/react/lib/Button';
+import { TextField } from '@fluentui/react/lib/TextField';
 import { Features } from "@azure/communication-calling";
 import { utils } from "../Utils/Utils";
 import { v4 as uuid } from 'uuid';

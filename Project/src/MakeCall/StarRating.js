@@ -1,6 +1,6 @@
 import React from "react";
 import { Icon } from '@fluentui/react/lib/Icon';
-import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
+import { Dropdown } from '@fluentui/react/lib/Dropdown';
 
 export default class StarRating extends React.Component {
     constructor(props) {

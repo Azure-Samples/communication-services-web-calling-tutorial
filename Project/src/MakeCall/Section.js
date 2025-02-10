@@ -1,6 +1,6 @@
 import React from "react";
 import { Depths } from '@uifabric/fluent-theme/lib/fluent/FluentDepths';
-import { PrimaryButton } from 'office-ui-fabric-react'
+import { PrimaryButton } from '@fluentui/react/lib/Button'
 
 export default class Section extends React.Component {
     constructor(props) {
