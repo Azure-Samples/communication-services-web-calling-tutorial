@@ -1,5 +1,6 @@
 import React from "react";
-import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
+import { Dropdown } from '@fluentui/react/lib/Dropdown';
+
 
 export default class MediaConstraint extends React.Component {
     constructor(props) {

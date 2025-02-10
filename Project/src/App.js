@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
 import './App.css';
 import MakeCall from './MakeCall/MakeCall'
-import { initializeIcons } from '@uifabric/icons';
+import { initializeIcons } from '@fluentui/font-icons-mdl2';
+import { registerIcons } from '@fluentui/react/lib/Styling';
+import { VideoOff2Icon } from '@fluentui/react-icons-mdl2';
 import { ToastContainer } from 'react-toastify';
 
-initializeIcons('https://res.cdn.office.net/files/fabric-cdn-prod_20241209.001/assets/icons/');
+initializeIcons();
+// VideoOff2 is not available in fluentui/react-icons-mdl2. So we need to use fluentui/font-icons-mdl2 to register the icon and use it.
+registerIcons({
+  icons: {
+    VideoOff2: <VideoOff2Icon style={{verticalAlign: 'baseline'}} />
+  }
+});
 
 function App() {
   let [users, setUsers] = useState([<MakeCall/>]);

@@ -1,12 +1,12 @@
 import React from "react";
-import { MessageBar, MessageBarType } from 'office-ui-fabric-react'
+import { MessageBar, MessageBarType } from '@fluentui/react'
 import { FunctionalStreamRenderer as StreamRenderer } from "./FunctionalStreamRenderer";
 import AddParticipantPopover from "./AddParticipantPopover";
 import RemoteParticipantCard from "./RemoteParticipantCard";
-import { Panel, PanelType } from 'office-ui-fabric-react/lib/Panel';
+import { Panel, PanelType } from '@fluentui/react/lib/Panel';
 import { Icon } from '@fluentui/react/lib/Icon';
 import LocalVideoPreviewCard from './LocalVideoPreviewCard';
-import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
+import { Dropdown } from '@fluentui/react/lib/Dropdown';
 import { LocalVideoStream, Features, LocalAudioStream } from '@azure/communication-calling';
 import { utils } from '../Utils/Utils';
 import CustomVideoEffects from "./RawVideoAccess/CustomVideoEffects";
@@ -1545,18 +1545,7 @@ export default class CallCard extends React.Component {
                             title = {`${this.state.canOnVideo ? (this.state.videoOn ? 'Turn your video off' : 'Turn your video on') : 'Video is disabled'}`}
                             variant="secondary"
                             onClick={() => this.handleVideoOnOff()}>
-                            {
-                                this.state.canOnVideo && this.state.videoOn &&
-                                <Icon iconName="Video" />
-                            }
-                            {
-                                (this.state.canOnVideo && !this.state.videoOn) &&
-                                <Icon iconName="VideoOff2" />
-                            }
-                            {
-                                (!this.state.canOnVideo) &&
-                                <Icon iconName="VideoOff" />
-                            }
+                                <Icon iconName={`${this.state.canOnVideo ? (this.state.videoOn ? 'Video' : 'VideoOff2') : 'VideoOff'}`} />
                         </span>
                         <span className="in-call-button"
                             title={`${this.state.canUnMuteMic ? (this.state.micMuted ? 'Unmute your microphone' : 'Mute your microphone') : 'Microphone is disabled'}`}

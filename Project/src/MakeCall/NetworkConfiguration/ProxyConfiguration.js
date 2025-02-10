@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import {
-    TextField,
-    PrimaryButton,
-    Checkbox
-} from 'office-ui-fabric-react';
+import { Checkbox } from '@fluentui/react';
+import { PrimaryButton } from '@fluentui/react/lib/Button';
+import { TextField } from '@fluentui/react/lib/TextField';
 
 export const ProxyConfiguration = (props) => {
     const [proxyUrl, setProxyUrl] = useState('');

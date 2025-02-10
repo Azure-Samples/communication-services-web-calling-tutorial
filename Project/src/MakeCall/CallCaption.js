@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Features } from '@azure/communication-calling';
-import { Dropdown } from 'office-ui-fabric-react/lib/Dropdown';
+import { Dropdown } from '@fluentui/react/lib/Dropdown';
 
 // CallCaption react function component
 const CallCaption = ({ call }) => {

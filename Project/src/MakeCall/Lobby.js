@@ -1,5 +1,5 @@
 import React from "react";
-import { PrimaryButton } from 'office-ui-fabric-react';
+import { PrimaryButton } from '@fluentui/react/lib/Button';
 import { Features } from '@azure/communication-calling';
 
 // Lobby react function component

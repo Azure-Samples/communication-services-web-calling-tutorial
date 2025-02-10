@@ -2,7 +2,9 @@ import React from "react";
 import { ToastContainer, toast } from 'react-toastify';
 import { Features } from '@azure/communication-calling';
 import 'react-toastify/dist/ReactToastify.css';
-import { PrimaryButton, TextField } from 'office-ui-fabric-react';
+import { PrimaryButton } from '@fluentui/react/lib/Button';
+import { TextField } from '@fluentui/react/lib/TextField';
+
 import { utils } from '../Utils/Utils';
 
 const toastOptions = {
