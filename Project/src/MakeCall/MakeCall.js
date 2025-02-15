@@ -13,6 +13,7 @@ import MediaConstraint from './MediaConstraint';
 import { setLogLevel, AzureLogger } from '@azure/logger';
 import { inflate } from 'pako';
 import { URL_PARAM } from "../Constants";
+import { utils } from "../Utils/Utils";
 export default class MakeCall extends React.Component {
     constructor(props) {
         super(props);
@@ -33,7 +34,9 @@ export default class MakeCall extends React.Component {
         this.meetingLink = null;
         this.meetingId = null;
         this.passcode = null;
-        this.roomsId = null;
+        this.presenterUserId = null;
+        this.consumerUserId1 = null;
+        this.consumerUserId2 = null;
         this.threadId = null;
         this.messageId = null;
         this.organizerId = null;
@@ -58,6 +61,8 @@ export default class MakeCall extends React.Component {
             showCustomContextSampleCode: false,
             showPreCallDiagnostcisResults: false,
             showCustomContext: false,
+            roomId: undefined,
+            showCreateRoomPanel: false,
             xHeadersCount: 1,
             xHeadersMaxCount: 5,
             isPreCallDiagnosticsCallInProgress: false,
@@ -360,10 +365,20 @@ export default class MakeCall extends React.Component {
     joinRooms = async (withVideo) => {
         try {
             const callOptions = await this.getCallOptions({video: withVideo, micMuted: false});
-            this.callAgent.join({ roomId: this.roomsId.value }, callOptions);
+            this.callAgent.join({ roomId: this.state.roomId }, callOptions);
         } catch (e) {
             console.error('Failed to join a call', e);
             this.setState({ callError: 'Failed to join a call: ' + e });
+        }
+    };
+
+    createRoom = async () => {
+        try {
+            const roomId = await utils.createRoom(this.presenterUserId.value, this.consumerUserId1.value, this.consumerUserId2.value);
+            console.log('Room id created: ', roomId);
+            this.setState({ roomId });
+        } catch (e) {
+            console.error('Failed to create a room: ', e);
         }
     };
 
@@ -1159,8 +1174,9 @@ this.callAgent.on('incomingCall', async (args) => {
                                                     <TextField className="mb-3 mt-0"
                                                         disabled={this.state.call || !this.state.loggedIn}
                                                         label="Rooms id"
+                                                        value={ this.state.roomId }
                                                         placeholder="<GUID>"
-                                                        componentRef={(val) => this.roomsId = val} />
+                                                        onChange={(e) => this.setState({ roomId: e.target.value })}/>
                                                 </div>
                                             </div>
                                             <PrimaryButton className="primary-button"
@@ -1175,7 +1191,48 @@ this.callAgent.on('incomingCall', async (args) => {
                                                 disabled={this.state.call || !this.state.loggedIn}
                                                 onClick={() => this.joinRooms(true)}>
                                             </PrimaryButton>
+                                            <PrimaryButton className="primary-button"
+                                                iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                                text="Create a room"
+                                                disabled={this.state.call || !this.state.loggedIn}
+                                                onClick={() => this.setState({ showCreateRoomPanel: !this.state.showCreateRoomPanel })}>
+                                            </PrimaryButton>
                                         </div>
+                                        {
+                                            this.state.showCreateRoomPanel &&
+                                                <div className="mt-5">
+                                                    <h2 className="mb-0">Create a Room</h2>
+                                                    <div className="ms-Grid-row">
+                                                        <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                            <TextField className="mb-3 mt-0"
+                                                                disabled={this.state.call || !this.state.loggedIn}
+                                                                label="Presenter user id"
+                                                                placeholder="8:acs:<ACA resource ID>_<GUID>"
+                                                                componentRef={(val) => this.presenterUserId = val} />
+                                                        </div>
+                                                        <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                            <TextField className="mb-3 mt-0"
+                                                                disabled={this.state.call || !this.state.loggedIn}
+                                                                label="Consumer 1 user id"
+                                                                placeholder="8:acs:<ACA resource ID>_<GUID>"
+                                                                componentRef={(val) => this.consumerUserId1 = val} />
+                                                        </div>
+                                                        <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                            <TextField className="mb-3 mt-0"
+                                                                disabled={this.state.call || !this.state.loggedIn}
+                                                                label="Consumer 2 user id"
+                                                                placeholder="8:acs:<ACA resource ID>_<GUID>"
+                                                                componentRef={(val) => this.consumerUserId2 = val} />
+                                                        </div>
+                                                    </div>
+                                                    <PrimaryButton className="primary-button"
+                                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                                        text="Create room"
+                                                        disabled={this.state.call || !this.state.loggedIn}
+                                                        onClick={() => this.createRoom()}>
+                                                    </PrimaryButton>
+                                                </div>
+                                        }
                                     </div>
                                 </div>
                                 <div className="ms-Grid-row mt-3">

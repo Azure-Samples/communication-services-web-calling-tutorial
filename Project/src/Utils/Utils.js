@@ -97,6 +97,24 @@ export const utils = {
         }
         throw new Error('Failed to get Teams User Acccess token');
     },
+    createRoom: async (presenterUserId, consumerUserId1, consumerUserId2) => {
+        try {
+            const response = await axios({
+                url: 'createRoom',
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json, text/plain, */*',
+                    'Content-type': 'application/json'
+                },
+                data: JSON.stringify({ presenterUserId, consumerUserId1, consumerUserId2 })
+            })
+
+            return response.data.roomId;
+
+        } catch (error) {
+            throw error.response.data.message;
+        }
+    },
     getIdentifierText: (identifier) => {
         if (isCommunicationUserIdentifier(identifier)) {
             return identifier.communicationUserId;
