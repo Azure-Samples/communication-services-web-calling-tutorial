@@ -97,7 +97,7 @@ export const utils = {
         }
         throw new Error('Failed to get Teams User Acccess token');
     },
-    createRoom: async (presenterUserId, consumerUserId1, consumerUserId2) => {
+    createRoom: async (presenterUserId, attendeeUserId, consumerUserId) => {
         try {
             const response = await axios({
                 url: 'createRoom',
@@ -106,7 +106,7 @@ export const utils = {
                     'Accept': 'application/json, text/plain, */*',
                     'Content-type': 'application/json'
                 },
-                data: JSON.stringify({ presenterUserId, consumerUserId1, consumerUserId2 })
+                data: JSON.stringify({ presenterUserId, attendeeUserId, consumerUserId })
             })
 
             return response.data.roomId;

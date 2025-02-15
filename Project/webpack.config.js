@@ -242,12 +242,12 @@ module.exports = {
                         id: { communicationUserId: req.body.presenterUserId },
                         role: "Presenter"
                     }) : null;
-                    req.body.consumerUserId1 ? participants.push({
-                        id: { communicationUserId: req.body.consumerUserId1 },
-                        role: "Consumer"
+                    req.body.attendeeUserId ? participants.push({
+                        id: { communicationUserId: req.body.attendeeUserId },
+                        role: "Attendee"
                     }) : null;
-                    req.body.consumerUserId2 ? participants.push({
-                        id: { communicationUserId: req.body.consumerUserId2 },
+                    req.body.consumerUserId ? participants.push({
+                        id: { communicationUserId: req.body.consumerUserId },
                         role: "Consumer"
                     }) : null;
 
@@ -258,6 +258,7 @@ module.exports = {
                         return;
                     }
 
+                    console.log('participants:', participants);
                     const validFrom = new Date(Date.now());
                     const validUntil = new Date(validFrom.getTime() + 60 * 60 * 1000);
                     const pstnDialOutEnabled = true;

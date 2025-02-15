@@ -35,8 +35,8 @@ export default class MakeCall extends React.Component {
         this.meetingId = null;
         this.passcode = null;
         this.presenterUserId = null;
-        this.consumerUserId1 = null;
-        this.consumerUserId2 = null;
+        this.attendeeUserId = null;
+        this.consumerUserId = null;
         this.threadId = null;
         this.messageId = null;
         this.organizerId = null;
@@ -374,7 +374,7 @@ export default class MakeCall extends React.Component {
 
     createRoom = async () => {
         try {
-            const roomId = await utils.createRoom(this.presenterUserId.value, this.consumerUserId1.value, this.consumerUserId2.value);
+            const roomId = await utils.createRoom(this.presenterUserId.value, this.attendeeUserId.value, this.consumerUserId.value);
             console.log('Room id created: ', roomId);
             this.setState({ roomId });
         } catch (e) {
@@ -995,7 +995,7 @@ this.callAgent.on('incomingCall', async (args) => {
                                                     className="mt-0"
                                                     disabled={this.state.call || !this.state.loggedIn}
                                                     label={`Enter an Identity to make a call to. You can specify multiple Identities to call by using \",\" separated values.`}
-                                                    placeholder="8:acs:<ACA resource ID>_<GUID>"
+                                                    placeholder="8:acs:<ACS resource ID>_<GUID>"
                                                     componentRef={(val) => this.destinationUserIds = val} />
                                                 <TextField
                                                     disabled={this.state.call || !this.state.loggedIn}
@@ -1207,22 +1207,22 @@ this.callAgent.on('incomingCall', async (args) => {
                                                             <TextField className="mb-3 mt-0"
                                                                 disabled={this.state.call || !this.state.loggedIn}
                                                                 label="Presenter user id"
-                                                                placeholder="8:acs:<ACA resource ID>_<GUID>"
+                                                                placeholder="8:acs:<ACS resource ID>_<GUID>"
                                                                 componentRef={(val) => this.presenterUserId = val} />
                                                         </div>
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
                                                                 disabled={this.state.call || !this.state.loggedIn}
-                                                                label="Consumer 1 user id"
-                                                                placeholder="8:acs:<ACA resource ID>_<GUID>"
-                                                                componentRef={(val) => this.consumerUserId1 = val} />
+                                                                label="Attendee user id"
+                                                                placeholder="8:acs:<ACS resource ID>_<GUID>"
+                                                                componentRef={(val) => this.attendeeUserId = val} />
                                                         </div>
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
                                                                 disabled={this.state.call || !this.state.loggedIn}
-                                                                label="Consumer 2 user id"
-                                                                placeholder="8:acs:<ACA resource ID>_<GUID>"
-                                                                componentRef={(val) => this.consumerUserId2 = val} />
+                                                                label="Consumer user id"
+                                                                placeholder="8:acs:<ACS resource ID>_<GUID>"
+                                                                componentRef={(val) => this.consumerUserId = val} />
                                                         </div>
                                                     </div>
                                                     <PrimaryButton className="primary-button"
