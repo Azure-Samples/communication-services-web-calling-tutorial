@@ -1,4 +1,5 @@
 const CommunicationIdentityClient = require("@azure/communication-identity").CommunicationIdentityClient;
+const { RoomsClient } = require('@azure/communication-rooms');
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const config = require("./serverConfig.json");
 const clientConfig = require("./clientConfig.json");
@@ -232,6 +233,54 @@ module.exports = {
                 } catch (e) {
                     console.error(e);
                     res.sendStatus(400);
+                }
+            });
+            devServer.app.post('/createRoom', async (req, res) => {
+                try {
+                    let participants = [];
+                    req.body.presenterUserId ? participants.push({
+                        id: { communicationUserId: req.body.presenterUserId },
+                        role: "Presenter"
+                    }) : null;
+                    req.body.attendeeUserId ? participants.push({
+                        id: { communicationUserId: req.body.attendeeUserId },
+                        role: "Attendee"
+                    }) : null;
+                    req.body.consumerUserId ? participants.push({
+                        id: { communicationUserId: req.body.consumerUserId },
+                        role: "Consumer"
+                    }) : null;
+
+                    if (participants.length === 0) {
+                        res.status(400).json({
+                            message: "At least one participant must be provided to create a room."
+                        });
+                        return;
+                    }
+
+                    console.log('participants:', participants);
+                    const validFrom = new Date(Date.now());
+                    const validUntil = new Date(validFrom.getTime() + 60 * 60 * 1000);
+                    const pstnDialOutEnabled = true;
+                    const roomsClient = new RoomsClient(config.connectionString);
+                    const createRoom = await roomsClient.createRoom({
+                        validFrom,
+                        validUntil,
+                        pstnDialOutEnabled,
+                        participants
+                    });
+                    const roomId = createRoom.id;
+                    console.log('\nRoom successfully created');
+                    console.log('Room ID:', roomId);
+                    console.log('Participants:', participants);
+
+                    res.setHeader('Content-Type', 'application/json');
+                    res.status(200).json({
+                        roomId
+                    });
+                } catch (e) {
+                    console.error(e);
+                    throw e;
                 }
             });
 
