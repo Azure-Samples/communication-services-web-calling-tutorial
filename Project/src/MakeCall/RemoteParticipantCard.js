@@ -118,7 +118,7 @@ export default class RemoteParticipantCard extends React.Component {
     handleMuteParticipant(e, remoteParticipant) {
         e.preventDefault();
         if (this.state.canMuteOthers) {
-            remoteParticipant.mute?.().catch((e) => console.error('Failed to mute specific participant.', e.message, e));
+            remoteParticipant.mute().catch((e) => console.error('Failed to mute specific participant.', e.message, e));
         } else {
             console.error('Soft mute of remote participants is not a supported capability for this participant.');
         }
