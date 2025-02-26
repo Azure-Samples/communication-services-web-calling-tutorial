@@ -849,7 +849,7 @@ export default class CallCard extends React.Component {
 
     async handleMuteAllRemoteParticipants() {
         try {
-            await this.call.muteAllRemoteParticipants?.();
+            await this.call.muteAllRemoteParticipants();
         } catch (e) {
             console.error('Failed to mute all other participants.', e);
         }
