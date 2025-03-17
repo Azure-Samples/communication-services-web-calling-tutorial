@@ -31,7 +31,7 @@ export default class RemoteParticipantCard extends React.Component {
             state: this.remoteParticipant.state,
             isMuted: this.remoteParticipant.isMuted,
             hasDisplayNameChanged: this.remoteParticipant.hasDisplayNameChanged,
-            displayName: this.remoteParticipant.hasDisplayNameChanged ? (this.remoteParticipant.displayName ? `${this.remoteParticipant.displayName?.trim()} (Edited)` :  '') : this.remoteParticipant.displayName?.trim(),
+            displayName: this.remoteParticipant.hasDisplayNameChanged ? (this.remoteParticipant.displayName ? `${this.remoteParticipant.displayName.trim()} (Edited)` :  '') : this.remoteParticipant.displayName?.trim(),
             participantIds: this.remoteParticipant.endpointDetails.map((e) => { return e.participantId }),
             isHandRaised: utils.isParticipantHandRaised(this.remoteParticipant.identifier, this.raiseHandFeature.getRaisedHands()),
             isSpotlighted: utils.isParticipantHandRaised(this.remoteParticipant.identifier, this.spotlightFeature.getSpotlightedParticipants()),
@@ -72,11 +72,14 @@ export default class RemoteParticipantCard extends React.Component {
         })
 
         this.remoteParticipant.on('displayNameChanged', ({newValue, oldValue, reason }) => {
+            const hasDisplayNameChanged = this.remoteParticipant.hasDisplayNameChanged;
+            const displayName = this.remoteParticipant.hasDisplayNameChanged ? (this.remoteParticipant.displayName ? `${this.remoteParticipant.displayName.trim()} (Edited)` :  '') : this.remoteParticipant.displayName?.trim();
             if (reason === 'editedDisplayName') {
                 console.log('Edited display Name: ', newValue, oldValue, reason);
-                this.setState({ hasDisplayNameChanged: this.remoteParticipant.hasDisplayNameChanged, displayName: this.remoteParticipant.hasDisplayNameChanged ? (this.remoteParticipant.displayName ? `${this.remoteParticipant.displayName?.trim()} (Edited)` :  '') : this.remoteParticipant.displayName?.trim() })
+                this.setState({ hasDisplayNameChanged, displayName});
+                this.menuOptionsHandler.handleDisplayNameChanged(newValue, oldValue, reason);
             } else {
-                this.setState({displayName: this.remoteParticipant.hasDisplayNameChanged ? (this.remoteParticipant.displayName ? `${this.remoteParticipant.displayName?.trim()} (Edited)` :  '') : this.remoteParticipant.displayName?.trim()}) 
+                this.setState({displayName})
             }
         });
 
