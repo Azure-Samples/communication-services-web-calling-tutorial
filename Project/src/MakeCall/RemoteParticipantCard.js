@@ -30,7 +30,8 @@ export default class RemoteParticipantCard extends React.Component {
             isSpeaking: this.remoteParticipant.isSpeaking,
             state: this.remoteParticipant.state,
             isMuted: this.remoteParticipant.isMuted,
-            displayName: this.remoteParticipant.displayName?.trim(),
+            hasDisplayNameChanged: this.remoteParticipant.hasDisplayNameChanged,
+            displayName: this.remoteParticipant.hasDisplayNameChanged ? (this.remoteParticipant.displayName ? `${this.remoteParticipant.displayName.trim()} (Edited)` :  '') : this.remoteParticipant.displayName?.trim(),
             participantIds: this.remoteParticipant.endpointDetails.map((e) => { return e.participantId }),
             isHandRaised: utils.isParticipantHandRaised(this.remoteParticipant.identifier, this.raiseHandFeature.getRaisedHands()),
             isSpotlighted: utils.isParticipantHandRaised(this.remoteParticipant.identifier, this.spotlightFeature.getSpotlightedParticipants()),
@@ -70,8 +71,16 @@ export default class RemoteParticipantCard extends React.Component {
             this.setState({ isSpeaking: this.remoteParticipant.isSpeaking });
         })
 
-        this.remoteParticipant.on('displayNameChanged', () => {
-            this.setState({ displayName: this.remoteParticipant.displayName?.trim() });
+        this.remoteParticipant.on('displayNameChanged', ({newValue, oldValue, reason }) => {
+            const hasDisplayNameChanged = this.remoteParticipant.hasDisplayNameChanged;
+            const displayName = this.remoteParticipant.hasDisplayNameChanged ? (this.remoteParticipant.displayName ? `${this.remoteParticipant.displayName.trim()} (Edited)` :  '') : this.remoteParticipant.displayName?.trim();
+            if (reason === 'editedDisplayName') {
+                console.log('Edited display Name: ', newValue, oldValue, reason);
+                this.setState({ hasDisplayNameChanged, displayName});
+                this.menuOptionsHandler.handleDisplayNameChanged(newValue, oldValue, reason);
+            } else {
+                this.setState({displayName})
+            }
         });
 
         this.spotlightFeature.on("spotlightChanged", () => {
