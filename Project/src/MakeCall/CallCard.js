@@ -1250,7 +1250,7 @@ export default class CallCard extends React.Component {
                 }
             },
             handleDisplayNameChanged: async (newValue, oldValue, reason) => {
-                let messageBarText = `Display name updated: "${oldValue}" is now "${newValue}" because ${reason}`;
+                let messageBarText = `Display name changed from "${oldValue}" to "${newValue}" due to ${reason}`;
                 this.setState({ callMessage: messageBarText })
             }
         }
