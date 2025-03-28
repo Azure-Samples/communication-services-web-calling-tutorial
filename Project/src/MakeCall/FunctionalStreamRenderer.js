@@ -35,9 +35,7 @@ export const FunctionalStreamRenderer = forwardRef(({
             remoteParticipant.off('isSpeakingChanged', isSpeakingChanged);
             remoteParticipant.off('isMutedChanged', isMutedChanged);
             remoteParticipant.off('displayNameChanged', isDisplayNameChanged);
-            if (renderer.current === undefined) {
-                disposeRenderer();
-            }
+            disposeRenderer();
         }
     }, []);
 
