@@ -41,7 +41,8 @@ export default class CallCard extends React.Component {
         this.raiseHandFeature = this.call.feature(Features.RaiseHand);
         this.capabilitiesFeature = this.call.feature(Features.Capabilities);
         this.capabilities = this.capabilitiesFeature.capabilities;
-        if (Features.RealTimeText) {
+        this.isTeamsUser = props.isTeamsUser;
+        if (Features.RealTimeText && !this.isTeamsUser) {
             this.realTimeTextFeature = this.call.feature(Features.RealTimeText);
         }
         this.dominantSpeakersFeature = this.call.feature(Features.DominantSpeakers);
@@ -67,7 +68,6 @@ export default class CallCard extends React.Component {
                 mediaAccessMap.set(mediaAccess.participant.rawId, mediaAccess);
             });
         }
-        this.isTeamsUser = props.isTeamsUser;
         this.dummyStreamTimeout = undefined;
         this.state = {
             ovc: 4,
