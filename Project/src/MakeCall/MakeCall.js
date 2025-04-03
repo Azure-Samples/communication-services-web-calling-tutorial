@@ -146,6 +146,7 @@ export default class MakeCall extends React.Component {
                 });
 
                 this.deviceManager = await this.callClient.getDeviceManager();
+                window.deviceManager = this.deviceManager;
                 const permissions = await this.deviceManager.askDevicePermission({ audio: true, video: true });
                 this.setState({permissions: permissions});
 
@@ -154,9 +155,8 @@ export default class MakeCall extends React.Component {
                 this.callAgent =  this.state.isTeamsUser ?
                     await this.callClient.createTeamsCallAgent(tokenCredential) :
                     await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
-
                 window.callAgent = this.callAgent;
-                window.videoStreamRenderer = VideoStreamRenderer;
+
                 this.callAgent.on('callsUpdated', e => {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
 
