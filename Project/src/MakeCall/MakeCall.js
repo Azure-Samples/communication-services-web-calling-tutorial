@@ -34,9 +34,10 @@ export default class MakeCall extends React.Component {
         this.meetingLink = null;
         this.meetingId = null;
         this.passcode = null;
-        this.presenterUserId = null;
-        this.attendeeUserId = null;
-        this.consumerUserId = null;
+        this.presenterUserIds = null;
+        this.collaboratorUserIds = null;
+        this.attendeeUserIds = null;
+        this.consumerUserIds = null;
         this.threadId = null;
         this.messageId = null;
         this.organizerId = null;
@@ -374,7 +375,7 @@ export default class MakeCall extends React.Component {
 
     createRoom = async () => {
         try {
-            const roomId = await utils.createRoom(this.presenterUserId.value, this.attendeeUserId.value, this.consumerUserId.value);
+            const roomId = await utils.createRoom(this.presenterUserIds.value,this.collaboratorUserIds.value, this.attendeeUserIds.value, this.consumerUserIds.value);
             console.log('Room id created: ', roomId);
             this.setState({ roomId });
         } catch (e) {
@@ -1207,23 +1208,30 @@ this.callAgent.on('incomingCall', async (args) => {
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
                                                                 disabled={this.state.call || !this.state.loggedIn}
-                                                                label="Presenter user id"
+                                                                label="Presenter user ids (comma delimited)"
                                                                 placeholder="8:acs:<ACS resource ID>_<GUID>"
-                                                                componentRef={(val) => this.presenterUserId = val} />
+                                                                componentRef={(val) => this.presenterUserIds = val} />
                                                         </div>
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
                                                                 disabled={this.state.call || !this.state.loggedIn}
-                                                                label="Attendee user id"
+                                                                label="Collaborator user ids (comma delimited)"
                                                                 placeholder="8:acs:<ACS resource ID>_<GUID>"
-                                                                componentRef={(val) => this.attendeeUserId = val} />
+                                                                componentRef={(val) => this.collaboratorUserIds = val} />
                                                         </div>
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
                                                                 disabled={this.state.call || !this.state.loggedIn}
-                                                                label="Consumer user id"
+                                                                label="Attendee user ids (comma delimited)"
                                                                 placeholder="8:acs:<ACS resource ID>_<GUID>"
-                                                                componentRef={(val) => this.consumerUserId = val} />
+                                                                componentRef={(val) => this.attendeeUserIds = val} />
+                                                        </div>
+                                                        <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                            <TextField className="mb-3 mt-0"
+                                                                disabled={this.state.call || !this.state.loggedIn}
+                                                                label="Consumer user ids (comma delimited)"
+                                                                placeholder="8:acs:<ACS resource ID>_<GUID>"
+                                                                componentRef={(val) => this.consumerUserIds = val} />
                                                         </div>
                                                     </div>
                                                     <PrimaryButton className="primary-button"

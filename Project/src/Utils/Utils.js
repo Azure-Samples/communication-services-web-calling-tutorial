@@ -97,8 +97,22 @@ export const utils = {
         }
         throw new Error('Failed to get Teams User Acccess token');
     },
-    createRoom: async (presenterUserId, attendeeUserId, consumerUserId) => {
+    createRoom: async (presenterUserIds, collaboratorUserIds, attendeeUserIds, consumerUserIds) => {
         try {
+            const data = {};
+            if (presenterUserIds) {
+                data.presenterUserIds = presenterUserIds.split(',').map(id => id.trim());
+            }
+            if (collaboratorUserIds) {
+                data.collaboratorUserIds = collaboratorUserIds.split(',').map(id => id.trim());
+            }
+            if (attendeeUserIds) {
+                data.attendeeUserIds = attendeeUserIds.split(',').map(id => id.trim());
+            }
+            if (consumerUserIds) {
+                data.consumerUserIds = consumerUserIds.split(',').map(id => id.trim());
+            }
+
             const response = await axios({
                 url: 'createRoom',
                 method: 'POST',
@@ -106,12 +120,13 @@ export const utils = {
                     'Accept': 'application/json, text/plain, */*',
                     'Content-type': 'application/json'
                 },
-                data: JSON.stringify({ presenterUserId, attendeeUserId, consumerUserId })
-            })
-
+                data: JSON.stringify(data)
+            });
+            console.log('Room created successfully:', response.data);
             return response.data.roomId;
 
         } catch (error) {
+            console.error('Error creating room:', error);
             throw error.response.data.message;
         }
     },

@@ -238,18 +238,39 @@ module.exports = {
             devServer.app.post('/createRoom', async (req, res) => {
                 try {
                     let participants = [];
-                    req.body.presenterUserId ? participants.push({
-                        id: { communicationUserId: req.body.presenterUserId },
-                        role: "Presenter"
-                    }) : null;
-                    req.body.attendeeUserId ? participants.push({
-                        id: { communicationUserId: req.body.attendeeUserId },
-                        role: "Attendee"
-                    }) : null;
-                    req.body.consumerUserId ? participants.push({
-                        id: { communicationUserId: req.body.consumerUserId },
-                        role: "Consumer"
-                    }) : null;
+                    console.log('req.body:', req.body);
+                    if (req.body.presenterUserIds && Array.isArray(req.body.presenterUserIds)) {
+                        req.body.presenterUserIds.forEach(presenterUserId => {
+                            participants.push({
+                                id: { communicationUserId: presenterUserId },
+                                role: "Presenter"
+                            });
+                        });
+                    }
+                    if (req.body.collaboratorUserIds && Array.isArray(req.body.collaboratorUserIds)) {
+                        req.body.collaboratorUserIds.forEach(collaboratorUserId => {
+                            participants.push({
+                                id: { communicationUserId: collaboratorUserId },
+                                role: "Collaborator"
+                            });
+                        });
+                    }
+                    if (req.body.attendeeUserIds && Array.isArray(req.body.attendeeUserIds)) {
+                        req.body.attendeeUserIds.forEach(attendeeUserId => {
+                            participants.push({
+                                id: { communicationUserId: attendeeUserId },
+                                role: "Attendee"
+                            });
+                        });
+                    }
+                    if (req.body.consumerUserIds && Array.isArray(req.body.consumerUserIds)) {
+                        req.body.consumerUserIds.forEach(consumerUserId => {
+                            participants.push({
+                                id: { communicationUserId: consumerUserId },
+                                role: "Consumer"
+                            });
+                        });
+                    }
 
                     if (participants.length === 0) {
                         res.status(400).json({
