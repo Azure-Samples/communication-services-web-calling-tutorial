@@ -62,7 +62,7 @@ export default class MakeCall extends React.Component {
             showPreCallDiagnostcisResults: false,
             showCustomContext: false,
             roomId: undefined,
-            showCreateRoomPanel: false,
+            showManageRoomsPanel: false,
             xHeadersCount: 1,
             xHeadersMaxCount: 5,
             isPreCallDiagnosticsCallInProgress: false,
@@ -1193,15 +1193,16 @@ this.callAgent.on('incomingCall', async (args) => {
                                             </PrimaryButton>
                                             <PrimaryButton className="primary-button"
                                                 iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                                text="Create a room"
+                                                text="Manage Rooms"
                                                 disabled={this.state.call || !this.state.loggedIn}
-                                                onClick={() => this.setState({ showCreateRoomPanel: !this.state.showCreateRoomPanel })}>
+                                                onClick={() => this.setState({ showManageRoomsPanel: !this.state.showManageRoomsPanel })}>
                                             </PrimaryButton>
                                         </div>
                                         {
-                                            this.state.showCreateRoomPanel &&
+                                            this.state.showManageRoomsPanel &&
                                                 <div className="mt-5">
-                                                    <h2 className="mb-0">Create a Room</h2>
+                                                    <h2 className="mb-0">Manage Rooms</h2>
+                                                    <h3 className="mb-0">Create a Room</h3>
                                                     <div className="ms-Grid-row">
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
