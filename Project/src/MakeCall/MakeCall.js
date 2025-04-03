@@ -34,7 +34,6 @@ export default class MakeCall extends React.Component {
         this.meetingLink = null;
         this.meetingId = null;
         this.passcode = null;
-        this.roomPstnDialOutEnabled = true;
         this.presenterUserIds = null;
         this.collaboratorUserIds = null;
         this.attendeeUserIds = null;
@@ -67,6 +66,7 @@ export default class MakeCall extends React.Component {
             showPreCallDiagnostcisResults: false,
             showCustomContext: false,
             roomId: undefined,
+            roomPstnDialOutEnabled: true,
             showManageRoomsPanel: false,
             xHeadersCount: 1,
             xHeadersMaxCount: 5,
@@ -379,7 +379,7 @@ export default class MakeCall extends React.Component {
 
     createRoom = async () => {
         try {
-            const roomId = await utils.createRoom(this.roomPstnDialOutEnabled, this.presenterUserIds.value, this.collaboratorUserIds.value, this.attendeeUserIds.value, this.consumerUserIds.value);
+            const roomId = await utils.createRoom(this.state.roomPstnDialOutEnabled, this.presenterUserIds.value, this.collaboratorUserIds.value, this.attendeeUserIds.value, this.consumerUserIds.value);
             console.log('Room id created: ', roomId);
             this.setState({ roomId });
         } catch (e) {
@@ -1208,7 +1208,6 @@ this.callAgent.on('incomingCall', async (args) => {
                                             <PrimaryButton className="primary-button"
                                                 iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                                 text="Manage Rooms"
-                                                disabled={this.state.call || !this.state.loggedIn}
                                                 onClick={() => this.setState({ showManageRoomsPanel: !this.state.showManageRoomsPanel })}>
                                             </PrimaryButton>
                                         </div>
@@ -1220,38 +1219,35 @@ this.callAgent.on('incomingCall', async (args) => {
                                                     <div className="ms-Grid-row">
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <Toggle className="mb-3 mt-0"
-                                                                disabled={this.state.call || !this.state.loggedIn}
-                                                                checked={this.roomPstnDialOutEnabled}
+                                                                checked={this.state.roomPstnDialOutEnabled}
                                                                 label="PSTN Dial Out Enabled"
-                                                                inlineLabel="True"
                                                                 onText="True"
                                                                 offText="False"
-                                                                onChange={() => {this.roomPstnDialOutEnabled = !this.roomPstnDialOutEnabled}} />
+                                                                onClick={() => {
+                                                                    console.log(this.state.roomPstnDialOutEnabled);
+                                                                    this.setState({roomPstnDialOutEnabled: !this.state.roomPstnDialOutEnabled})
+                                                                }} />
                                                         </div>
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
-                                                                disabled={this.state.call || !this.state.loggedIn}
                                                                 label="Presenter user ids (comma delimited)"
                                                                 placeholder="8:acs:<ACS resource ID>_<GUID>"
                                                                 componentRef={(val) => this.presenterUserIds = val} />
                                                         </div>
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
-                                                                disabled={this.state.call || !this.state.loggedIn}
                                                                 label="Collaborator user ids (comma delimited)"
                                                                 placeholder="8:acs:<ACS resource ID>_<GUID>"
                                                                 componentRef={(val) => this.collaboratorUserIds = val} />
                                                         </div>
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
-                                                                disabled={this.state.call || !this.state.loggedIn}
                                                                 label="Attendee user ids (comma delimited)"
                                                                 placeholder="8:acs:<ACS resource ID>_<GUID>"
                                                                 componentRef={(val) => this.attendeeUserIds = val} />
                                                         </div>
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
-                                                                disabled={this.state.call || !this.state.loggedIn}
                                                                 label="Consumer user ids (comma delimited)"
                                                                 placeholder="8:acs:<ACS resource ID>_<GUID>"
                                                                 componentRef={(val) => this.consumerUserIds = val} />
@@ -1259,7 +1255,6 @@ this.callAgent.on('incomingCall', async (args) => {
                                                         <PrimaryButton className="primary-button"
                                                         iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                                         text="Create room"
-                                                        disabled={this.state.call || !this.state.loggedIn}
                                                         onClick={() => this.createRoom()}>
                                                         </PrimaryButton>
                                                     </div>
@@ -1267,21 +1262,18 @@ this.callAgent.on('incomingCall', async (args) => {
                                                     <div className="ms-Grid-row">
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
-                                                                disabled={this.state.call || !this.state.loggedIn}
                                                                 label="Room ID"
                                                                 placeholder="Room ID (9xxxxxx)"
                                                                 componentRef={(val) => this.patchRoomId = val} />
                                                         </div>
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
-                                                                disabled={this.state.call || !this.state.loggedIn}
                                                                 label="Participant user ID"
                                                                 placeholder="8:acs:<ACS resource ID>_<GUID>"
                                                                 componentRef={(val) => this.patchParticipantId = val} />
                                                         </div>
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
-                                                                disabled={this.state.call || !this.state.loggedIn}
                                                                 label="Role"
                                                                 placeholder="Presenter, Collaborator, Attendee, Consumer"
                                                                 componentRef={(val) => this.patchParticipantRole = val} />
@@ -1289,7 +1281,6 @@ this.callAgent.on('incomingCall', async (args) => {
                                                         <PrimaryButton className="primary-button"
                                                         iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                                         text="Update participant role"
-                                                        disabled={this.state.call || !this.state.loggedIn}
                                                         onClick={() => this.updateParticipant()}>
                                                         </PrimaryButton>
                                                     </div>
