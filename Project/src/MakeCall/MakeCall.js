@@ -39,6 +39,9 @@ export default class MakeCall extends React.Component {
         this.collaboratorUserIds = null;
         this.attendeeUserIds = null;
         this.consumerUserIds = null;
+        this.patchRoomId = null;
+        this.patchParticipantId = null;
+        this.patchParticipantRole = null;
         this.threadId = null;
         this.messageId = null;
         this.organizerId = null;
@@ -381,6 +384,15 @@ export default class MakeCall extends React.Component {
             this.setState({ roomId });
         } catch (e) {
             console.error('Failed to create a room: ', e);
+        }
+    };
+
+    updateParticipant = async () => {
+        try {
+            await utils.updateParticipant(this.patchRoomId.value, this.patchParticipantId.value, this.patchParticipantRole.value);
+            console.log('Participant updated successfully');
+        } catch (e) {
+            console.error('Failed to update participant ', e);
         }
     };
 
@@ -1177,7 +1189,7 @@ this.callAgent.on('incomingCall', async (args) => {
                                                         disabled={this.state.call || !this.state.loggedIn}
                                                         label="Rooms id"
                                                         value={ this.state.roomId }
-                                                        placeholder="<GUID>"
+                                                        placeholder="<Room ID (starts with 9)>"
                                                         onChange={(e) => this.setState({ roomId: e.target.value })}/>
                                                 </div>
                                             </div>
@@ -1211,6 +1223,7 @@ this.callAgent.on('incomingCall', async (args) => {
                                                                 disabled={this.state.call || !this.state.loggedIn}
                                                                 checked={this.roomPstnDialOutEnabled}
                                                                 label="PSTN Dial Out Enabled"
+                                                                inlineLabel="True"
                                                                 onText="True"
                                                                 offText="False"
                                                                 onChange={() => {this.roomPstnDialOutEnabled = !this.roomPstnDialOutEnabled}} />
@@ -1243,13 +1256,43 @@ this.callAgent.on('incomingCall', async (args) => {
                                                                 placeholder="8:acs:<ACS resource ID>_<GUID>"
                                                                 componentRef={(val) => this.consumerUserIds = val} />
                                                         </div>
-                                                    </div>
-                                                    <PrimaryButton className="primary-button"
+                                                        <PrimaryButton className="primary-button"
                                                         iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
                                                         text="Create room"
                                                         disabled={this.state.call || !this.state.loggedIn}
                                                         onClick={() => this.createRoom()}>
-                                                    </PrimaryButton>
+                                                        </PrimaryButton>
+                                                    </div>
+                                                    <h3 className="mb-0">Update a Participant</h3>
+                                                    <div className="ms-Grid-row">
+                                                        <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                            <TextField className="mb-3 mt-0"
+                                                                disabled={this.state.call || !this.state.loggedIn}
+                                                                label="Room ID"
+                                                                placeholder="Room ID (9xxxxxx)"
+                                                                componentRef={(val) => this.patchRoomId = val} />
+                                                        </div>
+                                                        <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                            <TextField className="mb-3 mt-0"
+                                                                disabled={this.state.call || !this.state.loggedIn}
+                                                                label="Participant user ID"
+                                                                placeholder="8:acs:<ACS resource ID>_<GUID>"
+                                                                componentRef={(val) => this.patchParticipantId = val} />
+                                                        </div>
+                                                        <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                            <TextField className="mb-3 mt-0"
+                                                                disabled={this.state.call || !this.state.loggedIn}
+                                                                label="Role"
+                                                                placeholder="Presenter, Collaborator, Attendee, Consumer"
+                                                                componentRef={(val) => this.patchParticipantRole = val} />
+                                                        </div>
+                                                        <PrimaryButton className="primary-button"
+                                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                                        text="Update participant role"
+                                                        disabled={this.state.call || !this.state.loggedIn}
+                                                        onClick={() => this.updateParticipant()}>
+                                                        </PrimaryButton>
+                                                    </div>
                                                 </div>
                                         }
                                     </div>

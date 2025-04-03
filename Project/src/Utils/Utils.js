@@ -100,6 +100,7 @@ export const utils = {
     createRoom: async (pstnDialOutEnabled, presenterUserIds, collaboratorUserIds, attendeeUserIds, consumerUserIds) => {
         try {
             const data = {};
+            data.pstnDialOutEnabled = pstnDialOutEnabled;
             if (presenterUserIds) {
                 data.presenterUserIds = presenterUserIds.split(',').map(id => id.trim());
             }
@@ -128,6 +129,31 @@ export const utils = {
         } catch (error) {
             console.error('Error creating room:', error);
             throw error.response.data.message;
+        }
+    },
+    updateParticipant: async (patchRoomId, patchParticipantId, patchParticipantRole) => {
+        try {
+            if (!patchRoomId.trim() || !patchParticipantId.trim() || !patchParticipantRole.trim()) {
+                throw new Error('All parameters (patchRoomId, patchParticipantId, patchParticipantRole) must be non-empty strings without trailing whitespace.');
+            }
+
+            const response = await axios({
+            url: 'updateParticipant',
+            method: 'PATCH',
+            headers: {
+                'Accept': 'application/json, text/plain, */*',
+                'Content-type': 'application/json'
+            },
+            data: JSON.stringify({ 
+                patchRoomId: patchRoomId.trim(), 
+                patchParticipantId: patchParticipantId.trim(), 
+                patchParticipantRole: patchParticipantRole.trim() 
+            })
+            });
+            console.log('Participant updated successfully:', response.data);
+        } catch (error) {
+            console.error('Error updating participant:', error);
+            throw error.response?.data?.message || error.message;
         }
     },
     getIdentifierText: (identifier) => {

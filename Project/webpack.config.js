@@ -304,6 +304,26 @@ module.exports = {
                     throw e;
                 }
             });
+            devServer.app.patch('/updateParticipant', async (req, res) => {
+                try {
+                    const roomId = req.body.patchRoomId;
+                    const participantId = req.body.patchParticipantId;
+                    const participantRole = req.body.patchParticipantRole;
+                    const roomsClient = new RoomsClient(config.connectionString);
+                    const participant = [
+                        {
+                          id: { communicationUserId: participantId},
+                          role: participantRole,
+                        },
+                      ];
+                    await roomsClient.addOrUpdateParticipants(roomId, participant);
+                    res.setHeader('Content-Type', 'application/json');
+                    res.status(200).json({message: 'Participant updated successfully'});
+                } catch (e) {
+                    console.error(e);
+                    throw e;
+                }
+            });
 
             return middlewares;
         }
