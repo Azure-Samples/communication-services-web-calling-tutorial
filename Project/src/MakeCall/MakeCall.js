@@ -3,7 +3,7 @@ import { CallClient, LocalVideoStream, Features, CallAgentKind, VideoStreamRende
 import { AzureCommunicationTokenCredential, createIdentifierFromRawId} from '@azure/communication-common';
 import { PrimaryButton } from '@fluentui/react/lib/Button';
 import { TextField } from '@fluentui/react/lib/TextField';
-import { MessageBar, MessageBarType } from '@fluentui/react';
+import { MessageBar, MessageBarType, Toggle } from '@fluentui/react';
 import { Icon } from '@fluentui/react/lib/Icon';
 import IncomingCallCard from './IncomingCallCard';
 import CallCard from '../MakeCall/CallCard';
@@ -34,9 +34,13 @@ export default class MakeCall extends React.Component {
         this.meetingLink = null;
         this.meetingId = null;
         this.passcode = null;
-        this.presenterUserId = null;
-        this.attendeeUserId = null;
-        this.consumerUserId = null;
+        this.presenterUserIds = null;
+        this.collaboratorUserIds = null;
+        this.attendeeUserIds = null;
+        this.consumerUserIds = null;
+        this.patchRoomId = null;
+        this.patchParticipantId = null;
+        this.patchParticipantRole = null;
         this.threadId = null;
         this.messageId = null;
         this.organizerId = null;
@@ -62,7 +66,8 @@ export default class MakeCall extends React.Component {
             showPreCallDiagnostcisResults: false,
             showCustomContext: false,
             roomId: undefined,
-            showCreateRoomPanel: false,
+            roomPstnDialOutEnabled: true,
+            showManageRoomsPanel: false,
             xHeadersCount: 1,
             xHeadersMaxCount: 5,
             isPreCallDiagnosticsCallInProgress: false,
@@ -374,11 +379,20 @@ export default class MakeCall extends React.Component {
 
     createRoom = async () => {
         try {
-            const roomId = await utils.createRoom(this.presenterUserId.value, this.attendeeUserId.value, this.consumerUserId.value);
+            const roomId = await utils.createRoom(this.state.roomPstnDialOutEnabled, this.presenterUserIds.value, this.collaboratorUserIds.value, this.attendeeUserIds.value, this.consumerUserIds.value);
             console.log('Room id created: ', roomId);
             this.setState({ roomId });
         } catch (e) {
             console.error('Failed to create a room: ', e);
+        }
+    };
+
+    updateParticipant = async () => {
+        try {
+            await utils.updateParticipant(this.patchRoomId.value, this.patchParticipantId.value, this.patchParticipantRole.value);
+            console.log('Participant updated successfully');
+        } catch (e) {
+            console.error('Failed to update participant ', e);
         }
     };
 
@@ -1175,7 +1189,7 @@ this.callAgent.on('incomingCall', async (args) => {
                                                         disabled={this.state.call || !this.state.loggedIn}
                                                         label="Rooms id"
                                                         value={ this.state.roomId }
-                                                        placeholder="<GUID>"
+                                                        placeholder="<Room ID (starts with 9)>"
                                                         onChange={(e) => this.setState({ roomId: e.target.value })}/>
                                                 </div>
                                             </div>
@@ -1193,44 +1207,83 @@ this.callAgent.on('incomingCall', async (args) => {
                                             </PrimaryButton>
                                             <PrimaryButton className="primary-button"
                                                 iconProps={{ iconName: 'Group', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                                text="Create a room"
-                                                disabled={this.state.call || !this.state.loggedIn}
-                                                onClick={() => this.setState({ showCreateRoomPanel: !this.state.showCreateRoomPanel })}>
+                                                text="Manage Rooms"
+                                                onClick={() => this.setState({ showManageRoomsPanel: !this.state.showManageRoomsPanel })}>
                                             </PrimaryButton>
                                         </div>
                                         {
-                                            this.state.showCreateRoomPanel &&
+                                            this.state.showManageRoomsPanel &&
                                                 <div className="mt-5">
-                                                    <h2 className="mb-0">Create a Room</h2>
+                                                    <h2 className="mb-0">Manage Rooms</h2>
+                                                    <h3 className="mb-0">Create a Room</h3>
+                                                    <div className="ms-Grid-row">
+                                                        <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                            <Toggle className="mb-3 mt-0"
+                                                                checked={this.state.roomPstnDialOutEnabled}
+                                                                label="PSTN Dial Out Enabled"
+                                                                onText="True"
+                                                                offText="False"
+                                                                onClick={() => {
+                                                                    console.log(this.state.roomPstnDialOutEnabled);
+                                                                    this.setState({roomPstnDialOutEnabled: !this.state.roomPstnDialOutEnabled})
+                                                                }} />
+                                                        </div>
+                                                        <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                            <TextField className="mb-3 mt-0"
+                                                                label="Presenter user ids (comma delimited)"
+                                                                placeholder="8:acs:<ACS resource ID>_<GUID>"
+                                                                componentRef={(val) => this.presenterUserIds = val} />
+                                                        </div>
+                                                        <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                            <TextField className="mb-3 mt-0"
+                                                                label="Collaborator user ids (comma delimited)"
+                                                                placeholder="8:acs:<ACS resource ID>_<GUID>"
+                                                                componentRef={(val) => this.collaboratorUserIds = val} />
+                                                        </div>
+                                                        <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                            <TextField className="mb-3 mt-0"
+                                                                label="Attendee user ids (comma delimited)"
+                                                                placeholder="8:acs:<ACS resource ID>_<GUID>"
+                                                                componentRef={(val) => this.attendeeUserIds = val} />
+                                                        </div>
+                                                        <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                            <TextField className="mb-3 mt-0"
+                                                                label="Consumer user ids (comma delimited)"
+                                                                placeholder="8:acs:<ACS resource ID>_<GUID>"
+                                                                componentRef={(val) => this.consumerUserIds = val} />
+                                                        </div>
+                                                        <PrimaryButton className="primary-button"
+                                                        iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
+                                                        text="Create room"
+                                                        onClick={() => this.createRoom()}>
+                                                        </PrimaryButton>
+                                                    </div>
+                                                    <h3 className="mb-0">Update a Participant</h3>
                                                     <div className="ms-Grid-row">
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
-                                                                disabled={this.state.call || !this.state.loggedIn}
-                                                                label="Presenter user id"
-                                                                placeholder="8:acs:<ACS resource ID>_<GUID>"
-                                                                componentRef={(val) => this.presenterUserId = val} />
+                                                                label="Room ID"
+                                                                placeholder="Room ID (9xxxxxx)"
+                                                                componentRef={(val) => this.patchRoomId = val} />
                                                         </div>
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
-                                                                disabled={this.state.call || !this.state.loggedIn}
-                                                                label="Attendee user id"
+                                                                label="Participant user ID"
                                                                 placeholder="8:acs:<ACS resource ID>_<GUID>"
-                                                                componentRef={(val) => this.attendeeUserId = val} />
+                                                                componentRef={(val) => this.patchParticipantId = val} />
                                                         </div>
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
-                                                                disabled={this.state.call || !this.state.loggedIn}
-                                                                label="Consumer user id"
-                                                                placeholder="8:acs:<ACS resource ID>_<GUID>"
-                                                                componentRef={(val) => this.consumerUserId = val} />
+                                                                label="Role"
+                                                                placeholder="Presenter, Collaborator, Attendee, Consumer"
+                                                                componentRef={(val) => this.patchParticipantRole = val} />
                                                         </div>
-                                                    </div>
-                                                    <PrimaryButton className="primary-button"
+                                                        <PrimaryButton className="primary-button"
                                                         iconProps={{ iconName: 'Video', style: { verticalAlign: 'middle', fontSize: 'large' } }}
-                                                        text="Create room"
-                                                        disabled={this.state.call || !this.state.loggedIn}
-                                                        onClick={() => this.createRoom()}>
-                                                    </PrimaryButton>
+                                                        text="Update participant role"
+                                                        onClick={() => this.updateParticipant()}>
+                                                        </PrimaryButton>
+                                                    </div>
                                                 </div>
                                         }
                                     </div>
