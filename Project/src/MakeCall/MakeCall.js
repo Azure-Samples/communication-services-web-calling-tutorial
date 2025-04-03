@@ -3,7 +3,7 @@ import { CallClient, LocalVideoStream, Features, CallAgentKind, VideoStreamRende
 import { AzureCommunicationTokenCredential, createIdentifierFromRawId} from '@azure/communication-common';
 import { PrimaryButton } from '@fluentui/react/lib/Button';
 import { TextField } from '@fluentui/react/lib/TextField';
-import { MessageBar, MessageBarType } from '@fluentui/react';
+import { MessageBar, MessageBarType, Toggle } from '@fluentui/react';
 import { Icon } from '@fluentui/react/lib/Icon';
 import IncomingCallCard from './IncomingCallCard';
 import CallCard from '../MakeCall/CallCard';
@@ -34,6 +34,7 @@ export default class MakeCall extends React.Component {
         this.meetingLink = null;
         this.meetingId = null;
         this.passcode = null;
+        this.roomPstnDialOutEnabled = true;
         this.presenterUserIds = null;
         this.collaboratorUserIds = null;
         this.attendeeUserIds = null;
@@ -375,7 +376,7 @@ export default class MakeCall extends React.Component {
 
     createRoom = async () => {
         try {
-            const roomId = await utils.createRoom(this.presenterUserIds.value,this.collaboratorUserIds.value, this.attendeeUserIds.value, this.consumerUserIds.value);
+            const roomId = await utils.createRoom(this.roomPstnDialOutEnabled, this.presenterUserIds.value, this.collaboratorUserIds.value, this.attendeeUserIds.value, this.consumerUserIds.value);
             console.log('Room id created: ', roomId);
             this.setState({ roomId });
         } catch (e) {
@@ -1205,6 +1206,15 @@ this.callAgent.on('incomingCall', async (args) => {
                                                     <h2 className="mb-0">Manage Rooms</h2>
                                                     <h3 className="mb-0">Create a Room</h3>
                                                     <div className="ms-Grid-row">
+                                                        <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
+                                                            <Toggle className="mb-3 mt-0"
+                                                                disabled={this.state.call || !this.state.loggedIn}
+                                                                checked={this.roomPstnDialOutEnabled}
+                                                                label="PSTN Dial Out Enabled"
+                                                                onText="True"
+                                                                offText="False"
+                                                                onChange={() => {this.roomPstnDialOutEnabled = !this.roomPstnDialOutEnabled}} />
+                                                        </div>
                                                         <div className="md-Grid-col ml-2 ms-sm11 ms-md11 ms-lg9 ms-xl9 ms-xxl11">
                                                             <TextField className="mb-3 mt-0"
                                                                 disabled={this.state.call || !this.state.loggedIn}

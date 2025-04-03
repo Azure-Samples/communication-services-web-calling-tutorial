@@ -97,7 +97,7 @@ export const utils = {
         }
         throw new Error('Failed to get Teams User Acccess token');
     },
-    createRoom: async (presenterUserIds, collaboratorUserIds, attendeeUserIds, consumerUserIds) => {
+    createRoom: async (pstnDialOutEnabled, presenterUserIds, collaboratorUserIds, attendeeUserIds, consumerUserIds) => {
         try {
             const data = {};
             if (presenterUserIds) {

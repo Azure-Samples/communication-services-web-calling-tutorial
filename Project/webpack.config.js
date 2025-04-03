@@ -282,7 +282,7 @@ module.exports = {
                     console.log('participants:', participants);
                     const validFrom = new Date(Date.now());
                     const validUntil = new Date(validFrom.getTime() + 60 * 60 * 1000);
-                    const pstnDialOutEnabled = true;
+                    const pstnDialOutEnabled = req.body.pstnDialOutEnabled;
                     const roomsClient = new RoomsClient(config.connectionString);
                     const createRoom = await roomsClient.createRoom({
                         validFrom,
