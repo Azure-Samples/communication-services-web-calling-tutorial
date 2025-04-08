@@ -238,18 +238,39 @@ module.exports = {
             devServer.app.post('/createRoom', async (req, res) => {
                 try {
                     let participants = [];
-                    req.body.presenterUserId ? participants.push({
-                        id: { communicationUserId: req.body.presenterUserId },
-                        role: "Presenter"
-                    }) : null;
-                    req.body.attendeeUserId ? participants.push({
-                        id: { communicationUserId: req.body.attendeeUserId },
-                        role: "Attendee"
-                    }) : null;
-                    req.body.consumerUserId ? participants.push({
-                        id: { communicationUserId: req.body.consumerUserId },
-                        role: "Consumer"
-                    }) : null;
+                    console.log('req.body:', req.body);
+                    if (req.body.presenterUserIds && Array.isArray(req.body.presenterUserIds)) {
+                        req.body.presenterUserIds.forEach(presenterUserId => {
+                            participants.push({
+                                id: { communicationUserId: presenterUserId },
+                                role: "Presenter"
+                            });
+                        });
+                    }
+                    if (req.body.collaboratorUserIds && Array.isArray(req.body.collaboratorUserIds)) {
+                        req.body.collaboratorUserIds.forEach(collaboratorUserId => {
+                            participants.push({
+                                id: { communicationUserId: collaboratorUserId },
+                                role: "Collaborator"
+                            });
+                        });
+                    }
+                    if (req.body.attendeeUserIds && Array.isArray(req.body.attendeeUserIds)) {
+                        req.body.attendeeUserIds.forEach(attendeeUserId => {
+                            participants.push({
+                                id: { communicationUserId: attendeeUserId },
+                                role: "Attendee"
+                            });
+                        });
+                    }
+                    if (req.body.consumerUserIds && Array.isArray(req.body.consumerUserIds)) {
+                        req.body.consumerUserIds.forEach(consumerUserId => {
+                            participants.push({
+                                id: { communicationUserId: consumerUserId },
+                                role: "Consumer"
+                            });
+                        });
+                    }
 
                     if (participants.length === 0) {
                         res.status(400).json({
@@ -261,7 +282,7 @@ module.exports = {
                     console.log('participants:', participants);
                     const validFrom = new Date(Date.now());
                     const validUntil = new Date(validFrom.getTime() + 60 * 60 * 1000);
-                    const pstnDialOutEnabled = true;
+                    const pstnDialOutEnabled = req.body.pstnDialOutEnabled;
                     const roomsClient = new RoomsClient(config.connectionString);
                     const createRoom = await roomsClient.createRoom({
                         validFrom,
@@ -278,6 +299,26 @@ module.exports = {
                     res.status(200).json({
                         roomId
                     });
+                } catch (e) {
+                    console.error(e);
+                    throw e;
+                }
+            });
+            devServer.app.patch('/updateParticipant', async (req, res) => {
+                try {
+                    const roomId = req.body.patchRoomId;
+                    const participantId = req.body.patchParticipantId;
+                    const participantRole = req.body.patchParticipantRole;
+                    const roomsClient = new RoomsClient(config.connectionString);
+                    const participant = [
+                        {
+                          id: { communicationUserId: participantId},
+                          role: participantRole,
+                        },
+                      ];
+                    await roomsClient.addOrUpdateParticipants(roomId, participant);
+                    res.setHeader('Content-Type', 'application/json');
+                    res.status(200).json({message: 'Participant updated successfully'});
                 } catch (e) {
                     console.error(e);
                     throw e;
