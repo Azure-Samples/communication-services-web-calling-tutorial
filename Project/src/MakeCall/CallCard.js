@@ -1,6 +1,6 @@
 import React from "react";
 import { MessageBar, MessageBarType } from '@fluentui/react'
-import { FunctionalStreamRenderer as StreamRenderer } from "./FunctionalStreamRenderer";
+import { StreamRenderer } from "./StreamRenderer";
 import AddParticipantPopover from "./AddParticipantPopover";
 import RemoteParticipantCard from "./RemoteParticipantCard";
 import { Panel, PanelType } from '@fluentui/react/lib/Panel';
@@ -517,7 +517,6 @@ export default class CallCard extends React.Component {
     }
 
     updateListOfParticipantsToRender(reason) {
-
         const ovcFeature = this.call.feature(Features.OptimalVideoCount);
         const optimalVideoCount = ovcFeature.optimalVideoCount;
         console.log(`updateListOfParticipantsToRender because ${reason}, ovc is ${optimalVideoCount}`);
@@ -559,7 +558,7 @@ export default class CallCard extends React.Component {
             });
             streamsToAdd = streamsToAdd.slice(0, optimalVideoCount - streamsToKeep.length);
             console.log(`updateListOfParticipantsToRender identified ${streamsToAdd.length} streams to add`);
-            streamsToKeep = streamsToKeep.concat(streamsToAdd.filter(e => !!e));
+            streamsToKeep = streamsToKeep.concat(streamsToAdd.filter(stream => !!stream.participant));
         }
         console.log(`updateListOfParticipantsToRender final number of streams to render ${streamsToKeep.length}}`);
         this.setState(prevState => ({
