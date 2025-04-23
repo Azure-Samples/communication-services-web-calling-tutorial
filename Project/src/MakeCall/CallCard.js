@@ -1506,22 +1506,24 @@ export default class CallCard extends React.Component {
                             
                         </div>
                     }
-                    <div>
-                        {
-                            this.state.remoteScreenShareStream &&
-                                <StreamRenderer
-                                    key={`${utils.getIdentifierText(this.state.remoteScreenShareStream.participant.identifier)}-${this.state.remoteScreenShareStream.stream.mediaStreamType}-${this.state.remoteScreenShareStream.stream.id}`}
-                                    ref={this.state.remoteScreenShareStream.streamRendererComponentRef}
-                                    stream={this.state.remoteScreenShareStream.stream}
-                                    remoteParticipant={this.state.remoteScreenShareStream.participant}
-                                    dominantSpeakerMode={this.state.dominantSpeakerMode}
-                                    dominantRemoteParticipant={this.state.dominantRemoteParticipant}
-                                    call={this.call}
-                                    showMediaStats={this.state.logMediaStats}
-                                    streamCount={streamCount}
-                                />
-                        }
-                    </div>
+                </div>
+                <div className="ms-Grid-row">
+                    {
+                        this.state.remoteScreenShareStream &&
+                            <StreamRenderer
+                                key={`${utils.getIdentifierText(this.state.remoteScreenShareStream.participant.identifier)}-${this.state.remoteScreenShareStream.stream.mediaStreamType}-${this.state.remoteScreenShareStream.stream.id}`}
+                                ref={this.state.remoteScreenShareStream.streamRendererComponentRef}
+                                stream={this.state.remoteScreenShareStream.stream}
+                                remoteParticipant={this.state.remoteScreenShareStream.participant}
+                                dominantSpeakerMode={this.state.dominantSpeakerMode}
+                                dominantRemoteParticipant={this.state.dominantRemoteParticipant}
+                                call={this.call}
+                                showMediaStats={this.state.logMediaStats}
+                                streamCount={streamCount}
+                            />
+                    }
+                </div>
+                <div className="ms-Grid-row">
                     <div className="video-grid-row">
                         {
                             (this.state.callState === 'Connected' ||
