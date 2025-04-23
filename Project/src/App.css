@@ -215,6 +215,8 @@ ul {
 }
 
 .participant-item {
+  display: flex;
+  flex-wrap: wrap;
   padding-top: 2em;
   padding-bottom: 2em;
   padding-left: 1em;
