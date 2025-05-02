@@ -145,11 +145,13 @@ export const StreamRenderer = forwardRef(({
         return (
             <div id={componentId}
                 ref={componentContainer}
+                style={{ height:"1080px", width:"1920px"}}
                 className={`stream-container  stream-count-${streamCount}
                 ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``}
                 ${stream.isAvailable ? 'rendering' : ''}
                 ${isPinned ? 'pinned' : (isPinningActive ? 'pinning-is-active' : '')}`}>
                     <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`}
+                        style={{ height:"1080px", width:"1920px"}}
                         id={videoContainerId}
                         ref={videoContainer}>
                             <h4 className="video-title">
