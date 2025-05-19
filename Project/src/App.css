@@ -474,11 +474,27 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 
 .remote-video-container {
   position: relative;
-  height: 100%;
+}
+
+.remote-video-container.pinning-is-active {
+  height: 360px !important;
+  justify-self: center;
+}
+
+.remote-video-container.pinned {
+  height: 720px !important;
+  justify-self: center;
+}
+
+@media screen and (max-width: 1024px){
+  .remote-video-container.pinned {
+    height: 100% !important;
+    justify-self: unset;
+  }
 }
 
 .remote-video-container video {
-  object-fit: cover !important;
+  object-fit: contain !important;
   object-position: center center;
 }
 

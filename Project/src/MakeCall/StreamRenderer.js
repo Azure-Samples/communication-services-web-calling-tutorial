@@ -149,7 +149,7 @@ export const StreamRenderer = forwardRef(({
                 ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``}
                 ${stream.isAvailable ? 'rendering' : ''}
                 ${isPinned ? 'pinned' : (isPinningActive ? 'pinning-is-active' : '')}`}>
-                    <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}`}
+                    <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``} ${isPinned ? 'pinned' : (isPinningActive ? 'pinning-is-active' : '')}`}
                         id={videoContainerId}
                         ref={videoContainer}>
                             <h4 className="video-title">
@@ -172,13 +172,13 @@ export const StreamRenderer = forwardRef(({
                             {
                                 isLoading && <div className="remote-video-loading-spinner"></div>
                             }
+                            {
+                                videoStats && showMediaStats &&
+                                <h4 className="video-stats">
+                                    <VideoReceiveStats videoStats={videoStats} transportStats={transportStats} />
+                                </h4>
+                            }
                     </div>
-                    {
-                        videoStats && showMediaStats &&
-                        <h4 className="video-stats">
-                            <VideoReceiveStats videoStats={videoStats} transportStats={transportStats} />
-                        </h4>
-                    }
             </div>
         );
     }
