@@ -414,7 +414,7 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 .stream-container.pinned {
     order: 0;
     flex: 0 100% !important;
-    text-align: -webkit-center, center;
+    text-align: -webkit-center;
 }
 
 .stream-container.pinning-is-active {
