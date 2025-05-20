@@ -27,11 +27,14 @@ export const StreamRenderer = forwardRef(({
     const [displayName, setDisplayName] = useState(remoteParticipant?.displayName?.trim() ?? '');
     const [videoStats, setVideoStats] = useState();
     const [transportStats, setTransportStats] = useState();
+    const [height, setHeight] = useState(stream.size.height);
+    const [width, setWidth] = useState(stream.size.width);
 
     useEffect(() => {
         initializeComponent();
         return () => {
             stream.off('isReceivingChanged', isReceivingChanged);
+            stream.off('sizeChanged', sizeChanged);
             remoteParticipant.off('isSpeakingChanged', isSpeakingChanged);
             remoteParticipant.off('isMutedChanged', isMutedChanged);
             remoteParticipant.off('displayNameChanged', isDisplayNameChanged);
@@ -94,6 +97,11 @@ export const StreamRenderer = forwardRef(({
         }
     };
 
+    const sizeChanged = () => {
+        setHeight(stream.size.height);
+        setWidth(stream.size.width);
+    }
+
     const isMutedChanged = () => {
         setIsMuted(remoteParticipant && remoteParticipant?.isMuted);
     };
@@ -110,6 +118,7 @@ export const StreamRenderer = forwardRef(({
      */
     const initializeComponent = async () => {
         stream.on('isReceivingChanged', isReceivingChanged);
+        stream.on('sizeChanged', sizeChanged);
         remoteParticipant.on('isMutedChanged', isMutedChanged);
         remoteParticipant.on('isSpeakingChanged', isSpeakingChanged);
         if (dominantSpeakerMode && dominantRemoteParticipant !== remoteParticipant) {
@@ -124,10 +133,6 @@ export const StreamRenderer = forwardRef(({
         } catch (e) {
             console.error(e);
         }
-    }
-
-    const isPortrait = () => {
-        return view.current?.target?.offsetHeight > view.current?.target?.offsetWidth;
     }
 
     useImperativeHandle(ref, () => ({
@@ -157,7 +162,7 @@ export const StreamRenderer = forwardRef(({
                         ref={videoContainer}
                         className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}
                         ${isPinned ? 'pinned' : (isPinningActive ? 'pinning-is-active' : '')}
-                        ${isPortrait() ? 'portrait' : ''}`}>
+                        ${height > width ? 'portrait' : ''}`}>
                             <h4 className="video-title">
                                 {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
                             </h4>
