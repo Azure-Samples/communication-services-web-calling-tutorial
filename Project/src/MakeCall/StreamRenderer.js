@@ -126,6 +126,10 @@ export const StreamRenderer = forwardRef(({
         }
     }
 
+    const isPortrait = () => {
+        return view.current?.target?.offsetHeight > view.current?.target?.offsetWidth;
+    }
+
     useImperativeHandle(ref, () => ({
         updateReceiveStats(videoStatsReceived, transportStatsReceived) {
             if (videoStatsReceived) {
@@ -149,9 +153,11 @@ export const StreamRenderer = forwardRef(({
                 ${stream.mediaStreamType === 'ScreenSharing' ? `ms-xxl12` : ``}
                 ${stream.isAvailable ? 'rendering' : ''}
                 ${isPinned ? 'pinned' : (isPinningActive ? 'pinning-is-active' : '')}`}>
-                    <div className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``} ${isPinned ? 'pinned' : (isPinningActive ? 'pinning-is-active' : '')}`}
-                        id={videoContainerId}
-                        ref={videoContainer}>
+                    <div id={videoContainerId}
+                        ref={videoContainer}
+                        className={`remote-video-container ${isSpeaking && !isMuted ? `speaking-border-for-video` : ``}
+                        ${isPinned ? 'pinned' : (isPinningActive ? 'pinning-is-active' : '')}
+                        ${isPortrait() ? 'portrait' : ''}`}>
                             <h4 className="video-title">
                                 {displayName ? displayName : remoteParticipant.displayName ? remoteParticipant.displayName : utils.getIdentifierText(remoteParticipant.identifier)}
                             </h4>

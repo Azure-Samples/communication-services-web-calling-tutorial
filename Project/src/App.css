@@ -486,8 +486,13 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
   justify-self: center;
 }
 
+.remote-video-container.pinned.portrait {
+  height: 1280px !important;
+  justify-self: center;
+}
+
 @media screen and (max-width: 1024px){
-  .remote-video-container.pinned {
+  .remote-video-container.pinned, .remote-video-container.pinned.portrait {
     height: 100% !important;
     justify-self: unset;
   }
