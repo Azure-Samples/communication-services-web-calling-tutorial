@@ -478,8 +478,8 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 }
 
 .remote-video-container.pinning-is-active {
-  height: 360px !important;
-  width: 640px !important;
+  height: 234px !important;
+  width: 416px !important;
   justify-self: center;
 }
 
