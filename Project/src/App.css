@@ -414,6 +414,7 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 .stream-container.pinned {
     order: 0;
     flex: 0 100% !important;
+    text-align: -webkit-center;
 }
 
 .stream-container.pinning-is-active {
@@ -474,11 +475,36 @@ div.ms-Checkbox>input[type="checkbox"]+label.ms-Checkbox-label>span.ms-Checkbox-
 
 .remote-video-container {
   position: relative;
-  height: 100%;
+}
+
+.remote-video-container.pinning-is-active {
+  height: 234px !important;
+  width: 416px !important;
+  justify-self: center;
+}
+
+.remote-video-container.pinned {
+  height: 720px !important;
+  width: 1280px !important;
+  justify-self: center;
+}
+
+.remote-video-container.pinned.portrait {
+  height: 1280px !important;
+  width: 720px !important;
+  justify-self: center;
+}
+
+@media screen and (max-width: 1024px){
+  .remote-video-container.pinned, .remote-video-container.pinned.portrait {
+    height: 100% !important;
+    width: 100% !important;
+    justify-self: unset;
+  }
 }
 
 .remote-video-container video {
-  object-fit: cover !important;
+  object-fit: contain !important;
   object-position: center center;
 }
 
