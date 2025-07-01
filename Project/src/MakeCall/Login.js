@@ -48,6 +48,7 @@ export default class Login extends React.Component {
                 turn: null
             },
             isTeamsUser: false,
+            isEntraUser: false,
             isJoinOnlyToken: false
         }
     }
@@ -119,7 +120,8 @@ export default class Login extends React.Component {
                 clientTag:this.clientTag,
                 proxy: this.state.proxy,
                 customTurn: this.state.customTurn,
-                isTeamsUser: this.state.isTeamsUser
+                isTeamsUser: this.state.isTeamsUser,
+                isEntraUser: this.state.isEntraUser
             });
         }
         console.log('Login response: ', this.userDetailsResponse);
@@ -128,7 +130,7 @@ export default class Login extends React.Component {
 
     async logIn() {
         try {
-            this.setState({ isTeamsUser: false });
+            this.setState({ isTeamsUser: false, isEntraUser: false });
             this.setState({ showSpinner: true });
             if (!this.state.token && !this.state.communicationUserId) {
                 this.userDetailsResponse = await utils.getCommunicationUserToken(undefined, this.state.isJoinOnlyToken);
@@ -157,12 +159,28 @@ export default class Login extends React.Component {
 
     async teamsUserOAuthLogin() {
         try {
-            this.setState({ isTeamsUser: true });
+            this.setState({ isTeamsUser: true, isEntraUser: false });
             this.setState({ showSpinner: true });
             this.userDetailsResponse  = this.teamsUserEmail && this.teamsUserPassword ?
                 await utils.teamsM365Login(this.teamsUserEmail, this.teamsUserPassword ):
                 await utils.teamsPopupLogin();
             this.teamsUserEmail = this.teamsUserPassword = '';
+            await this.setupLoginStates();
+        } catch (error) {
+            this.setState({
+                loginErrorMessage: error.message
+            });
+            console.log(error);
+        } finally {
+            this.setState({ showSpinner: false });
+        }
+    }
+
+    async entraUserLogin() {
+        try {
+            this.setState({ isEntraUser: true, isTeamsUser: false });
+            this.setState({ showSpinner: true });
+            this.userDetailsResponse  = await utils.entraUserLogin();
             await this.setupLoginStates();
         } catch (error) {
             this.setState({
@@ -631,7 +649,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                 </div>
                             }
                             {
-                                this.state.loggedIn && !this.state.isTeamsUser &&
+                                this.state.loggedIn && !this.state.isTeamsUser && !this.state.isEntraUser &&
                                     <div>
                                         <br></br>
                                         <div>Congrats! You've provisioned an ACS user identity and initialized the ACS Calling Client Web SDK. You are ready to start making calls!</div>
@@ -743,6 +761,36 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                 }
                                             </div>
                                         </div>
+                                        <div className="ms-Grid-col ms-sm12 ms-md12 ms-lg12 ms-xl6 ms-xxl6">
+                                            <div className="login-pannel entra">
+                                                <div className="ms-Grid-row">
+                                                    <div className="ms-Grid-col">
+                                                        <h2>💠 Entra User Identity (AAD)</h2>
+                                                    </div>
+                                                </div>
+                                                <div className="ms-Grid-row">
+                                                    <div className="ms-Grid-col">
+                                                        <div>Azure Identity TokenCredential is used to retrieve an Entra user token which is then exchanged internally to get an access
+                                                            token from the communication service. The access token is then used to initialize the ACS SDK</div>
+                                                        <div>Information and steps on how to implement the Entra OAuth flow with ACS, can be found in the <a className="sdk-docs-link" target="_blank" href="https://review.learn.microsoft.com/en-us/azure/communication-services/quickstarts/identity/entra-id-authentication-integration?branch=pr-en-us-300881&pivots=programming-language-javascript">Microsoft Docs</a></div>
+                                                    </div>
+                                                </div>
+                                                {
+                                                    (!this.state.showSpinner && !this.state.loggedIn) &&
+                                                    <div>
+                                                        <div className="ms-Grid-row">
+                                                            <div className="ms-Grid-col">
+                                                            <PrimaryButton className="primary-button mt-3"
+                                                                iconProps={{iconName: 'ReleaseGate', style: {verticalAlign: 'middle', fontSize: 'large'}}}
+                                                                onClick={() => this.entraUserLogin()}>
+                                                                    Login Entra user and initialize SDK
+                                                            </PrimaryButton>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             }
@@ -753,6 +801,16 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                         <div>Congrats! Teams User was successfully logged in. You are ready to start making calls!</div>
                                         <div>Teams User logged in identity is: <span className="identity"><b>{this.state.communicationUserId}</b></span></div>
                                         {<div>Usage is tagged with: <span className="identity"><b>{this.clientTag}</b></span></div>}
+                                    </div>
+                            }
+                            {
+                                this.state.loggedIn && this.state.isEntraUser &&
+                                    <div>
+                                        <br></br>
+                                        <div>Congrats! Entra User was successfully logged in. You are ready to start making calls!</div>
+                                        <div>Entra User logged in identity is: <span className="identity"><b>{this.state.communicationUserId}</b></span></div>
+                                        {<div>Usage is tagged with: <span className="identity"><b>{this.clientTag}</b></span></div>}
+                                        <div>Connection status: <span className="identity fontweight-700">{this.state.callAgentConnectionState}</span></div>
                                     </div>
                             }
                             {

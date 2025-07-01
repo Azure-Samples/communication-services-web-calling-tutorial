@@ -78,6 +78,7 @@ const getACSAccessTokenInfo = async (aadToken, userObjectId) => {
     return tokenResponse;
 }
 
+// comment devServer.webSocketServer: false to enable hot reloading
 module.exports = {
     devtool: 'inline-source-map',
     mode: 'development',

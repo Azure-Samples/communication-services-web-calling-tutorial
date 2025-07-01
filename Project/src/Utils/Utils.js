@@ -3,10 +3,11 @@ import {
     isPhoneNumberIdentifier,
     isMicrosoftTeamsUserIdentifier,
     isUnknownIdentifier,
-    createIdentifierFromRawId
+    AzureCommunicationTokenCredential
 } from '@azure/communication-common';
+import { InteractiveBrowserCredential } from '@azure/identity';
 import { PublicClientApplication } from "@azure/msal-browser";
-import { authConfig, authScopes } from "../../oAuthConfig"
+import { authConfig, authScopes, entraCredentialConfig } from "../../oAuthConfig"
 import axios from 'axios';
 
 export const utils = {
@@ -96,6 +97,20 @@ export const utils = {
             return response.data;
         }
         throw new Error('Failed to get Teams User Acccess token');
+    },
+    entraUserLogin: async () => {
+        const tokenCredential = new InteractiveBrowserCredential({
+            ...entraCredentialConfig
+        });
+        const credential = new AzureCommunicationTokenCredential({
+            tokenCredential: tokenCredential,
+            resourceEndpoint: entraCredentialConfig.resourceEndpoint
+        });
+        const tokenResponse = await credential.getToken();
+        // hack: getting the identifier needs to become a public API on the credential
+        const parsedToken = JSON.parse(atob(tokenResponse.token.split('.')[1]));
+        const communicationUserId = `8:${parsedToken.skypeid}`;
+        return { communicationUserToken: tokenResponse, userId: { communicationUserId } };
     },
     createRoom: async (pstnDialOutEnabled, presenterUserIds, collaboratorUserIds, attendeeUserIds, consumerUserIds) => {
         try {
