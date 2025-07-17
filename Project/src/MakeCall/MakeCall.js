@@ -86,12 +86,6 @@ export default class MakeCall extends React.Component {
             identityMri: undefined
         };
 
-        setInterval(() => {
-            if (this.state.ufdMessages.length > 0) {
-                this.setState({ ufdMessages: this.state.ufdMessages.slice() });
-            }
-        }, 10000);
-
         // override logger to be able to dowload logs locally
         AzureLogger.log = (...args) => {
             this.logBuffer.push(...args);
@@ -168,27 +162,35 @@ export default class MakeCall extends React.Component {
                     e.added.forEach(call => {
                         this.setState({ call: call });
 
+                        const addToUfdMessages = (msg) => {
+                            const messageObj = { msg };
+                            this.setState(prevState => ({
+                                ufdMessages: [messageObj, ...prevState.ufdMessages]
+                            }));
+                            setTimeout(() => {
+                                this.setState(prevState => ({
+                                    ufdMessages: prevState.ufdMessages.filter(m => m !== messageObj)
+                                }));
+                            }, 15000);
+                        };
+
                         const diagnosticChangedListener = (diagnosticInfo) => {
-                                const rmsg = `UFD Diagnostic changed:
+                                const msg = `UFD Diagnostic changed:
                                 Diagnostic: ${diagnosticInfo.diagnostic}
                                 Value: ${diagnosticInfo.value}
                                 Value type: ${diagnosticInfo.valueType}`;
-                                this.setState(prevState => ({
-                                    ufdMessages: [rmsg, ...prevState.ufdMessages]
-                                }));
+                                addToUfdMessages(msg);
                         };
 
                         const remoteDiagnosticChangedListener = (diagnosticArgs) => {
                             diagnosticArgs.diagnostics.forEach(diagnosticInfo => {
-                                const rmsg = `UFD Diagnostic changed:
+                                const msg = `UFD Diagnostic changed:
                                 Diagnostic: ${diagnosticInfo.diagnostic}
                                 Value: ${diagnosticInfo.value}
                                 Value type: ${diagnosticInfo.valueType}
                                 Participant Id: ${diagnosticInfo.participantId}
                                 Participant name: ${diagnosticInfo.remoteParticipant?.displayName}`;
-                                this.setState(prevState => ({
-                                    ufdMessages: [rmsg, ...prevState.ufdMessages]
-                                }));
+                               addToUfdMessages(msg);
                             });
                         };
 
@@ -981,7 +983,7 @@ this.callAgent.on('incomingCall', async (args) => {
                                 isMultiline={true}
                                 onDismiss={() => { this.setState({ ufdMessages: [] }) }}
                                 dismissButtonAriaLabel="Close">
-                                {this.state.ufdMessages.map((msg, index) => <li key={index}>{msg}</li>)}
+                                {this.state.ufdMessages.map((msg, index) => <li key={index}>{msg.msg}</li>)}
                             </MessageBar>
                         }
                         {
