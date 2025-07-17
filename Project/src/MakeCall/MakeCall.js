@@ -88,7 +88,7 @@ export default class MakeCall extends React.Component {
 
         setInterval(() => {
             if (this.state.ufdMessages.length > 0) {
-                this.setState({ ufdMessages: this.state.ufdMessages.slice(1) });
+                this.setState({ ufdMessages: this.state.ufdMessages.slice() });
             }
         }, 10000);
 
@@ -173,16 +173,9 @@ export default class MakeCall extends React.Component {
                                 Diagnostic: ${diagnosticInfo.diagnostic}
                                 Value: ${diagnosticInfo.value}
                                 Value type: ${diagnosticInfo.valueType}`;
-                                if (this.state.ufdMessages.length > 0) {
-                                    // limit speakingWhileMicrophoneIsMuted diagnostic until another diagnostic is received
-                                    if (diagnosticInfo.diagnostic === 'speakingWhileMicrophoneIsMuted' && this.state.ufdMessages[0].includes('speakingWhileMicrophoneIsMuted')) {
-                                        console.info(rmsg);
-                                        return;
-                                    }
-                                    this.setState({ ufdMessages: [rmsg, ...this.state.ufdMessages] });
-                                } else {
-                                    this.setState({ ufdMessages: [rmsg] });
-                                }
+                                this.setState(prevState => ({
+                                    ufdMessages: [rmsg, ...prevState.ufdMessages]
+                                }));
                         };
 
                         const remoteDiagnosticChangedListener = (diagnosticArgs) => {
@@ -193,11 +186,9 @@ export default class MakeCall extends React.Component {
                                 Value type: ${diagnosticInfo.valueType}
                                 Participant Id: ${diagnosticInfo.participantId}
                                 Participant name: ${diagnosticInfo.remoteParticipant?.displayName}`;
-                                if (this.state.ufdMessages.length > 0) {
-                                    this.setState({ ufdMessages: [rmsg, ...this.state.ufdMessages] });
-                                } else {
-                                    this.setState({ ufdMessages: [rmsg] });
-                                }
+                                this.setState(prevState => ({
+                                    ufdMessages: [rmsg, ...prevState.ufdMessages]
+                                }));
                             });
                         };
 
