@@ -13,7 +13,6 @@ const authScopes = {
 const entraCredentialConfig = {
     tenantId: 'ENTER_TENANT_ID',
     clientId: 'ENTER_CLIENT_ID',
-    redirectUri: 'REDIRECT_URI', // e.g., 'http://localhost:3000',
     resourceEndpoint: 'ACS_RESOURCE_ENDPOINT' // e.g., 'https://contoso.unitedstates.communication.azure.com/'
 };
 

@@ -100,6 +100,7 @@ export const utils = {
     },
     entraUserLogin: async () => {
         const tokenCredential = new InteractiveBrowserCredential({
+            redirectUri: window.location.href, // e.g., 'http://localhost:3000',
             ...entraCredentialConfig
         });
         const credential = new AzureCommunicationTokenCredential({
