@@ -213,6 +213,19 @@ module.exports = {
                     res.sendStatus(400);
                 }
             });
+            devServer.app.get('/entraConfigs', async (req, res) => {
+                try {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.status(200).json({
+                        tenantId: 'ENTER_TENANT_ID',
+                        clientId: 'ENTER_CLIENT_ID',
+                        resourceEndpoint: 'ACS_RESOURCE_ENDPOINT' // e.g., 'https://contoso.unitedstates.communication.azure.com'
+                    });
+                } catch (e) {
+                    console.error(e);
+                    res.sendStatus(400);
+                }
+            });
             devServer.app.post('/teamsM365Login', async (req, res) => {
                 try {
                     const email = req.body.email;

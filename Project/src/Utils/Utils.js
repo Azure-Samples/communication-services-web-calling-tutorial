@@ -7,7 +7,7 @@ import {
 } from '@azure/communication-common';
 import { InteractiveBrowserCredential } from '@azure/identity';
 import { PublicClientApplication } from "@azure/msal-browser";
-import { authConfig, authScopes, entraCredentialConfig } from "../../oAuthConfig"
+import { authConfig, authScopes } from "../../oAuthConfig"
 import axios from 'axios';
 
 export const utils = {
@@ -99,8 +99,28 @@ export const utils = {
         throw new Error('Failed to get Teams User Acccess token');
     },
     entraUserLogin: async () => {
+        /* 
+        Ideally entraCredentialConfig could be stored in a config file or environment variable:
+            const entraCredentialConfig = {
+                tenantId: 'ENTER_TENANT_ID',
+                clientId: 'ENTER_CLIENT_ID',
+                resourceEndpoint: 'ACS_RESOURCE_ENDPOINT' // e.g., 'https://contoso.unitedstates.communication.azure.com/'
+            };
+        */
+        const fetchEntraConfigs = async () => {
+            const response = await axios({
+                url: 'entraConfigs',
+                method: 'GET'
+            });
+            if (response.status !== 200) {
+                throw new Error('Failed to get entra configs');
+            }
+            return response.data;
+        }
+        const entraCredentialConfig = await fetchEntraConfigs();
+
         const tokenCredential = new InteractiveBrowserCredential({
-            redirectUri: window.location.href, // e.g., 'http://localhost:3000',
+            redirectUri: window.location.href, // e.g., 'http://localhost:3000'
             ...entraCredentialConfig
         });
         const credential = new AzureCommunicationTokenCredential({
