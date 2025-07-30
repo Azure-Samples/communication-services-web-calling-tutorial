@@ -107,9 +107,9 @@ export const utils = {
                 resourceEndpoint: 'ACS_RESOURCE_ENDPOINT' // e.g., 'https://contoso.unitedstates.communication.azure.com/'
             };
         */
-        const fetchEntraConfigs = async () => {
+        const fetchEntraConfig = async () => {
             const response = await axios({
-                url: 'entraConfigs',
+                url: 'entraConfig',
                 method: 'GET'
             });
             if (response.status !== 200) {
@@ -117,7 +117,7 @@ export const utils = {
             }
             return response.data;
         }
-        const entraCredentialConfig = await fetchEntraConfigs();
+        const entraCredentialConfig = await fetchEntraConfig();
 
         const tokenCredential = new InteractiveBrowserCredential({
             redirectUri: window.location.href, // e.g., 'http://localhost:3000'

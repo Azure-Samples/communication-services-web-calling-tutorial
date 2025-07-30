@@ -213,7 +213,7 @@ module.exports = {
                     res.sendStatus(400);
                 }
             });
-            devServer.app.get('/entraConfigs', async (req, res) => {
+            devServer.app.get('/entraConfig', async (req, res) => {
                 try {
                     res.setHeader('Content-Type', 'application/json');
                     res.status(200).json({
