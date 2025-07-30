@@ -772,7 +772,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                     <div className="ms-Grid-col">
                                                         <div>Azure Identity TokenCredential is used to retrieve an Entra user token which is then exchanged internally to get an access
                                                             token from the communication service. The access token is then used to initialize the ACS SDK</div>
-                                                        <div>Information and steps on how to implement the Entra OAuth flow with ACS, can be found in the <a className="sdk-docs-link" target="_blank" href="https://review.learn.microsoft.com/en-us/azure/communication-services/quickstarts/identity/entra-id-authentication-integration?branch=pr-en-us-300881&pivots=programming-language-javascript">Microsoft Docs</a></div>
+                                                        <div>Information and steps on how to implement the Entra OAuth flow with ACS, can be found in the <a className="sdk-docs-link" target="_blank" href="https://learn.microsoft.com/azure/communication-services/quickstarts/identity/microsoft-entra-id-authentication-integration?pivots=programming-language-javascript">Microsoft Docs</a></div>
                                                     </div>
                                                 </div>
                                                 {
