@@ -666,7 +666,7 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                                 onChange={(e) => { this.displayName = e.target.value }}/>
                                                         <TextField
                                                                 defaultValue={this.clientTag}
-                                                                label="Optinal - Usage tag for this session"
+                                                                label="Optional - Usage tag for this session"
                                                                 onChange={(e) => { this.clientTag = e.target.value }}/>
                                                         <TextField
                                                             placeholder="JWT Token"
