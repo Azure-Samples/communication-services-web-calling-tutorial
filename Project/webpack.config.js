@@ -78,6 +78,7 @@ const getACSAccessTokenInfo = async (aadToken, userObjectId) => {
     return tokenResponse;
 }
 
+// comment devServer.webSocketServer: false to enable hot reloading
 module.exports = {
     devtool: 'inline-source-map',
     mode: 'development',
@@ -206,6 +207,19 @@ module.exports = {
                     res.status(200).json({
                         communicationUserToken: {token: acsTokenInfo.token},
                         userId: acsTokenInfo.userId
+                    });
+                } catch (e) {
+                    console.error(e);
+                    res.sendStatus(400);
+                }
+            });
+            devServer.app.get('/entraConfig', async (req, res) => {
+                try {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.status(200).json({
+                        tenantId: 'ENTER_TENANT_ID',
+                        clientId: 'ENTER_CLIENT_ID',
+                        resourceEndpoint: 'ACS_RESOURCE_ENDPOINT' // e.g., 'https://contoso.unitedstates.communication.azure.com'
                     });
                 } catch (e) {
                     console.error(e);

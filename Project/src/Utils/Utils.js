@@ -3,8 +3,9 @@ import {
     isPhoneNumberIdentifier,
     isMicrosoftTeamsUserIdentifier,
     isUnknownIdentifier,
-    createIdentifierFromRawId
+    AzureCommunicationTokenCredential
 } from '@azure/communication-common';
+import { InteractiveBrowserCredential } from '@azure/identity';
 import { PublicClientApplication } from "@azure/msal-browser";
 import { authConfig, authScopes } from "../../oAuthConfig"
 import axios from 'axios';
@@ -96,6 +97,41 @@ export const utils = {
             return response.data;
         }
         throw new Error('Failed to get Teams User Acccess token');
+    },
+    entraUserLogin: async () => {
+        /* 
+        Ideally entraCredentialConfig could be stored in a config file or environment variable:
+            const entraCredentialConfig = {
+                tenantId: 'ENTER_TENANT_ID',
+                clientId: 'ENTER_CLIENT_ID',
+                resourceEndpoint: 'ACS_RESOURCE_ENDPOINT' // e.g., 'https://contoso.unitedstates.communication.azure.com/'
+            };
+        */
+        const fetchEntraConfig = async () => {
+            const response = await axios({
+                url: 'entraConfig',
+                method: 'GET'
+            });
+            if (response.status !== 200) {
+                throw new Error('Failed to get entra configs');
+            }
+            return response.data;
+        }
+        const entraCredentialConfig = await fetchEntraConfig();
+
+        const tokenCredential = new InteractiveBrowserCredential({
+            redirectUri: window.location.href, // e.g., 'http://localhost:3000'
+            ...entraCredentialConfig
+        });
+        const credential = new AzureCommunicationTokenCredential({
+            tokenCredential: tokenCredential,
+            resourceEndpoint: entraCredentialConfig.resourceEndpoint
+        });
+        const tokenResponse = await credential.getToken();
+        // hack: getting the identifier needs to become a public API on the credential
+        const parsedToken = JSON.parse(atob(tokenResponse.token.split('.')[1]));
+        const communicationUserId = `8:${parsedToken.skypeid}`;
+        return { communicationUserToken: tokenResponse, userId: { communicationUserId } };
     },
     createRoom: async (pstnDialOutEnabled, presenterUserIds, collaboratorUserIds, attendeeUserIds, consumerUserIds) => {
         try {
