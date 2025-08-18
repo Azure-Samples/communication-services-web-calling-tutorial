@@ -7,7 +7,7 @@ const axios = require("axios");
 const bodyParser = require('body-parser');
 const msal = require('@azure/msal-node');
 
-const {authConfig, authScopes} = require('./oAuthConfig');
+const {authConfig, authScopes, entraCredentialConfig} = require('./oAuthConfig');
 const clientId = authConfig.auth.clientId;
 
 
@@ -217,9 +217,9 @@ module.exports = {
                 try {
                     res.setHeader('Content-Type', 'application/json');
                     res.status(200).json({
-                        tenantId: 'ENTER_TENANT_ID',
-                        clientId: 'ENTER_CLIENT_ID',
-                        resourceEndpoint: 'ACS_RESOURCE_ENDPOINT' // e.g., 'https://contoso.unitedstates.communication.azure.com'
+                        tenantId: entraCredentialConfig.tenantId,
+                        clientId: entraCredentialConfig.clientId,
+                        resourceEndpoint: entraCredentialConfig.resourceEndpoint
                     });
                 } catch (e) {
                     console.error(e);

@@ -10,4 +10,10 @@ const authScopes = {
     m365Login: []
 };
 
-module.exports = {authConfig, authScopes }
+const entraCredentialConfig = {
+    tenantId: 'ENTER_TENANT_ID',
+    clientId: 'ENTER_CLIENT_ID',
+    resourceEndpoint: 'ACS_RESOURCE_ENDPOINT' // e.g., 'https://contoso.unitedstates.communication.azure.com/'
+};
+
+module.exports = {authConfig, authScopes, entraCredentialConfig }
