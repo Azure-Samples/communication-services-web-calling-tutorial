@@ -7,8 +7,8 @@ const axios = require("axios");
 const bodyParser = require('body-parser');
 const msal = require('@azure/msal-node');
 
-const {authConfig, authScopes, entraCredentialConfig} = require('./oAuthConfig');
-const clientId = authConfig.auth.clientId;
+const {authConfig, entraCredentialConfig} = require('./oAuthConfig');
+const clientId = authConfig.configuration.auth.clientId;
 
 
 if(!config || !config.connectionString || config.connectionString.indexOf('endpoint=') === -1)
@@ -216,11 +216,7 @@ module.exports = {
             devServer.app.get('/entraConfig', async (req, res) => {
                 try {
                     res.setHeader('Content-Type', 'application/json');
-                    res.status(200).json({
-                        tenantId: entraCredentialConfig.tenantId,
-                        clientId: entraCredentialConfig.clientId,
-                        resourceEndpoint: entraCredentialConfig.resourceEndpoint
-                    });
+                    res.status(200).json(entraCredentialConfig);
                 } catch (e) {
                     console.error(e);
                     res.sendStatus(400);
@@ -231,8 +227,8 @@ module.exports = {
                     const email = req.body.email;
                     const password = req.body.password;
                 
-                    const pca = new msal.PublicClientApplication(authConfig);
-                    let tokenRequest = {scopes: authScopes.m365Login}
+                    const pca = new msal.PublicClientApplication(authConfig.configuration);
+                    let tokenRequest = {scopes: authConfig.scopes.m365Login}
 
                     tokenRequest.username = email;
                     tokenRequest.password = password;
@@ -244,6 +240,15 @@ module.exports = {
                         communicationUserToken: {token: acsTokenInfo.token},
                         userId: acsTokenInfo.userId
                     });
+                } catch (e) {
+                    console.error(e);
+                    res.sendStatus(400);
+                }
+            });
+            devServer.app.get('/authConfig', async (req, res) => {
+                try {
+                    res.setHeader('Content-Type', 'application/json');
+                    res.status(200).json(authConfig);
                 } catch (e) {
                     console.error(e);
                     res.sendStatus(400);

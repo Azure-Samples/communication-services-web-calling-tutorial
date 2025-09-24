@@ -7,7 +7,6 @@ import {
 } from '@azure/communication-common';
 import { InteractiveBrowserCredential } from '@azure/identity';
 import { PublicClientApplication } from "@azure/msal-browser";
-import { authConfig, authScopes } from "../../oAuthConfig"
 import axios from 'axios';
 
 export const utils = {
@@ -64,8 +63,40 @@ export const utils = {
         throw new Error('Failed to get ACS User Acccess token for the given OneSignal Registration Token');
     },
     teamsPopupLogin: async () => {
-        const oAuthObj = new PublicClientApplication(authConfig);
-        const popupLoginRespoonse = await oAuthObj.loginPopup({scopes: authScopes.popUpLogin});
+        /* 
+        Ideally authConfig could be stored in a config file or environment variable:
+            const authConfig = {
+                configuration: {
+                    auth: {
+                        clientId: 'ENTER_CLIENT_ID',
+                        authority: 'https://login.microsoftonline.com/common'
+                    }
+                },
+                scopes: {
+                    m365Login: [
+                        "https://auth.msft.communication.azure.com/.default"
+                    ],
+                    popUpLogin: [
+                        "https://auth.msft.communication.azure.com/Teams.ManageCalls",
+                        "https://auth.msft.communication.azure.com/Teams.ManageChats"
+                    ]
+                }
+            };
+        */
+        const fetchAuthConfig = async () => {
+            const response = await axios({
+                url: 'authConfig',
+                method: 'GET'
+            });
+            if (response.status !== 200) {
+                throw new Error('Failed to get auth configs');
+            }
+            return response.data;
+        }
+        const authConfig = await fetchAuthConfig();
+
+        const oAuthObj = new PublicClientApplication(authConfig.configuration);
+        const popupLoginResponse = await oAuthObj.loginPopup({scopes: authConfig.scopes.popUpLogin});
         const response = await axios({
             url: 'teamsPopupLogin',
             method: 'POST',
@@ -74,8 +105,8 @@ export const utils = {
                 'Content-type': 'application/json'
             },
             data: JSON.stringify({
-                aadToken: popupLoginRespoonse.accessToken,
-                userObjectId: popupLoginRespoonse.uniqueId
+                aadToken: popupLoginResponse.accessToken,
+                userObjectId: popupLoginResponse.uniqueId
             })
         });
         if (response.status === 200) {
