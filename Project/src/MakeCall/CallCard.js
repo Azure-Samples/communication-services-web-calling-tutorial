@@ -69,6 +69,11 @@ export default class CallCard extends React.Component {
             });
         }
         this.dummyStreamTimeout = undefined;
+        this.videoDevicesUpdatedHandler = undefined;
+        this.audioDevicesUpdatedHandler = undefined;
+        this.selectedSpeakerChangedHandler = undefined;
+        this.selectedMicrophoneChangedHandler = undefined;
+
         this.state = {
             ovc: 4,
             callState: this.call.state,
@@ -144,33 +149,19 @@ export default class CallCard extends React.Component {
     }
 
     componentWillUnmount() {
-        this.call.off('stateChanged', () => { });
-        this.deviceManager.off('videoDevicesUpdated', () => { });
-        this.deviceManager.off('audioDevicesUpdated', () => { });
-        this.deviceManager.off('selectedSpeakerChanged', () => { });
-        this.deviceManager.off('selectedMicrophoneChanged', () => { });
-        this.call.off('localVideoStreamsUpdated', () => { });
-        this.call.off('idChanged', () => { });
-        this.call.off('isMutedChanged', () => { });
-        this.call.off('isIncomingAudioMutedChanged', () => { });
-        this.call.off('isScreenSharingOnChanged', () => { });
-        this.call.off('remoteParticipantsUpdated', () => { });
-        this.state.mediaCollector?.off('sampleReported', () => { });
-        this.state.mediaCollector?.off('summaryReported', () => { });
-        this.call.feature(Features.DominantSpeakers).off('dominantSpeakersChanged', () => { });
-        this.call.feature(Features.Spotlight).off('spotlightChanged', this.spotlightStateChangedHandler);
-        this.call.feature(Features.RaiseHand).off('raisedHandEvent', this.raiseHandChangedHandler);
-        this.call.feature(Features.RaiseHand).off('loweredHandEvent', this.raiseHandChangedHandler);
-        this.recordingFeature.off('isRecordingActiveChanged', this.isRecordingActiveChangedHandler);
-        this.transcriptionFeature.off('isTranscriptionActiveChanged', this.isTranscriptionActiveChangedHandler);
-        this.lobby?.off('lobbyParticipantsUpdated', () => { });
-        if (Features.Reaction) {
-            this.call.feature(Features.Reaction).off('reaction', this.reactionChangeHandler);
+        if (this.videoDevicesUpdatedHandler) {
+            this.deviceManager.off('videoDevicesUpdated', this.videoDevicesUpdatedHandler);
         }
-        if (Features.PPTLive) {
-            this.call.feature(Features.PPTLive).off('isActiveChanged', this.pptLiveChangedHandler);
+        if (this.audioDevicesUpdatedHandler) {
+            this.deviceManager.off('audioDevicesUpdated', this.audioDevicesUpdatedHandler);
         }
-        this.dominantSpeakersFeature.off('dominantSpeakersChanged', this.dominantSpeakersChanged);
+        if (this.selectedSpeakerChangedHandler) {
+            this.deviceManager.off('selectedSpeakerChanged', this.selectedSpeakerChangedHandler);
+        }
+        if (this.selectedMicrophoneChangedHandler) {
+            this.deviceManager.off('selectedMicrophoneChanged',this.selectedMicrophoneChangedHandler);
+        }
+        this.lobby?.off('lobbyParticipantsUpdated', this.lobbyParticipantsUpdatedHandler);
         if (Features.mediaAccess) {
             this.mediaAccessCallFeature.off('mediaAccessChanged', this.mediaAccessChangedHandler);
             this.mediaAccessCallFeature.off('meetingMediaAccessChanged', this.meetingMediaAccessChangedHandler);
@@ -179,7 +170,7 @@ export default class CallCard extends React.Component {
 
     componentDidMount() {
         if (this.call) {
-            this.deviceManager.on('videoDevicesUpdated', async e => {
+            this.videoDevicesUpdatedHandler = (e) => {
                 e.added.forEach(addedCameraDevice => {
                     const addedCameraDeviceOption = { key: addedCameraDevice.id, text: addedCameraDevice.name };
                     // If there were no cameras in the system and then a camera is plugged in / enabled, select it for use.
@@ -206,9 +197,10 @@ export default class CallCard extends React.Component {
                         }
                     });
                 });
-            });
+            };
+            this.deviceManager.on('videoDevicesUpdated', this.videoDevicesUpdatedHandler);
 
-            this.deviceManager.on('audioDevicesUpdated', e => {
+            this.audioDevicesUpdatedHandler = (e) => {
                 e.added.forEach(addedAudioDevice => {
                     const addedAudioDeviceOption = { key: addedAudioDevice.id, text: addedAudioDevice.name };
                     if (addedAudioDevice.deviceType === 'Speaker') {
@@ -237,15 +229,19 @@ export default class CallCard extends React.Component {
                         }))
                     }
                 });
-            });
+            };
 
-            this.deviceManager.on('selectedSpeakerChanged', () => {
+            this.deviceManager.on('audioDevicesUpdated', this.audioDevicesUpdatedHandler);
+
+            this.selectedSpeakerChangedHandler = () => {
                 this.setState({ selectedSpeakerDeviceId: this.deviceManager.selectedSpeaker?.id });
-            });
+            };
+            this.deviceManager.on('selectedSpeakerChanged', this.selectedSpeakerChangedHandler);
 
-            this.deviceManager.on('selectedMicrophoneChanged', () => {
+            this.selectedMicrophoneChangedHandler = () => {
                 this.setState({ selectedMicrophoneDeviceId: this.deviceManager.selectedMicrophone?.id });
-            });
+            };
+            this.deviceManager.on('selectedMicrophoneChanged', this.selectedMicrophoneChangedHandler);
 
             const callStateChanged = () => {
                 console.log('Call state changed ', this.call.state);
