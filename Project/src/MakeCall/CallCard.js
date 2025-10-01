@@ -493,7 +493,7 @@ export default class CallCard extends React.Component {
             const ovcFeature = this.call.feature(Features.OptimalVideoCount);
             const ovcChangedHandler = () => {
                 if (this.state.ovc !== ovcFeature.optimalVideoCount) {
-                    this.setState({ ovc: ovcFeature.optimalVideoCount });
+                    this.setState({ ovc: ovcFeature.optimalVideoCount, lastOvcChangeReason: ovcFeature.lastOvcChangeReason });
                     this.updateListOfParticipantsToRender('optimalVideoCountChanged');
                 }
             }
