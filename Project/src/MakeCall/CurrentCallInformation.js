@@ -5,6 +5,7 @@ import { AzureLogger } from '@azure/logger';
 const CurrentCallInformation = ({ sentResolution, call }) => {
     const [ovcFeature, setOvcFeature] = useState();
     const [optimalVideoCount, setOptimalVideoCount] = useState(1);
+    const [lastOvcChangeReason, setLastOvcChangeReason] = useState('Unknown');
 
     useEffect(() => {
         try {
@@ -24,6 +25,9 @@ const CurrentCallInformation = ({ sentResolution, call }) => {
 
     const optimalVideoCountChanged = () => {
         setOptimalVideoCount(ovcFeature.optimalVideoCount);
+        if (ovcFeature.lastOvcChangeReason) {
+            setLastOvcChangeReason(ovcFeature.lastOvcChangeReason);
+        }
     };
 
     return (
@@ -34,7 +38,12 @@ const CurrentCallInformation = ({ sentResolution, call }) => {
                 sentResolution && <div>Sent Resolution: {sentResolution}</div>
             }
             {
-                ovcFeature && <div>Optimal Video Count: {optimalVideoCount}</div>
+                ovcFeature && (
+                    <>
+                        <div>Optimal Video Count: {optimalVideoCount}</div>
+                        <div>Last OVC Change Reason: {lastOvcChangeReason}</div>
+                    </>
+                )
             }           
         </div>
     );
