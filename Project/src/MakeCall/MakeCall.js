@@ -164,6 +164,7 @@ export default class MakeCall extends React.Component {
 
                 this.callAgent.on('noActiveCalls', () => {
                     console.log('noActiveCalls event received - user no longer in a call');
+                    this.setState({activeCallDetails: undefined});
                 });
 
 
@@ -998,19 +999,21 @@ this.callAgent.on('incomingCall', async (args) => {
                             </MessageBar>
                         }
                         {
-                            this.state.activeCallDetails && <MessageBar
+                            this.state.activeCallDetails && !this.state.call && <MessageBar
                                 messageBarType={MessageBarType.info}
                                 isMultiline={true}
                                 onDismiss={() => { this.setState({ activeCallDetails: undefined }) }}
                                 dismissButtonAriaLabel="Close">
-                                <div className="ms-Grid-row pl-2 pr-2">
+                                <div className="ms-Grid-row">
                                     <b>You're in an active call!</b>
-                                    <DefaultButton onClick={async () => {
-                                        const newCall = await this.callAgent.activeCallTransfer(this.state.activeCallDetails, {isTransfer: true});
+                                    <DefaultButton className="pl-2" onClick={async () => {
+                                        const callOptions = await this.getCallOptions({video: false, micMuted: false});
+                                        const newCall = await this.callAgent.activeCallTransfer(this.state.activeCallDetails, {isTransfer: true, joinCallOptions: callOptions});
                                         this.setState({call: newCall});
                                     }}>Transfer to this device</DefaultButton>
-                                    <DefaultButton onClick={async () => {
-                                        const newCall = await this.callAgent.activeCallTransfer(this.state.activeCallDetails, {isTransfer: false});
+                                    <DefaultButton className="pl-2" onClick={async () => {
+                                        const callOptions = await this.getCallOptions({video: false, micMuted: false});
+                                        const newCall = await this.callAgent.activeCallTransfer(this.state.activeCallDetails, {isTransfer: false, joinCallOptions: callOptions});
                                         this.setState({call: newCall});
                                     }}>Join here</DefaultButton>
                                 </div>
