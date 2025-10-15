@@ -1,7 +1,7 @@
 import React from "react";
 import { CallClient, LocalVideoStream, Features, CallAgentKind, VideoStreamRenderer } from '@azure/communication-calling';
 import { AzureCommunicationTokenCredential, createIdentifierFromRawId} from '@azure/communication-common';
-import { PrimaryButton } from '@fluentui/react/lib/Button';
+import { DefaultButton, PrimaryButton } from '@fluentui/react/lib/Button';
 import { TextField } from '@fluentui/react/lib/TextField';
 import { MessageBar, MessageBarType, Toggle } from '@fluentui/react';
 import { Icon } from '@fluentui/react/lib/Icon';
@@ -83,7 +83,8 @@ export default class MakeCall extends React.Component {
             },
             preCallDiagnosticsResults: {},
             isTeamsUser: false,
-            identityMri: undefined
+            identityMri: undefined,
+            activeCallDetails: undefined
         };
 
         // override logger to be able to dowload logs locally
@@ -155,6 +156,16 @@ export default class MakeCall extends React.Component {
                     await this.callClient.createTeamsCallAgent(tokenCredential) :
                     await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
                 window.callAgent = this.callAgent;
+                
+                this.callAgent.on('activeCallsUpdated', (args) => {
+                    console.log(`activeCallsUpdated, activeCalls=${args.activeCallDetails}`);
+                    this.setState({activeCallDetails: args.activeCallDetails});
+                });
+
+                this.callAgent.on('noActiveCalls', () => {
+                    console.log('noActiveCalls event received - user no longer in a call');
+                });
+
 
                 this.callAgent.on('callsUpdated', e => {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
@@ -984,6 +995,25 @@ this.callAgent.on('incomingCall', async (args) => {
                                 onDismiss={() => { this.setState({ ufdMessages: [] }) }}
                                 dismissButtonAriaLabel="Close">
                                 {this.state.ufdMessages.map((msg, index) => <li key={index}>{msg.msg}</li>)}
+                            </MessageBar>
+                        }
+                        {
+                            this.state.activeCallDetails && <MessageBar
+                                messageBarType={MessageBarType.info}
+                                isMultiline={true}
+                                onDismiss={() => { this.setState({ activeCallDetails: undefined }) }}
+                                dismissButtonAriaLabel="Close">
+                                <div className="ms-Grid-row ml-2 mr-2">
+                                    <b>You're in an active call!</b>
+                                    <DefaultButton onClick={async () => {
+                                        const newCall = await this.callAgent.activeCallTransfer(this.state.activeCallDetails, {isTransfer: true});
+                                        this.setState({call: newCall});
+                                    }}>Transfer to this device</DefaultButton>
+                                    <DefaultButton onClick={async () => {
+                                        const newCall = await this.callAgent.activeCallTransfer(this.state.activeCallDetails, {isTransfer: false});
+                                        this.setState({call: newCall});
+                                    }}>Join here</DefaultButton>
+                                </div>
                             </MessageBar>
                         }
                         {
