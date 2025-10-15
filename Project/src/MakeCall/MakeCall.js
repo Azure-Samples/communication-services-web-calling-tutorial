@@ -1003,7 +1003,7 @@ this.callAgent.on('incomingCall', async (args) => {
                                 isMultiline={true}
                                 onDismiss={() => { this.setState({ activeCallDetails: undefined }) }}
                                 dismissButtonAriaLabel="Close">
-                                <div className="ms-Grid-row ml-2 mr-2">
+                                <div className="ms-Grid-row pl-2 pr-2">
                                     <b>You're in an active call!</b>
                                     <DefaultButton onClick={async () => {
                                         const newCall = await this.callAgent.activeCallTransfer(this.state.activeCallDetails, {isTransfer: true});
