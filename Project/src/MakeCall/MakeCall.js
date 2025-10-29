@@ -236,6 +236,8 @@ export default class MakeCall extends React.Component {
                 this.logInComponentRef.current.setCallAgent(this.callAgent);
                 this.logInComponentRef.current.setCallClient(this.callClient);
                 this.autoJoinMeetingByMeetingLink();
+                const activeCalls = await this.callAgent.getActiveCallDetails();
+                this.setState({ activeCallDetails: activeCalls.callId ? activeCalls : undefined });
             } catch (e) {
                 console.error(e);
             }
