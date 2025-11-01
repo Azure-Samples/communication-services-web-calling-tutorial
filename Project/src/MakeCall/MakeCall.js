@@ -157,15 +157,22 @@ export default class MakeCall extends React.Component {
                     await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
                 window.callAgent = this.callAgent;
                 
-                this.callAgent.on('activeCallsUpdated', (args) => {
-                    console.log(`activeCallsUpdated, activeCalls=${args.activeCallDetails}`);
-                    this.setState({activeCallDetails: args.activeCallDetails});
-                });
+                try {
+                    this.callAgent.on('activeCallsUpdated', (args) => {
+                        console.log(`activeCallsUpdated, activeCalls=${args.activeCallDetails}`);
+                        this.setState({activeCallDetails: args.activeCallDetails});
+                    });
 
-                this.callAgent.on('noActiveCalls', () => {
-                    console.log('noActiveCalls event received - user no longer in a call');
-                    this.setState({activeCallDetails: undefined});
-                });
+                    this.callAgent.on('noActiveCalls', () => {
+                        console.log('noActiveCalls event received - user no longer in a call');
+                        this.setState({activeCallDetails: undefined});
+                    });
+                    const activeCalls = await this.callAgent.getActiveCallDetails();
+                    this.setState({ activeCallDetails: activeCalls.callId ? activeCalls : undefined });
+                } catch (e) {
+                    console.log('active call transfer not configured for this release version');
+                } 
+                
 
 
                 this.callAgent.on('callsUpdated', e => {
@@ -235,9 +242,7 @@ export default class MakeCall extends React.Component {
                 this.setState({ loggedIn: true });
                 this.logInComponentRef.current.setCallAgent(this.callAgent);
                 this.logInComponentRef.current.setCallClient(this.callClient);
-                this.autoJoinMeetingByMeetingLink();
-                const activeCalls = await this.callAgent.getActiveCallDetails();
-                this.setState({ activeCallDetails: activeCalls.callId ? activeCalls : undefined });
+                this.autoJoinMeetingByMeetingLink();               
             } catch (e) {
                 console.error(e);
             }
