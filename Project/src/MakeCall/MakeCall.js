@@ -1,7 +1,7 @@
 import React from "react";
 import { CallClient, LocalVideoStream, Features, CallAgentKind, VideoStreamRenderer } from '@azure/communication-calling';
 import { AzureCommunicationTokenCredential, createIdentifierFromRawId} from '@azure/communication-common';
-import { PrimaryButton } from '@fluentui/react/lib/Button';
+import { DefaultButton, PrimaryButton } from '@fluentui/react/lib/Button';
 import { TextField } from '@fluentui/react/lib/TextField';
 import { MessageBar, MessageBarType, Toggle } from '@fluentui/react';
 import { Icon } from '@fluentui/react/lib/Icon';
@@ -84,7 +84,8 @@ export default class MakeCall extends React.Component {
             preCallDiagnosticsResults: {},
             isTeamsUser: false,
             headsetEnhancement: false,
-            identityMri: undefined
+            identityMri: undefined,
+            activeCallDetails: undefined
         };
 
         // override logger to be able to dowload logs locally
@@ -163,6 +164,24 @@ export default class MakeCall extends React.Component {
                     await this.callClient.createTeamsCallAgent(tokenCredential) :
                     await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
                 window.callAgent = this.callAgent;
+                
+                try {
+                    this.callAgent.on('activeCallsUpdated', (args) => {
+                        console.log(`activeCallsUpdated, activeCalls=${args.activeCallDetails}`);
+                        this.setState({activeCallDetails: args.activeCallDetails});
+                    });
+
+                    this.callAgent.on('noActiveCalls', () => {
+                        console.log('noActiveCalls event received - user no longer in a call');
+                        this.setState({activeCallDetails: undefined});
+                    });
+                    const activeCalls = await this.callAgent.getActiveCallDetails();
+                    this.setState({ activeCallDetails: activeCalls.callId ? activeCalls : undefined });
+                } catch (e) {
+                    console.log('active call transfer not configured for this release version');
+                } 
+                
+
 
                 this.callAgent.on('callsUpdated', e => {
                     console.log(`callsUpdated, added=${e.added}, removed=${e.removed}`);
@@ -231,7 +250,7 @@ export default class MakeCall extends React.Component {
                 this.setState({ loggedIn: true });
                 this.logInComponentRef.current.setCallAgent(this.callAgent);
                 this.logInComponentRef.current.setCallClient(this.callClient);
-                this.autoJoinMeetingByMeetingLink();
+                this.autoJoinMeetingByMeetingLink();               
             } catch (e) {
                 console.error(e);
             }
@@ -992,6 +1011,32 @@ this.callAgent.on('incomingCall', async (args) => {
                                 onDismiss={() => { this.setState({ ufdMessages: [] }) }}
                                 dismissButtonAriaLabel="Close">
                                 {this.state.ufdMessages.map((msg, index) => <li key={index}>{msg.msg}</li>)}
+                            </MessageBar>
+                        }
+                        {
+                            this.state.activeCallDetails && !this.state.call && <MessageBar
+                                messageBarType={MessageBarType.warning}
+                                isMultiline={true}
+                                onDismiss={() => { this.setState({ activeCallDetails: undefined }) }}
+                                dismissButtonAriaLabel="Close">
+                                <div className="ms-Grid-row">
+                                    <b className="ms-Grid-col">You're in an active call!</b>
+                                    <div className="ms-Grid-col">
+                                        <DefaultButton  onClick={async () => {
+                                            const callOptions = await this.getCallOptions({video: false, micMuted: false});
+                                            const newCall = await this.callAgent.activeCallTransfer(this.state.activeCallDetails, {isTransfer: true, joinCallOptions: callOptions});
+                                            this.setState({call: newCall});
+                                        }}>Transfer to this device</DefaultButton>
+                                    </div>
+                                    <div className="ms-Grid-col">
+                                        <DefaultButton onClick={async () => {
+                                            const callOptions = await this.getCallOptions({video: false, micMuted: false});
+                                            const newCall = await this.callAgent.activeCallTransfer(this.state.activeCallDetails, {isTransfer: false, joinCallOptions: callOptions});
+                                            this.setState({call: newCall});
+                                        }}>Add this device</DefaultButton>
+                                    </div>
+                                    
+                                </div>
                             </MessageBar>
                         }
                         {
