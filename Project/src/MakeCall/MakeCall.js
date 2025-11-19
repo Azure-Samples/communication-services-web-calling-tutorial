@@ -83,6 +83,7 @@ export default class MakeCall extends React.Component {
             },
             preCallDiagnosticsResults: {},
             isTeamsUser: false,
+            headsetEnhancement: false,
             identityMri: undefined,
             activeCallDetails: undefined
         };
@@ -130,6 +131,10 @@ export default class MakeCall extends React.Component {
                 this.tokenCredential = tokenCredential;
                 setLogLevel('verbose');
 
+                this.setState({ headsetEnhancement: userDetails.headsetEnhancement });
+
+                console.log("MakeCall::handleLogIn, headsetEnhancement: ", userDetails.headsetEnhancement);
+
                 const proxyConfiguration = userDetails.proxy.useProxy ? { url: userDetails.proxy.url } : undefined;
                 const turnConfiguration = userDetails.customTurn.useCustomTurn ? userDetails.customTurn.turn : undefined;
                 this.callClient = new CallClient({
@@ -142,6 +147,9 @@ export default class MakeCall extends React.Component {
                     networkConfiguration: {
                         proxy: proxyConfiguration,
                         turn: turnConfiguration
+                    },
+                    audioOptions: {
+                        headsetEnhancement: userDetails.headsetEnhancement
                     }
                 });
 
