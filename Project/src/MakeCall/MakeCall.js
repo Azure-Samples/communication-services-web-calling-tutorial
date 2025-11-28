@@ -50,6 +50,7 @@ export default class MakeCall extends React.Component {
         this.videoConstraints = null;
         this.tokenCredential = null;
         this.logInComponentRef = React.createRef();
+        this.activeCallTransferFeature = null;
 
         this.state = {
             id: undefined,
@@ -164,18 +165,18 @@ export default class MakeCall extends React.Component {
                     await this.callClient.createTeamsCallAgent(tokenCredential) :
                     await this.callClient.createCallAgent(tokenCredential, { displayName: userDetails.displayName });
                 window.callAgent = this.callAgent;
-                
+                this.activeCallTransferFeature = this.callAgent.feature(Features.ActiveCallTransfer);
                 try {
-                    this.callAgent.on('activeCallsUpdated', (args) => {
+                    this.activeCallTransferFeature.on('activeCallsUpdated', (args) => {
                         console.log(`activeCallsUpdated, activeCalls=${args.activeCallDetails}`);
                         this.setState({activeCallDetails: args.activeCallDetails});
                     });
 
-                    this.callAgent.on('noActiveCalls', () => {
+                    this.activeCallTransferFeature.on('noActiveCalls', () => {
                         console.log('noActiveCalls event received - user no longer in a call');
                         this.setState({activeCallDetails: undefined});
                     });
-                    const activeCalls = await this.callAgent.getActiveCallDetails();
+                    const activeCalls = await this.activeCallTransferFeature.getActiveCallDetails();
                     this.setState({ activeCallDetails: activeCalls.callId ? activeCalls : undefined });
                 } catch (e) {
                     console.log('active call transfer not configured for this release version');
@@ -1024,14 +1025,14 @@ this.callAgent.on('incomingCall', async (args) => {
                                     <div className="ms-Grid-col">
                                         <DefaultButton  onClick={async () => {
                                             const callOptions = await this.getCallOptions({video: false, micMuted: false});
-                                            const newCall = await this.callAgent.activeCallTransfer(this.state.activeCallDetails, {isTransfer: true, joinCallOptions: callOptions});
+                                            const newCall = await this.activeCallTransferFeature.activeCallTransfer(this.state.activeCallDetails, {isTransfer: true, joinCallOptions: callOptions});
                                             this.setState({call: newCall});
                                         }}>Transfer to this device</DefaultButton>
                                     </div>
                                     <div className="ms-Grid-col">
                                         <DefaultButton onClick={async () => {
                                             const callOptions = await this.getCallOptions({video: false, micMuted: false});
-                                            const newCall = await this.callAgent.activeCallTransfer(this.state.activeCallDetails, {isTransfer: false, joinCallOptions: callOptions});
+                                            const newCall = await this.activeCallTransferFeature.activeCallTransfer(this.state.activeCallDetails, {isTransfer: false, joinCallOptions: callOptions});
                                             this.setState({call: newCall});
                                         }}>Add this device</DefaultButton>
                                     </div>
