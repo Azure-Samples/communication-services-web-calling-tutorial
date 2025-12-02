@@ -120,7 +120,8 @@ export default class AudioEffectsContainer extends React.Component {
             activeEffects: {
                 autoGainControl: this.localAudioStreamFeatureApi?.activeEffects?.autoGainControl,
                 echoCancellation: this.localAudioStreamFeatureApi?.activeEffects?.echoCancellation,
-                noiseSuppression: this.localAudioStreamFeatureApi?.activeEffects?.noiseSuppression
+                noiseSuppression: this.localAudioStreamFeatureApi?.activeEffects?.noiseSuppression,
+                voiceIsolation: this.localAudioStreamFeatureApi?.activeEffects?.voiceIsolation
             }
         });
     }
@@ -584,16 +585,16 @@ export default class AudioEffectsContainer extends React.Component {
                             <div className='ms-Grid-col ms-sm12 ms-md12 ms-lg12'>
                                 <PrimaryButton
                                     className='secondary-button mt-2'
-                                    onClick={() => this.startNs()}
+                                    onClick={() => this.startVi()}
                                 >
-                                    {this.state.noiseSuppression.startLoading ? <LoadingSpinner /> : 'Start NS'}
+                                    {this.state.voiceIsolation.startLoading ? <LoadingSpinner /> : 'Start VI'}
                                 </PrimaryButton>
 
                                 <PrimaryButton
                                     className='secondary-button mt-2'
-                                    onClick={() => this.stopNs()}
+                                    onClick={() => this.stopVi()}
                                 >
-                                    {this.state.noiseSuppression.stopLoading ? <LoadingSpinner /> : 'Stop NS'}
+                                    {this.state.voiceIsolation.stopLoading ? <LoadingSpinner /> : 'Stop VI'}
                                 </PrimaryButton>
                             </div>
                         </div>
