@@ -722,11 +722,11 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                 </div>
                                                 <div className="ms-Grid-row">
                                                     <div className="ms-Grid-col">
-                                                    <Checkbox 
+                                                    <Checkbox
                                                         className='mt-3'
                                                         label='Headset Enhancement'
                                                         checked={this.state.headsetEnhancement}
-                                                        onChange={(e, isChecked) => this.setState({headsetEnhancement: isChecked})} />    
+                                                        onChange={(e, isChecked) => this.setState({headsetEnhancement: isChecked})} />
                                                     </div>
                                                 </div>
                                                 <div className="ms-Grid-row">

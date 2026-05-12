@@ -84,7 +84,6 @@ export default class MakeCall extends React.Component {
             },
             preCallDiagnosticsResults: {},
             isTeamsUser: false,
-            headsetEnhancement: false,
             identityMri: undefined,
             activeCallDetails: undefined
         };

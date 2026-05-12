@@ -254,6 +254,9 @@ module.exports = {
                     res.sendStatus(400);
                 }
             });
+            devServer.app.get('/blank', async (req, res) => {
+                res.status(200).send('');
+            });
             devServer.app.post('/createRoom', async (req, res) => {
                 try {
                     let participants = [];

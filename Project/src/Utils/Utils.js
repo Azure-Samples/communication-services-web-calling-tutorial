@@ -94,9 +94,10 @@ export const utils = {
             return response.data;
         }
         const authConfig = await fetchAuthConfig();
+        const redirectUri = `${window.location.origin}/blank`;
 
         const oAuthObj = new PublicClientApplication(authConfig.configuration);
-        const popupLoginResponse = await oAuthObj.loginPopup({scopes: authConfig.scopes.popUpLogin});
+        const popupLoginResponse = await oAuthObj.loginPopup({scopes: authConfig.scopes.popUpLogin, redirectUri});
         const response = await axios({
             url: 'teamsPopupLogin',
             method: 'POST',
@@ -149,9 +150,10 @@ export const utils = {
             return response.data;
         }
         const entraCredentialConfig = await fetchEntraConfig();
+        const redirectUri = `${window.location.origin}/blank`;
 
         const tokenCredential = new InteractiveBrowserCredential({
-            redirectUri: window.location.href, // e.g., 'http://localhost:3000'
+            redirectUri, // e.g., 'http://localhost:3000'
             ...entraCredentialConfig
         });
         const credential = new AzureCommunicationTokenCredential({

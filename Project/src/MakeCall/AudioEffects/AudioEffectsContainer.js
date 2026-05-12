@@ -2,8 +2,7 @@ import React from 'react';
 import { Features, LocalAudioStream } from '@azure/communication-calling';
 import { 
     EchoCancellationEffect,
-    DeepNoiseSuppressionEffect,
-    VoiceIsolationEffect
+    DeepNoiseSuppressionEffect
 } from '@azure/communication-calling-effects';
 import { Dropdown, PrimaryButton } from '@fluentui/react';
 
@@ -42,17 +41,10 @@ export default class AudioEffectsContainer extends React.Component {
                 noiseSuppressionList: [],
                 currentSelected: undefined
             },
-            voiceIsolation: {
-                startLoading: false,
-                stopLoading: false,
-                voiceIsolationList: [],
-                currentSelected: undefined
-            },
             activeEffects: {
                 autoGainControl: [],
                 echoCancellation: [],
-                noiseSuppression: [],
-                voiceIsolation: []
+                noiseSuppression: []
             }
         };
 
@@ -120,8 +112,7 @@ export default class AudioEffectsContainer extends React.Component {
             activeEffects: {
                 autoGainControl: this.localAudioStreamFeatureApi?.activeEffects?.autoGainControl,
                 echoCancellation: this.localAudioStreamFeatureApi?.activeEffects?.echoCancellation,
-                noiseSuppression: this.localAudioStreamFeatureApi?.activeEffects?.noiseSuppression,
-                voiceIsolation: this.localAudioStreamFeatureApi?.activeEffects?.voiceIsolation
+                noiseSuppression: this.localAudioStreamFeatureApi?.activeEffects?.noiseSuppression
             }
         });
     }
@@ -132,7 +123,6 @@ export default class AudioEffectsContainer extends React.Component {
         const autoGainControlList = [];
         const echoCancellationList = [];
         const noiseSuppressionList = [];
-        const voiceIsolationList = [];
 
         if (this.localAudioStreamFeatureApi) {
             if (await this.localAudioStreamFeatureApi.isSupported('BrowserAutoGainControl')) {
@@ -177,15 +167,6 @@ export default class AudioEffectsContainer extends React.Component {
                 });
             }
 
-            const voiceIsolation = new VoiceIsolationEffect();
-            if (await this.localAudioStreamFeatureApi.isSupported(voiceIsolation)) {
-                supported.push(voiceIsolation);
-                voiceIsolationList.push({
-                    key: voiceIsolation.name,
-                    text: 'Voice Isolation'
-                });
-            }
-
             this.setState({
                 supportedAudioEffects: [ ...supported ],
                 supportedAudioEffectsPopulated: true,
@@ -201,15 +182,10 @@ export default class AudioEffectsContainer extends React.Component {
                     ...this.state.noiseSuppression,
                     noiseSuppressionList
                 },
-                voiceIsolation: {
-                    ...this.state.voiceIsolation,
-                    voiceIsolationList
-                },
                 activeEffects: {
                     autoGainControl: this.localAudioStreamFeatureApi?.activeEffects?.autoGainControl,
                     echoCancellation: this.localAudioStreamFeatureApi?.activeEffects?.echoCancellation,
-                    noiseSuppression: this.localAudioStreamFeatureApi?.activeEffects?.noiseSuppression,
-                    voiceIsolation: this.localAudioStreamFeatureApi?.activeEffects?.voiceIsolation
+                    noiseSuppression: this.localAudioStreamFeatureApi?.activeEffects?.noiseSuppression
                 }
             });
         }
@@ -401,64 +377,6 @@ export default class AudioEffectsContainer extends React.Component {
     }
     /* ------------ NS control functions - end ---------------- */
 
-    /* ------------ VI control functions - start ---------------- */
-    viSelectionChanged(e, item) {
-        const effect = this.findEffectFromSupportedList(item.key);
-        if (effect) {
-            this.setState({
-                voiceIsolation: {
-                    ...this.state.voiceIsolation,
-                    currentSelected: effect
-                }
-            });
-        }
-    }
-
-    async startVi() {
-        this.setState({
-            voiceIsolation: {
-                ...this.state.voiceIsolation,
-                startLoading: true
-            }
-        });
-
-        if (this.localAudioStreamFeatureApi) {
-            await this.localAudioStreamFeatureApi.startEffects({
-                voiceIsolation: this.state.voiceIsolation.currentSelected
-            });
-        }
-
-        this.setState({
-            voiceIsolation: {
-                ...this.state.voiceIsolation,
-                startLoading: false
-            }
-        });
-    }
-
-    async stopVi() {
-        this.setState({
-            voiceIsolation: {
-                ...this.state.voiceIsolation,
-                stopLoading: true
-            }
-        });
-
-        if (this.localAudioStreamFeatureApi) {
-            await this.localAudioStreamFeatureApi.stopEffects({
-                voiceIsolation: true
-            });
-        }
-
-        this.setState({
-            voiceIsolation: {
-                ...this.state.voiceIsolation,
-                stopLoading: false
-            }
-        });
-    }
-    /* ------------ VI control functions - end ---------------- */
-
     render() {
         return (
             <>
@@ -483,11 +401,6 @@ export default class AudioEffectsContainer extends React.Component {
                             {this.state.activeEffects.noiseSuppression?.length > 0 &&
                             <div className='ms-Grid-col ms-sm4 ms-md4 ms-lg4'>
                                 {this.state.activeEffects.noiseSuppression[0]}
-                            </div>
-                            }
-                            {this.state.activeEffects.voiceIsolation?.length > 0 &&
-                            <div className='ms-Grid-col ms-sm4 ms-md4 ms-lg4'>
-                                {this.state.activeEffects.voiceIsolation[0]}
                             </div>
                             }
                         </div>
@@ -568,33 +481,6 @@ export default class AudioEffectsContainer extends React.Component {
                                     onClick={() => this.stopNs()}
                                 >
                                     {this.state.noiseSuppression.stopLoading ? <LoadingSpinner /> : 'Stop NS'}
-                                </PrimaryButton>
-                            </div>
-                        </div>
-
-                        <div className='ms-Grid-row'>
-                            <div className='ms-Grid-col ms-sm12 ms-md12 ms-lg12'>
-                                <Dropdown
-                                    label='Voice Isolation'
-                                    onChange={(e, item) => this.viSelectionChanged(e, item)}
-                                    options={this.state.voiceIsolation.voiceIsolationList}
-                                    placeholder={'Select an option'}
-                                    styles={{ dropdown: { width: 300, color: 'black' }, label: { color: 'white' } }}
-                                />
-                            </div>
-                            <div className='ms-Grid-col ms-sm12 ms-md12 ms-lg12'>
-                                <PrimaryButton
-                                    className='secondary-button mt-2'
-                                    onClick={() => this.startVi()}
-                                >
-                                    {this.state.voiceIsolation.startLoading ? <LoadingSpinner /> : 'Start VI'}
-                                </PrimaryButton>
-
-                                <PrimaryButton
-                                    className='secondary-button mt-2'
-                                    onClick={() => this.stopVi()}
-                                >
-                                    {this.state.voiceIsolation.stopLoading ? <LoadingSpinner /> : 'Stop VI'}
                                 </PrimaryButton>
                             </div>
                         </div>
