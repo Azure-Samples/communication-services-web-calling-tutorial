@@ -51,7 +51,6 @@ export default class Login extends React.Component {
             isEntraUser: false,
             isJoinOnlyToken: false,
             enableVDI3: false,
-            headsetEnhancement: false,
         }
     }
 
@@ -124,8 +123,7 @@ export default class Login extends React.Component {
                 customTurn: this.state.customTurn,
                 isTeamsUser: this.state.isTeamsUser,
                 isEntraUser: this.state.isEntraUser,
-                enableVDI3: this.state.enableVDI3,
-                headsetEnhancement: this.state.headsetEnhancement
+                enableVDI3: this.state.enableVDI3
             });
         }
         console.log('Login response: ', this.userDetailsResponse);
@@ -216,8 +214,7 @@ export default class Login extends React.Component {
                     clientTag:this.clientTag,
                     proxy: this.state.proxy,
                     customTurn: this.state.customTurn,
-                    enableVDI3: this.state.enableVDI3,
-                    headsetEnhancement: this.state.headsetEnhancement
+                    enableVDI3: this.state.enableVDI3
                 });
                 this._callAgentInitPromise = new Promise((resolve) => { this._callAgentInitPromiseResolve = resolve });
                 await this._callAgentInitPromise;
@@ -718,15 +715,6 @@ const isSupportedEnvironment = this.environmentInfo.isSupportedEnvironment;
                                                         label='Enable VDI3'
                                                         checked={this.state.enableVDI3}
                                                         onChange={(e, isChecked) => this.setState({enableVDI3: isChecked})} />
-                                                    </div>
-                                                </div>
-                                                <div className="ms-Grid-row">
-                                                    <div className="ms-Grid-col">
-                                                    <Checkbox
-                                                        className='mt-3'
-                                                        label='Headset Enhancement'
-                                                        checked={this.state.headsetEnhancement}
-                                                        onChange={(e, isChecked) => this.setState({headsetEnhancement: isChecked})} />
                                                     </div>
                                                 </div>
                                                 <div className="ms-Grid-row">

@@ -131,9 +131,6 @@ export default class MakeCall extends React.Component {
                 this.tokenCredential = tokenCredential;
                 setLogLevel('verbose');
 
-                this.setState({ headsetEnhancement: userDetails.headsetEnhancement });
-
-                console.log("MakeCall::handleLogIn, headsetEnhancement: ", userDetails.headsetEnhancement);
                 console.log("MakeCall::handleLogIn, enableVDI3: ", userDetails.enableVDI3);
 
                 const proxyConfiguration = userDetails.proxy.useProxy ? { url: userDetails.proxy.url } : undefined;
@@ -148,9 +145,6 @@ export default class MakeCall extends React.Component {
                     networkConfiguration: {
                         proxy: proxyConfiguration,
                         turn: turnConfiguration
-                    },
-                    audioOptions: {
-                        headsetEnhancement: userDetails.headsetEnhancement
                     },
                     vdi3: {
                         enabled: userDetails.enableVDI3
