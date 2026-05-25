@@ -65,11 +65,17 @@ export const utils = {
     teamsPopupLogin: async () => {
         /* 
         Ideally authConfig could be stored in a config file or environment variable:
+            // Environment options: 'commercial' or 'gcch' (Government Community Cloud High)
+            const environment = 'commercial'; // Change to 'gcch' for Government accounts
+            const authorityEndpoints = {
+                commercial: 'https://login.microsoftonline.com/common',
+                gcch: 'https://login.microsoftonline.us/ENTER_TENANT_ID' // GCCH requires tenant-specific authority
+            };
             const authConfig = {
                 configuration: {
                     auth: {
                         clientId: 'ENTER_CLIENT_ID',
-                        authority: 'https://login.microsoftonline.com/common'
+                        authority: authorityEndpoints[environment]
                     }
                 },
                 scopes: {
