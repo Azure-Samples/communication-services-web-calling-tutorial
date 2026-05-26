@@ -89,17 +89,22 @@ export const utils = {
                 }
             };
         */
-        const fetchAuthConfig = async () => {
-            const response = await axios({
-                url: 'authConfig',
-                method: 'GET'
-            });
-            if (response.status !== 200) {
-                throw new Error('Failed to get auth configs');
+        // GCCH configuration - embedded to avoid server endpoint override
+        const authConfig = {
+            configuration: {
+                auth: {
+                    clientId: '5ea2529c-3327-47e0-a362-c75a829fb6f2',
+                    authority: 'https://login.microsoftonline.us/fef24bbe-18d9-453d-a4c9-3471d278af0c'
+                }
+            },
+            scopes: {
+                m365Login: ['https://auth.msft.communication.azure.com/.default'],
+                popUpLogin: [
+                    'https://auth.msft.communication.azure.com/Teams.ManageCalls',
+                    'https://auth.msft.communication.azure.com/Teams.ManageChats'
+                ]
             }
-            return response.data;
-        }
-        const authConfig = await fetchAuthConfig();
+        };
         const redirectUri = `${window.location.origin}/blank`;
 
         const oAuthObj = new PublicClientApplication(authConfig.configuration);
