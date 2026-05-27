@@ -100,7 +100,7 @@ export const utils = {
             scopes: {
                 m365Login: ['https://auth.msft.communication.azure.us/.default'],
                 popUpLogin: [
-                    'https://auth.msft.communication.azure.us/Teams.ManageCalls'
+                    'https://auth.msft.communication.azure.us/TeamsExtension.ManageCalls'
                 ]
             }
         };
