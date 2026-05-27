@@ -93,15 +93,14 @@ export const utils = {
         const authConfig = {
             configuration: {
                 auth: {
-                    clientId: '5ea2529c-3327-47e0-a362-c75a829fb6f2',
+                    clientId: '61e3b7ec-d28b-4acd-853d-1a3673c083f4',
                     authority: 'https://login.microsoftonline.us/fef24bbe-18d9-453d-a4c9-3471d278af0c'
                 }
             },
             scopes: {
                 m365Login: ['https://auth.msft.communication.azure.us/.default'],
                 popUpLogin: [
-                    'https://auth.msft.communication.azure.us/Teams.ManageCalls',
-                    'https://auth.msft.communication.azure.us/Teams.ManageChats'
+                    'https://auth.msft.communication.azure.us/Teams.ManageCalls'
                 ]
             }
         };
