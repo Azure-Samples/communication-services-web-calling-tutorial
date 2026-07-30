@@ -131,6 +131,8 @@ export default class MakeCall extends React.Component {
                 this.tokenCredential = tokenCredential;
                 setLogLevel('verbose');
 
+                console.log("MakeCall::handleLogIn, enableVDI3: ", userDetails.enableVDI3);
+
                 const proxyConfiguration = userDetails.proxy.useProxy ? { url: userDetails.proxy.url } : undefined;
                 const turnConfiguration = userDetails.customTurn.useCustomTurn ? userDetails.customTurn.turn : undefined;
                 this.callClient = new CallClient({
@@ -143,6 +145,9 @@ export default class MakeCall extends React.Component {
                     networkConfiguration: {
                         proxy: proxyConfiguration,
                         turn: turnConfiguration
+                    },
+                    vdi3: {
+                        enabled: userDetails.enableVDI3
                     }
                 });
 
