@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@azure/communication-calling": "1.37.1-beta.1",
-    "@azure/communication-calling-effects": "1.1.1-beta.1",
+    "@azure/communication-calling": "1.45.1-alpha.1",
+    "@azure/communication-calling-effects": "1.45.1-alpha.1",
     "@azure/communication-common": "^2.4.0",
     "@azure/communication-identity": "^1.3.0",
     "@azure/communication-network-traversal": "^1.1.0-beta.1",
@@ -26,7 +26,10 @@
     "start-local": "webpack-dev-server --port 5000 --mode development",
     "build-local": "webpack --mode development",
     "start": "webpack-dev-server --host 0.0.0.0",
-    "build": "webpack"
+    "clean": "rm -rf dist",
+    "build": "npm run clean && webpack --env all",
+    "build:esm": "npm run clean && webpack --env esm --mode production",
+    "build:umd": "npm run clean && webpack --env umd --mode production"
   },
   "devDependencies": {
     "@babel/core": "^7.8.7",

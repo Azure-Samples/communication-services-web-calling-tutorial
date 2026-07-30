@@ -15,6 +15,22 @@
     <script type="text/javascript">
       window.FabricConfig = {
       };
+      
+      // Load ESM or UMD bundle based on URL query parameter
+      (function() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var bundleType = urlParams.get('bundle');
+        var script = document.createElement('script');
+        
+        if (bundleType === 'esm') {
+          script.type = 'module';
+          script.src = './esm/bundle.js';
+        } else {
+          script.src = './umd/bundle.js';
+        }
+        
+        document.body.appendChild(script);
+      })();
     </script>
   </body>
 </html>
