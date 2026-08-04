@@ -6,6 +6,7 @@ const clientConfig = require("./clientConfig.json");
 const axios = require("axios");
 const bodyParser = require('body-parser');
 const msal = require('@azure/msal-node');
+const crypto = require('crypto');
 
 const {authConfig, entraCredentialConfig} = require('./oAuthConfig');
 const clientId = authConfig.configuration.auth.clientId;
@@ -39,11 +40,9 @@ const registerCommunicationUserForOneSignal = async (communicationAccessToken, c
     return oneSignalRegistrationToken;
 }
 
+// Registration tokens are exchanged for ACS access tokens, so they must not be guessable.
 const generateGuid = function () {
-    function s4() {
-        return Math.floor((Math.random() + 1) * 0x10000).toString(16).substring(1);
-    }
-    return `${s4()}${s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
+    return crypto.randomUUID();
 }
 
 function parseJWT (token) {
@@ -76,6 +75,81 @@ const getACSAccessTokenInfo = async (aadToken, userObjectId) => {
     };
     return tokenResponse;
 }
+
+// This server holds the ACS resource connection string, so any route that mints tokens or
+// manages rooms must first prove the caller owns the identity/room it is asked to act on.
+// Sessions are held server-side and keyed by an opaque HttpOnly cookie.
+const SESSION_COOKIE_NAME = 'acsSampleSession';
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const MAX_SESSIONS = 1000;
+const MAX_ROOM_PARTICIPANTS = 50;
+const ROOM_ROLES = new Set(['Presenter', 'Collaborator', 'Attendee', 'Consumer']);
+const sessions = new Map();
+
+const pruneSessions = () => {
+    const now = Date.now();
+    for (const [id, session] of sessions) {
+        if (now - session.createdAt > SESSION_TTL_MS) {
+            sessions.delete(id);
+        }
+    }
+    while (sessions.size > MAX_SESSIONS) {
+        sessions.delete(sessions.keys().next().value);
+    }
+};
+
+const readSessionId = (req) => {
+    const cookieHeader = req.headers.cookie;
+    if (!cookieHeader) {
+        return undefined;
+    }
+    for (const pair of cookieHeader.split(';')) {
+        const separatorIndex = pair.indexOf('=');
+        if (separatorIndex !== -1 && pair.slice(0, separatorIndex).trim() === SESSION_COOKIE_NAME) {
+            return pair.slice(separatorIndex + 1).trim();
+        }
+    }
+    return undefined;
+};
+
+const getSession = (req) => {
+    pruneSessions();
+    const sessionId = readSessionId(req);
+    return sessionId ? sessions.get(sessionId) : undefined;
+};
+
+const startSession = (req, res) => {
+    const existingSession = getSession(req);
+    if (existingSession) {
+        return existingSession;
+    }
+    const sessionId = crypto.randomBytes(32).toString('base64url');
+    const session = { createdAt: Date.now(), acsUserIds: new Set(), roomIds: new Set() };
+    sessions.set(sessionId, session);
+    pruneSessions();
+    const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+    // SameSite=Strict is what keeps these cookie-authorized, state-changing routes from being CSRF-able.
+    res.setHeader('Set-Cookie', `${SESSION_COOKIE_NAME}=${sessionId}; Path=/; HttpOnly; SameSite=Strict${isSecure ? '; Secure' : ''}`);
+    return session;
+};
+
+// A caller may manage a room it created through this server, or one where an identity it
+// owns is already a Presenter.
+const isAuthorizedForRoom = async (roomsClient, session, roomId) => {
+    if (session.roomIds.has(roomId)) {
+        return true;
+    }
+    try {
+        for await (const participant of roomsClient.listParticipants(roomId)) {
+            if (participant.role === 'Presenter' && session.acsUserIds.has(participant.id?.communicationUserId)) {
+                return true;
+            }
+        }
+    } catch (e) {
+        console.error('Failed to verify room membership', e);
+    }
+    return false;
+};
 
 const path = require('path');
 
@@ -191,13 +265,19 @@ const devServerSettings = {
         devServer.app.use(bodyParser.json());
         devServer.app.post('/getCommunicationUserToken', async (req, res) => {
             try {
+                const session = startSession(req, res);
                 const communicationUserId = req.body.communicationUserId;
                 const isJoinOnlyToken = req.body.isJoinOnlyToken === true;
                 let CommunicationUserIdentifier;
                 if (!communicationUserId) {
                     CommunicationUserIdentifier = await communicationIdentityClient.createUser();
-                } else {
+                    session.acsUserIds.add(CommunicationUserIdentifier.communicationUserId);
+                } else if (typeof communicationUserId === 'string' && session.acsUserIds.has(communicationUserId)) {
                     CommunicationUserIdentifier = { communicationUserId: communicationUserId };
+                } else {
+                    // Minting a token for an arbitrary identity would let any caller impersonate it.
+                    res.status(403).json({ message: 'This session does not own the requested ACS identity. Request a new identity, or sign in with an access token you already hold.' });
+                    return;
                 }
                 const communicationUserToken = await communicationIdentityClient.getToken(CommunicationUserIdentifier, [isJoinOnlyToken ? "voip.join" : "voip"]);
                 let oneSignalRegistrationToken;
@@ -317,39 +397,38 @@ const devServerSettings = {
         });
         devServer.app.post('/createRoom', async (req, res) => {
             try {
+                const session = getSession(req);
+                if (!session || session.acsUserIds.size === 0) {
+                    res.status(401).json({ message: 'Provision an ACS identity from this app before creating a room.' });
+                    return;
+                }
                 let participants = [];
-                console.log('req.body:', req.body);
-                if (req.body.presenterUserIds && Array.isArray(req.body.presenterUserIds)) {
-                    req.body.presenterUserIds.forEach(presenterUserId => {
+                let invalidParticipant = false;
+                const addParticipants = (userIds, role) => {
+                    if (!Array.isArray(userIds)) {
+                        return;
+                    }
+                    userIds.forEach(userId => {
+                        if (typeof userId !== 'string' || !userId.trim()) {
+                            invalidParticipant = true;
+                            return;
+                        }
                         participants.push({
-                            id: { communicationUserId: presenterUserId },
-                            role: "Presenter"
+                            id: { communicationUserId: userId.trim() },
+                            role
                         });
                     });
-                }
-                if (req.body.collaboratorUserIds && Array.isArray(req.body.collaboratorUserIds)) {
-                    req.body.collaboratorUserIds.forEach(collaboratorUserId => {
-                        participants.push({
-                            id: { communicationUserId: collaboratorUserId },
-                            role: "Collaborator"
-                        });
+                };
+                addParticipants(req.body.presenterUserIds, "Presenter");
+                addParticipants(req.body.collaboratorUserIds, "Collaborator");
+                addParticipants(req.body.attendeeUserIds, "Attendee");
+                addParticipants(req.body.consumerUserIds, "Consumer");
+
+                if (invalidParticipant) {
+                    res.status(400).json({
+                        message: "Every participant ID must be a non-empty string."
                     });
-                }
-                if (req.body.attendeeUserIds && Array.isArray(req.body.attendeeUserIds)) {
-                    req.body.attendeeUserIds.forEach(attendeeUserId => {
-                        participants.push({
-                            id: { communicationUserId: attendeeUserId },
-                            role: "Attendee"
-                        });
-                    });
-                }
-                if (req.body.consumerUserIds && Array.isArray(req.body.consumerUserIds)) {
-                    req.body.consumerUserIds.forEach(consumerUserId => {
-                        participants.push({
-                            id: { communicationUserId: consumerUserId },
-                            role: "Consumer"
-                        });
-                    });
+                    return;
                 }
 
                 if (participants.length === 0) {
@@ -359,10 +438,16 @@ const devServerSettings = {
                     return;
                 }
 
-                console.log('participants:', participants);
+                if (participants.length > MAX_ROOM_PARTICIPANTS) {
+                    res.status(400).json({
+                        message: `A room cannot be created with more than ${MAX_ROOM_PARTICIPANTS} participants.`
+                    });
+                    return;
+                }
+
                 const validFrom = new Date(Date.now());
                 const validUntil = new Date(validFrom.getTime() + 60 * 60 * 1000);
-                const pstnDialOutEnabled = req.body.pstnDialOutEnabled;
+                const pstnDialOutEnabled = req.body.pstnDialOutEnabled === true;
                 const roomsClient = new RoomsClient(config.connectionString);
                 const createRoom = await roomsClient.createRoom({
                     validFrom,
@@ -371,9 +456,9 @@ const devServerSettings = {
                     participants
                 });
                 const roomId = createRoom.id;
+                session.roomIds.add(roomId);
                 console.log('\nRoom successfully created');
                 console.log('Room ID:', roomId);
-                console.log('Participants:', participants);
 
                 res.setHeader('Content-Type', 'application/json');
                 res.status(200).json({
@@ -381,27 +466,42 @@ const devServerSettings = {
                 });
             } catch (e) {
                 console.error(e);
-                throw e;
+                res.status(500).json({ message: 'Failed to create room.' });
             }
         });
         devServer.app.patch('/updateParticipant', async (req, res) => {
             try {
+                const session = getSession(req);
+                if (!session || session.acsUserIds.size === 0) {
+                    res.status(401).json({ message: 'Provision an ACS identity from this app before updating a room.' });
+                    return;
+                }
                 const roomId = req.body.patchRoomId;
                 const participantId = req.body.patchParticipantId;
                 const participantRole = req.body.patchParticipantRole;
+                if (typeof roomId !== 'string' || !roomId.trim() ||
+                    typeof participantId !== 'string' || !participantId.trim() ||
+                    !ROOM_ROLES.has(participantRole)) {
+                    res.status(400).json({ message: `Provide a room ID, a participant ID, and one of these roles: ${[...ROOM_ROLES].join(', ')}.` });
+                    return;
+                }
                 const roomsClient = new RoomsClient(config.connectionString);
+                if (!await isAuthorizedForRoom(roomsClient, session, roomId.trim())) {
+                    res.status(403).json({ message: 'This session is not authorized to manage the requested room.' });
+                    return;
+                }
                 const participant = [
                     {
-                      id: { communicationUserId: participantId},
+                      id: { communicationUserId: participantId.trim() },
                       role: participantRole,
                     },
                   ];
-                await roomsClient.addOrUpdateParticipants(roomId, participant);
+                await roomsClient.addOrUpdateParticipants(roomId.trim(), participant);
                 res.setHeader('Content-Type', 'application/json');
                 res.status(200).json({message: 'Participant updated successfully'});
             } catch (e) {
                 console.error(e);
-                throw e;
+                res.status(500).json({ message: 'Failed to update participant.' });
             }
         });
 

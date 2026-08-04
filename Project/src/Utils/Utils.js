@@ -21,14 +21,19 @@ export const utils = {
         if (isJoinOnlyToken) {
             data.isJoinOnlyToken = isJoinOnlyToken;
         }
-        let response = await axios({
-            url: 'getCommunicationUserToken',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            data: JSON.stringify(data)
-        })
+        let response;
+        try {
+            response = await axios({
+                url: 'getCommunicationUserToken',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                data: JSON.stringify(data)
+            });
+        } catch (error) {
+            throw new Error(error.response?.data?.message ?? 'Failed to get ACS User Access token');
+        }
         if (response.status === 200) {
             return response.data;
         }
@@ -197,7 +202,7 @@ export const utils = {
 
         } catch (error) {
             console.error('Error creating room:', error);
-            throw error.response.data.message;
+            throw error.response?.data?.message ?? error.message;
         }
     },
     updateParticipant: async (patchRoomId, patchParticipantId, patchParticipantRole) => {
