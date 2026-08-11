@@ -16,6 +16,10 @@ products:
 - [NPM](https://www.npmjs.com/get-npm)
 - You need to have [Node.js 18](https://nodejs.org/dist/v18.18.0/). You can use the msi installer to install it.
 
+## ❤️ Feedback
+
+We appreciate your feedback and energy helping us improve our services. [If you've tried the service, please give us feedback through this survey](https://microsoft.qualtrics.com/jfe/form/SV_9WTOR2ItSo0oFee). 
+
 ## Code structure
 * ./Project/src: client side source code
 * ./Project/webpack.config.js: Project bundler. Has a simple local server for user token provisioning.
